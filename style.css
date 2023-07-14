@@ -1,0 +1,25 @@
+canvas {
+    padding: 0;
+    margin: 0;
+    position: absolute;
+
+    border: 1px solid black;
+}
+
+#bgCanvas {
+    z-index: 0;
+}
+
+#fgCanvas {
+    z-index: 1;
+}
+
+html {
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    height: 50%;
+    width: 70%;
+}

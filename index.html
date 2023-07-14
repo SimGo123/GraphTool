@@ -1,0 +1,263 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<style>
+</style>
+
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Einbinden des Bootstrap-Stylesheets -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- optional: Einbinden der jQuery-Bibliothek -->
+  <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.12.4.min.js"></script>
+
+  <title>Graph Tool</title>
+</head>
+
+<body onload="onload()" onresize="onresize()">
+
+  <p class="h3">Graph Tool</h1>
+
+  <div class="container">
+    <div class="collapse">
+
+      <p>
+        Vertices
+
+      <div class="vertices container">
+        <div class="panel panel-default">
+          <!-- <div class="panel-heading">Add More Field using Bootstrap and Jquery</div> -->
+          <div class="panel-body">
+            <div class="input-group control-group after-add-more" style="margin-bottom:5px">
+              <input type="text" name="vr" class="form-control" placeholder="Enter Name Here">
+            </div>
+
+            <!-- Copy Fields -->
+            <div class="v-copy collapse">
+              <div class="vcg control-group input-group" style="margin-bottom:5px">
+                <input name="vx" type="text" class="form-control" placeholder="Enter Name Here">
+                <div class="input-group-btn">
+                  <button class="btn btn-danger v-remove" type="button"><i
+                      class="glyphicon glyphicon-remove"></i>Remove</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="input-group-btn v-end">
+              <button class="btn btn-success v-add-more" type="button"><i
+                  class="glyphicon glyphicon-plus"></i>Add</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script type="text/javascript">
+        $(document).ready(function () {
+          $(".v-add-more").click(function () {
+            var elem = $(".v-copy").clone();
+            elem.children().children("[name=vx]").attr("name", "vr");
+            var html = elem.html();
+            $(".v-end").before(html);
+            onVerticesChange();
+          });
+
+          $("body").on("click", ".v-remove", function () {
+            $(this).parents(".vcg").remove();
+            onVerticesChange();
+          });
+        });
+
+        function onVerticesChange() {
+          var vertices = [];
+          var i = 0;
+          var options = "";
+          $("[name=vr]").each(function () {
+            if ($(this).val() != "")
+              options += ("<option value='" + i + "'>" + $(this).val() + "</option>\n");
+          });
+          $("[name=vFrom]").each(function () {
+            $(this).html("<option selected>From...</option>\n" + options);
+          });
+          $("[name=vTo]").each(function () {
+            $(this).html("<option selected>To...</option>\n" + options);
+          });
+          console.log(vertices);
+        }
+      </script>
+      </p>
+
+      <p>
+        Edges
+
+      <div class="edges container">
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="input-group control-group after-add-more" style="margin-bottom:5px">
+              <select class="custom-select" name="vFrom">
+                <option selected>From...</option>
+              </select>
+              <select class="custom-select" name="vTo">
+                <option selected>To...</option>
+              </select>
+            </div>
+
+            <!-- Copy Fields -->
+            <div class="e-copy collapse">
+              <div class="ecg control-group input-group" style="margin-bottom:5px">
+                <div class="input-group control-group after-add-more" style="margin-bottom:5px">
+                  <select class="custom-select" name="xvFrom">
+                    <option selected>From...</option>
+                  </select>
+                  <select class="custom-select" name="xvTo">
+                    <option selected>To...</option>
+                  </select>
+                  <div class="input-group-btn">
+                    <button class="btn btn-danger e-remove" type="button"><i
+                        class="glyphicon glyphicon-remove"></i>Remove</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="input-group-btn e-end">
+              <button class="btn btn-success e-add-more" type="button"><i
+                  class="glyphicon glyphicon-plus"></i>Add</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script type="text/javascript">
+        $(document).ready(function () {
+          $(".e-add-more").click(function () {
+            var elem = $(".e-copy").clone();
+            elem.children().children().children("[name=xvFrom]").attr("name", "vFrom");
+            elem.children().children().children("[name=xvTo]").attr("name", "vTo");
+            var html = elem.html();
+            $(".e-end").before(html);
+          });
+
+          $("body").on("click", ".e-remove", function () {
+            $(this).parents(".ecg").remove();
+          });
+        });
+      </script>
+      </p>
+
+      <p>
+        Algorithms
+
+      <div class="edges container">
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="input-group control-group after-add-more" style="margin-bottom:5px">
+              <select class="custom-select" name="vFrom">
+                <option selected>From...</option>
+              </select>
+              <select class="custom-select" name="vTo">
+                <option selected>To...</option>
+              </select>
+            </div>
+
+            <!-- Copy Fields -->
+            <div class="e-copy collapse">
+              <div class="ecg control-group input-group" style="margin-bottom:5px">
+                <div class="input-group control-group after-add-more" style="margin-bottom:5px">
+                  <select class="custom-select" name="xvFrom">
+                    <option selected>From...</option>
+                  </select>
+                  <select class="custom-select" name="xvTo">
+                    <option selected>To...</option>
+                  </select>
+                  <div class="input-group-btn">
+                    <button class="btn btn-danger e-remove" type="button"><i
+                        class="glyphicon glyphicon-remove"></i>Remove</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="input-group-btn e-end">
+              <button class="btn btn-success e-add-more" type="button"><i
+                  class="glyphicon glyphicon-plus"></i>Add</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script type="text/javascript">
+        $(document).ready(function () {
+          $(".e-add-more").click(function () {
+            var elem = $(".e-copy").clone();
+            elem.children().children().children("[name=xvFrom]").attr("name", "vFrom");
+            elem.children().children().children("[name=xvTo]").attr("name", "vTo");
+            var html = elem.html();
+            $(".e-end").before(html);
+          });
+
+          $("body").on("click", ".e-remove", function () {
+            $(this).parents(".ecg").remove();
+          });
+        });
+      </script>
+      </p>
+
+      <p>
+        <button id="drawGraphButton" class="btn btn-success btn-lg">Draw Graph</button>
+      </p>
+    </div>
+
+    <ul class="list-group list-group-horizontal my-3" id="graphModes">
+      <li class="list-group-item list-group-item-action active" onclick="modeClick(0)">Selection</li>
+      <li class="list-group-item list-group-item-action" onclick="modeClick(1)">Vertices</li>
+      <li class="list-group-item list-group-item-action" onclick="modeClick(2)">Edges</li>
+      <li class="list-group-item list-group-item-action" onclick="modeClick(3); changeAlgorithmsVisible(true)">Algorithms</li>
+      <li class="list-group-item list-group-item-action" onclick="modeClick(4); changePredefinedVisible(true)">Predefined</li>
+    </ul>
+
+    <ul class="list-group list-group-horizontal my-3 collapse" id="vertexTools">
+      <li class="list-group-item list-group-item-action" onclick="vertexToolClick(0)">Delete</li>
+    </ul>
+
+    <ul class="list-group list-group-horizontal my-3 collapse" id="edgeTools">
+      <li class="list-group-item list-group-item-action" onclick="edgeToolClick(0)">Delete</li>
+      <li class="list-group-item list-group-item-action" onclick="edgeToolClick(1)">Expand</li>
+      <li class="list-group-item list-group-item-action" onclick="edgeToolClick(2)">Contract</li>
+    </ul>
+
+    <ul class="list-group list-group-horizontal my-3 collapse" id="algorithms">
+      <li class="list-group-item list-group-item-action" onclick="algorithmClick(0)">Triangulate</li>
+    </ul>
+
+    <ul class="list-group list-group-horizontal my-3 collapse" id="predefinedGraphs">
+      <li class="list-group-item list-group-item-action" onclick="predefinedClick(0)">Get current graph representation</li>
+      <li class="list-group-item list-group-item-action" onclick="predefinedClick(1)">Degree One Graph</li>
+    </ul>
+
+    <canvas id="fgCanvas"></canvas>
+
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+    integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js"
+    integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js"
+    integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+    crossorigin="anonymous"></script>
+</body>
+
+<script src="objectTouchCheck.js"></script>
+<script src="graph.js"></script>
+<script src="canvasUpdates.js"></script>
+<script src="eventHandler.js"></script>
+<script src="algorithms.js"></script>
+<script src="predefined.js"></script>
+
+</html>
