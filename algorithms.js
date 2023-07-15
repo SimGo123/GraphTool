@@ -14,14 +14,22 @@ function triangulation() {
         console.log("not enough vertices for triangulation");
         return;
     }
+    if (!graph.isPlanarEmbedded()) {
+        console.log("graph is not planar embedded");
+        return;
+    }
+    if (graph.getConnectedComponents().length > 1) {
+        console.log("graph is not connected");
+        return;
+    }
     var vertex = getNextDegOneVertex();
     // Add edges until there are no more vertices of degree 1
     while (vertex != null) {
         var neighbour = graph.getAllNeighbours(vertex)[0];
-        console.log("neighbour " + JSON.stringify(neighbour));
+        // console.log("neighbour " + JSON.stringify(neighbour));
         var neighboursNeighbours = graph.getAllNeighbours(neighbour);
         let neighboursNeighbour = nextVertexAfter(neighboursNeighbours, vertex, true);
-        console.log("neighboursNeighbour " + JSON.stringify(neighboursNeighbour));
+        // console.log("neighboursNeighbour " + JSON.stringify(neighboursNeighbour));
         var edge = new Edge(vertex, neighboursNeighbour);
         graph.addEdge(edge);
         console.log("added edge " + JSON.stringify(edge));
@@ -106,8 +114,27 @@ function nextVertexAfter(vertices, afterVertex, rightDir) {
     }
 }
 
+function depthFirstSearch(vertex) {
+    console.log("depthFirstSearch");
+    let visited = [];
+    let stack = [];
+    stack.push(vertex);
+    while (stack.length > 0) {
+        let vertex = stack.pop();
+        if (eqIndexOf(visited, vertex) == -1) {
+            visited.push(vertex);
+            let neighbours = graph.getAllNeighbours(vertex);
+            $.each(neighbours, function (_index, neighbour) {
+                stack.push(neighbour);
+            });
+        }
+    }
+    return visited;
+}
+
 // Returns an array of facet walks
 // TODO Handle one degree vertices
+// Requires: graph is planar embedded, only one connected component
 function getAllFacets() {
     console.log("getAllFacets");
     // Copy edges into statusEdges, which keep additional left/right visited booleans
@@ -164,6 +191,7 @@ function getAllFacets() {
             console.log(facetStr);
         }
     });
+    console.log("Found " + facets.length + " facets");
     $.each(facets, function (_index, facet) {
         let facetStr = "";
         $.each(facet, function (_index, vertex) {
@@ -214,3 +242,8 @@ function statusEdgeIndex(statusEdges, edge) {
     console.log("no se");
     return -1;
 }
+
+/*
+Problem with:
+[{"x":360,"y":97.60000610351562,"number":3,"radius":15,"highlightColor":"red","color":"gray"},{"x":166,"y":284.6000061035156,"number":0,"radius":15,"highlightColor":"red","color":"gray"},{"x":139,"y":155.60000610351562,"number":1,"radius":15,"highlightColor":"red","color":"gray"},{"x":224,"y":391.6000061035156,"number":2,"radius":15,"highlightColor":"red","color":"gray"},{"x":360,"y":97.60000610351562,"number":3,"radius":15,"highlightColor":"red","color":"gray"},{"x":139,"y":155.60000610351562,"number":1,"radius":15,"highlightColor":"red","color":"gray"},{"x":166,"y":284.6000061035156,"number":0,"radius":15,"highlightColor":"red","color":"gray"},{"x":360,"y":97.60000610351562,"number":3,"radius":15,"highlightColor":"red","color":"gray"},{"x":224,"y":391.6000061035156,"number":2,"radius":15,"highlightColor":"red","color":"gray"},{"x":139,"y":155.60000610351562,"number":1,"radius":15,"highlightColor":"red","color":"gray"},{"x":221,"y":187.60000610351562,"number":4,"radius":15,"highlightColor":"red","color":"gray"}]
+*/

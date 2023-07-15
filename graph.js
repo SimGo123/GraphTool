@@ -216,6 +216,34 @@ class Graph {
         }
         return multiEdges;
     }
+
+    isPlanarEmbedded() {
+        for (let i = 0; i < this.edges.length; i++) {
+            let edge = this.edges[i];
+            for (let j = i + 1; j < this.edges.length; j++) {
+                let other = this.edges[j];
+                if (doIntersect(edge.v1, edge.v2, other.v1, other.v2)) {
+                    console.log("isPlanarEmbedded: " + edge.print() + " and " + other.print() + " intersect");
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    getConnectedComponents() {
+        let components = [];
+        let visited = [];
+        for (let i = 0; i < this.vertices.length; i++) {
+            if (eqIndexOf(visited, this.vertices[i]) == -1) {
+                let newVisited = depthFirstSearch(this.vertices[i]);
+                components.push(newVisited);
+                visited = visited.concat(newVisited);
+            }
+        }
+        console.log("Found " + components.length + " connected components");
+        return components;
+    }
 }
 
 graph = new Graph();
