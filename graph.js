@@ -13,16 +13,18 @@ class Vertex {
 
     draw(selectedVertex) {
         var ctx = fgCanvas.getContext("2d");
-        //ctx.fillStyle = this.color;
+        console.log("drawing vertex " + this.number);
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
         ctx.fillStyle = "white";
         ctx.fill();
         ctx.strokeStyle = this.color;
+        ctx.lineWidth = 3;
         ctx.stroke();
+        ctx.closePath();
         ctx.fillStyle = this.color;
         ctx.fillText(this.number, this.x, this.y);
-        //ctx.fill();
+        ctx.closePath();
 
         if (selectedVertex == this) {
             // Draw highlighting circle around vertex
@@ -31,6 +33,7 @@ class Vertex {
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.radius + 5, 0, 2 * Math.PI);
             ctx.stroke();
+            ctx.closePath();
         }
     }
 
@@ -51,7 +54,7 @@ class Edge {
         this.color = "gray";
     }
 
-    draw(selectedEdge) {
+    draw(selectedEdge, multiEdge = false) {
         var ctx = fgCanvas.getContext("2d");
         if (selectedEdge == this) {
             ctx.strokeStyle = "red";
@@ -60,10 +63,45 @@ class Edge {
             ctx.strokeStyle = this.color;
             ctx.lineWidth = 3;
         }
-        ctx.beginPath();
-        ctx.moveTo(this.v1.x, this.v1.y);
-        ctx.lineTo(this.v2.x, this.v2.y);
-        ctx.stroke();
+        if (!multiEdge) {
+            ctx.beginPath();
+            ctx.moveTo(this.v1.x, this.v1.y);
+            ctx.lineTo(this.v2.x, this.v2.y);
+            ctx.stroke();
+            ctx.closePath();
+            console.log("not a multi edge");
+        } else {
+            // Draw multiple edges with bezier curves
+            let dx = this.v2.x - this.v1.x;
+            let dy = this.v2.y - this.v1.y;
+            let vectorLen = 60;
+            
+            // Control points are perpendicular to edge
+            let controlVec = new Point(dy, -dx);
+            controlVec = changeVectorLength(controlVec, vectorLen);
+            
+            let control1 = new Point(this.v1.x + controlVec.x, this.v1.y + controlVec.y);
+            let control2 = new Point(this.v2.x + controlVec.x, this.v2.y + controlVec.y);
+
+            ctx.moveTo(this.v1.x, this.v1.y);
+            ctx.beginPath();
+            ctx.moveTo(this.v1.x, this.v1.y);
+            ctx.bezierCurveTo(control1.x, control1.y, control2.x, control2.y, this.v2.x, this.v2.y);
+            ctx.stroke();
+            ctx.closePath();
+
+            controlVec = new Point(-dy, dx);
+            controlVec = changeVectorLength(controlVec, vectorLen);
+            
+            control1 = new Point(this.v1.x + controlVec.x, this.v1.y + controlVec.y);
+            control2 = new Point(this.v2.x + controlVec.x, this.v2.y + controlVec.y);
+
+            ctx.beginPath();
+            ctx.moveTo(this.v1.x, this.v1.y);
+            ctx.bezierCurveTo(control1.x, control1.y, control2.x, control2.y, this.v2.x, this.v2.y);
+            ctx.stroke();
+            ctx.closePath();
+        }
     }
 
     eq(other) {
@@ -133,11 +171,20 @@ class Graph {
 
     draw(selectedVertex, selectedEdge) {
         console.log("drawGraph");
-        for (let i = 0; i < this.edges.length; i++) {
-            this.edges[i].draw(selectedEdge);
-        }
+        let multiEdges = this.getMultiEdges();
+        $.each(multiEdges, function (_i, edge) {
+            edge.draw(selectedEdge, true);
+        });
+        let otherEdgesToDraw = [];
+        $.each(graph.edges, function (_i, edge) {
+            if (eqIndexOf(multiEdges, edge) == -1) {
+                otherEdgesToDraw.push(edge);
+            }
+        });
+        $.each(otherEdgesToDraw, function (_i, edge) {
+            edge.draw(selectedEdge);
+        });
         for (let i = 0; i < this.vertices.length; i++) {
-            console.log("drawing vertex " + i);
             this.vertices[i].draw(selectedVertex);
         }
     }
@@ -151,7 +198,7 @@ class Graph {
         this.edges.push(edge2);
         this.edges.splice(this.edges.indexOf(edge), 1);
     }
-    
+
     contractEdge(edge) {
         let middleVertex = new Vertex((edge.v1.x + edge.v2.x) / 2, (edge.v1.y + edge.v2.y) / 2);
         let vertexLeft = edge.v1;
@@ -182,7 +229,7 @@ class Graph {
         }
         return incidentEdges;
     }
-    
+
     getVertexDegree(vertex) {
         return this.getIncidentEdges(vertex).length;
     }
@@ -199,7 +246,7 @@ class Graph {
             }
         });
         //console.log("getAllNeighbours: " + JSON.stringify(sortClockwise(vertex, neighbours)));
-        
+
         return sortClockwise(vertex, neighbours);
     }
 
@@ -249,12 +296,12 @@ class Graph {
 graph = new Graph();
 
 function sortClockwise(vertex, vertices) {
-    return vertices.sort(function(x, y) {
+    return vertices.sort(function (x, y) {
         if (getAngle(vertex, x) < getAngle(vertex, y)) {
-          return -1;
+            return -1;
         }
         if (getAngle(vertex, x) > getAngle(vertex, y)) {
-          return 1;
+            return 1;
         }
         return 0;
     });
@@ -272,4 +319,9 @@ function getAngle(vertex, neighbour) {
     if (angle < 0) degree_angle = 360 - Math.abs(degree_angle);
 
     return degree_angle;
+}
+
+function changeVectorLength(vector, length) {
+    let vectorLength = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
+    return new Point(vector.x * length / vectorLength, vector.y * length / vectorLength);
 }
