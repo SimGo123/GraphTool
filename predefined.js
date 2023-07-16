@@ -1,6 +1,7 @@
 const PREDEFINEDS = {
     GET_CURR: 0,
-    DEG_ONE_GRAPH: 1
+    DEG_ONE_GRAPH: 1,
+    STAR_GRAPH: 2
 };
 
 function predefinedClick(param) {
@@ -16,24 +17,32 @@ function predefinedClick(param) {
             let edge = graph.edges[i];
             jsonGraph.edges.push({"v1": {"x": edge.v1.x, "y": edge.v1.y}, "v2": {"x": edge.v2.x, "y": edge.v2.y}});
         }
-        console.log(JSON.stringify(jsonGraph));
+        window.alert(JSON.stringify(jsonGraph));
     } else if (param == PREDEFINEDS.DEG_ONE_GRAPH) {
         const degOneGraph = '{"vertices":[{"x":100,"y":300,"radius":15,"highlightColor":"red","color":"gray"},{"x":200,"y":300,"radius":15,"highlightColor":"red","color":"gray"},{"x":300,"y":300,"radius":15,"highlightColor":"red","color":"gray"},{"x":200,"y":200,"radius":15,"highlightColor":"red","color":"gray"},{"x":200,"y":100,"radius":15,"highlightColor":"red","color":"gray"}],"edges":[{"v1":{"x":200,"y":100,"radius":15,"highlightColor":"red","color":"gray"},"v2":{"x":200,"y":200,"radius":15,"highlightColor":"red","color":"gray"},"thickness":5,"color":"gray"},{"v1":{"x":200,"y":200,"radius":15,"highlightColor":"red","color":"gray"},"v2":{"x":100,"y":300,"radius":15,"highlightColor":"red","color":"gray"},"thickness":5,"color":"gray"},{"v1":{"x":100,"y":300,"radius":15,"highlightColor":"red","color":"gray"},"v2":{"x":200,"y":300,"radius":15,"highlightColor":"red","color":"gray"},"thickness":5,"color":"gray"},{"v1":{"x":200,"y":300,"radius":15,"highlightColor":"red","color":"gray"},"v2":{"x":300,"y":300,"radius":15,"highlightColor":"red","color":"gray"},"thickness":5,"color":"gray"},{"v1":{"x":300,"y":300,"radius":15,"highlightColor":"red","color":"gray"},"v2":{"x":200,"y":200,"radius":15,"highlightColor":"red","color":"gray"},"thickness":5,"color":"gray"},{"v1":{"x":200,"y":200,"radius":15,"highlightColor":"red","color":"gray"},"v2":{"x":200,"y":300,"radius":15,"highlightColor":"red","color":"gray"},"thickness":5,"color":"gray"}]}';
-        jsonGraph = JSON.parse(degOneGraph);
-        graph = new Graph();
-        for (var i = 0; i < jsonGraph.vertices.length; i++) {
-            var vertex = jsonGraph.vertices[i];
-            graph.addVertex(new Vertex(vertex.x, vertex.y));
-        }
-        for (var i = 0; i < jsonGraph.edges.length; i++) {
-            var edge = jsonGraph.edges[i];
-            let v1 = edge.v1;
-            let v2 = edge.v2;
-            let v1Idx = eqIndexOf(graph.vertices, v1);
-            let v2Idx = eqIndexOf(graph.vertices, v2);
-            console.log("idx " + graph.vertices.indexOf(v2));
-            graph.addEdge(new Edge(graph.vertices[v1Idx], graph.vertices[v2Idx]));
-        }
-        redrawAll();
+        let jsonGraph = JSON.parse(degOneGraph);
+        loadGraphFromJson(jsonGraph);
+    } else if (param == PREDEFINEDS.STAR_GRAPH) {
+        const starGraph = '{"vertices":[{"x":348,"y":251.8000030517578},{"x":351,"y":140.8000030517578},{"x":456,"y":198.8000030517578},{"x":445,"y":308.8000030517578},{"x":299,"y":327.8000030517578},{"x":252,"y":215.8000030517578}],"edges":[{"v1":{"x":351,"y":140.8000030517578},"v2":{"x":348,"y":251.8000030517578}},{"v1":{"x":348,"y":251.8000030517578},"v2":{"x":456,"y":198.8000030517578}},{"v1":{"x":348,"y":251.8000030517578},"v2":{"x":445,"y":308.8000030517578}},{"v1":{"x":348,"y":251.8000030517578},"v2":{"x":299,"y":327.8000030517578}},{"v1":{"x":348,"y":251.8000030517578},"v2":{"x":252,"y":215.8000030517578}}]}';
+        let jsonGraph = JSON.parse(starGraph);
+        loadGraphFromJson(jsonGraph);
     }
+}
+
+function loadGraphFromJson(jsonGraph) {
+    graph = new Graph();
+    for (var i = 0; i < jsonGraph.vertices.length; i++) {
+        var vertex = jsonGraph.vertices[i];
+        graph.addVertex(new Vertex(vertex.x, vertex.y));
+    }
+    for (var i = 0; i < jsonGraph.edges.length; i++) {
+        var edge = jsonGraph.edges[i];
+        let v1 = edge.v1;
+        let v2 = edge.v2;
+        let v1Idx = eqIndexOf(graph.vertices, v1);
+        let v2Idx = eqIndexOf(graph.vertices, v2);
+        console.log("idx " + graph.vertices.indexOf(v2));
+        graph.addEdge(new Edge(graph.vertices[v1Idx], graph.vertices[v2Idx]));
+    }
+    redrawAll();
 }

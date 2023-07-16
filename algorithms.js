@@ -11,15 +11,15 @@ function algorithmClick(param) {
 function triangulation() {
     console.log("triangulation");
     if (graph.vertices.length < 3) {
-        console.log("not enough vertices for triangulation");
+        window.alert("can't triangulate, not enough vertices for triangulation");
         return;
     }
     if (!graph.isPlanarEmbedded()) {
-        console.log("graph is not planar embedded");
+        window.alert("can't triangulate, graph is not planar embedded");
         return;
     }
     if (graph.getConnectedComponents().length > 1) {
-        console.log("graph is not connected");
+        window.alert("can't triangulate, graph is not connected");
         return;
     }
     var vertex = getNextDegOneVertex();
@@ -133,8 +133,8 @@ function depthFirstSearch(vertex) {
 }
 
 // Returns an array of facet walks
-// TODO Handle one degree vertices
 // Requires: graph is planar embedded, only one connected component
+// TODO Handle one degree vertices
 function getAllFacets() {
     console.log("getAllFacets");
     // Copy edges into statusEdges, which keep additional left/right visited booleans
