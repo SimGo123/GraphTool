@@ -54,7 +54,7 @@ class Edge {
         this.color = "gray";
     }
 
-    draw(selectedEdge, occurences = 1) {
+    draw(selectedEdge, multiEdge=false, loop=false, occurences = 1) {
         var ctx = fgCanvas.getContext("2d");
         if (selectedEdge == this) {
             ctx.strokeStyle = "red";
@@ -70,7 +70,30 @@ class Edge {
             ctx.stroke();
             ctx.closePath();
         }
-        if (occurences > 1) { // => Multi-edge
+        if (loop) {
+            // Draw loop
+            let vertex = this.v1;
+            let length = 50;
+            let height = 20;
+
+            ctx.beginPath();
+            ctx.moveTo(vertex.x, vertex.y);
+            ctx.bezierCurveTo(vertex.x + length / 2, vertex.y + height, vertex.x + length, vertex.y + height, vertex.x + length, vertex.y);
+            ctx.stroke();
+            ctx.closePath();
+            
+            ctx.beginPath();
+            ctx.moveTo(vertex.x, vertex.y);
+            ctx.bezierCurveTo(vertex.x + length / 2, vertex.y - height, vertex.x + length, vertex.y - height, vertex.x + length, vertex.y);
+            ctx.stroke();
+            ctx.closePath();
+
+            // Write loop count into loop, if > 1
+            if (occurences > 1) {
+                ctx.fillStyle = this.color;
+                ctx.fillText(occurences, vertex.x + length / 2, vertex.y + 5);
+            }
+        } else if (multiEdge) {
             // Draw multiple edges with bezier curves
             let dx = this.v2.x - this.v1.x;
             let dy = this.v2.y - this.v1.y;
@@ -107,8 +130,6 @@ class Edge {
                 ctx.stroke();
                 ctx.closePath();
             }
-        } else {
-            console.log("Error: occurences must be >= 1, but was " + occurences);
         }
     }
 
@@ -180,9 +201,23 @@ class Graph {
 
     draw(selectedVertex, selectedEdge) {
         console.log("drawGraph");
+        let loops = this.getLoops();
+        for (let i = 0; i < loops.length; i++) {
+            let loop = loops[i];
+            let occurrences = 0;
+            $.each(this.edges, function (_j, otherEdge) {
+                if (loop.eq(otherEdge)) {
+                    occurrences++;
+                }
+            });
+            loop.draw(selectedEdge, false, true, occurrences);
+        }
         let multiEdges = this.getMultiEdges();
         for (let i = 0; i < multiEdges.length; i++) {
             let multiEdge = multiEdges[i];
+            if (eqIndexOf(loops, multiEdge) != -1) {
+                continue;
+            }
             let occurrences = 0;
             console.log(this.edges.length + " edges");
             $.each(this.edges, function (_j, otherEdge) {
@@ -191,7 +226,7 @@ class Graph {
                     occurrences++;
                 }
             });
-            multiEdge.draw(selectedEdge, occurrences);
+            multiEdge.draw(selectedEdge, true, false, occurrences);
         }
         let otherEdgesToDraw = [];
         $.each(this.edges, function (_i, edge) {
@@ -291,6 +326,17 @@ class Graph {
             }
         }
         return multiEdges;
+    }
+
+    getLoops() {
+        let loops = [];
+        for (let i = 0; i < this.edges.length; i++) {
+            let edge = this.edges[i];
+            if (edge.v1.eq(edge.v2)) {
+                loops.push(edge);
+            }
+        }
+        return loops;
     }
 
     isPlanarEmbedded() {

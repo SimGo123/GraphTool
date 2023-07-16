@@ -73,8 +73,8 @@ class Algorithm {
 class TriangulationAlgo extends Algorithm {
     async run() {
         console.log("triangulation");
-        super.numSteps = 3;
-        
+        super.numSteps = 4;
+
         await super.pause("Connect degree 1 vertices", "Connect vertices of degree 1 to the next clockwise neighbour of their neighbour");
 
         if (graph.vertices.length < 3) {
@@ -92,17 +92,23 @@ class TriangulationAlgo extends Algorithm {
             super.onFinished();
             return;
         }
+        if (graph.getMultiEdges().length > 0 || graph.getLoops().length > 0) {
+            window.alert("can't triangulate, graph has multi-edges or loops");
+            super.onFinished();
+            return;
+        }
 
         this.connectDegOneVertices();
+
         await super.pause("Triangulate", "Triangulate the graph without paying attention to multi-edges/loops. Picks one vertex per facet and connects it with all other vertices in the facet except neighbours");
-
         let newFacets = this.uncleanTriangulation();
-        await super.pause("Remove multi-edges", "Remove multi-edges by deleting newly added edges and connecting them to the other vertices in the facet (edge exchange)");
 
+        await super.pause("Remove multi-edges", "Remove multi-edges by deleting newly added edges and connecting them to the other vertices in the facet (edge exchange)");
         this.cleanMultiEdges(newFacets);
 
-        // TODO Handle loops
-
+        await super.pause("Remove loops", "Remove loops");
+        this.cleanLoops();
+        
         super.onFinished();
 
         return;
@@ -242,6 +248,14 @@ class TriangulationAlgo extends Algorithm {
         });
 
         redrawAll();
+    }
+
+    cleanLoops() {
+        let loops = graph.getLoops();
+        $.each(loops, function (_index, loop) {
+            graph.deleteEdge(loop);
+            console.log("deleted loop " + loop.print());
+        });
     }
 }
 
