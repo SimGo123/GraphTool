@@ -32,19 +32,24 @@ class Algorithm {
     constructor() {
         this.shouldContinue = false;
         this.runComplete = false;
+        this.numSteps = 0;
+        this.currentStep = 0;
     }
 
     async run() {
 
     }
 
-    async pause() {
+    async pause(stepTitle="", stepDesc="") {
+        this.currentStep++;
         console.log("pause");
         if (this.runComplete) {
             return;
         }
         $("#stepButton").removeClass("disabled");
         $("#runCompleteButton").removeClass("disabled");
+        $("#stepTitle").text("Step " + this.currentStep + "/" + this.numSteps + ": " + stepTitle);
+        $("#stepDescription").text(stepDesc);
         while (!this.shouldContinue) {
             console.log("waiting");
             await this.sleep(1000);
@@ -68,7 +73,9 @@ class Algorithm {
 class TriangulationAlgo extends Algorithm {
     async run() {
         console.log("triangulation");
-        await super.pause();
+        super.numSteps = 3;
+        
+        await super.pause("Connect degree 1 vertices", "Connect vertices of degree 1 to the next clockwise neighbour of their neighbour");
 
         if (graph.vertices.length < 3) {
             window.alert("can't triangulate, not enough vertices for triangulation");
@@ -87,10 +94,10 @@ class TriangulationAlgo extends Algorithm {
         }
 
         this.connectDegOneVertices();
-        await super.pause();
+        await super.pause("Triangulate", "Triangulate the graph without paying attention to multi-edges/loops. Picks one vertex per facet and connects it with all other vertices in the facet except neighbours");
 
         let newFacets = this.uncleanTriangulation();
-        await super.pause();
+        await super.pause("Remove multi-edges", "Remove multi-edges by deleting newly added edges and connecting them to the other vertices in the facet (edge exchange)");
 
         this.cleanMultiEdges(newFacets);
 

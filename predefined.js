@@ -1,7 +1,8 @@
 const PREDEFINEDS = {
     GET_CURR: 0,
-    DEG_ONE_GRAPH: 1,
-    STAR_GRAPH: 2
+    FROM_JSON: 1,
+    DEG_ONE_GRAPH: 2,
+    STAR_GRAPH: 3
 };
 
 function predefinedClick(param) {
@@ -18,6 +19,14 @@ function predefinedClick(param) {
             jsonGraph.edges.push({"v1": {"x": edge.v1.x, "y": edge.v1.y}, "v2": {"x": edge.v2.x, "y": edge.v2.y}});
         }
         window.alert(JSON.stringify(jsonGraph));
+    } else if (param == PREDEFINEDS.FROM_JSON) {
+        let jsonGraph = window.prompt("Enter JSON graph:");
+        try {
+            jsonGraph = JSON.parse(jsonGraph);
+            loadGraphFromJson(jsonGraph);
+        } catch (e) {
+            window.alert("Invalid JSON graph!");
+        }
     } else if (param == PREDEFINEDS.DEG_ONE_GRAPH) {
         const degOneGraph = '{"vertices":[{"x":100,"y":300,"radius":15,"highlightColor":"red","color":"gray"},{"x":200,"y":300,"radius":15,"highlightColor":"red","color":"gray"},{"x":300,"y":300,"radius":15,"highlightColor":"red","color":"gray"},{"x":200,"y":200,"radius":15,"highlightColor":"red","color":"gray"},{"x":200,"y":100,"radius":15,"highlightColor":"red","color":"gray"}],"edges":[{"v1":{"x":200,"y":100,"radius":15,"highlightColor":"red","color":"gray"},"v2":{"x":200,"y":200,"radius":15,"highlightColor":"red","color":"gray"},"thickness":5,"color":"gray"},{"v1":{"x":200,"y":200,"radius":15,"highlightColor":"red","color":"gray"},"v2":{"x":100,"y":300,"radius":15,"highlightColor":"red","color":"gray"},"thickness":5,"color":"gray"},{"v1":{"x":100,"y":300,"radius":15,"highlightColor":"red","color":"gray"},"v2":{"x":200,"y":300,"radius":15,"highlightColor":"red","color":"gray"},"thickness":5,"color":"gray"},{"v1":{"x":200,"y":300,"radius":15,"highlightColor":"red","color":"gray"},"v2":{"x":300,"y":300,"radius":15,"highlightColor":"red","color":"gray"},"thickness":5,"color":"gray"},{"v1":{"x":300,"y":300,"radius":15,"highlightColor":"red","color":"gray"},"v2":{"x":200,"y":200,"radius":15,"highlightColor":"red","color":"gray"},"thickness":5,"color":"gray"},{"v1":{"x":200,"y":200,"radius":15,"highlightColor":"red","color":"gray"},"v2":{"x":200,"y":300,"radius":15,"highlightColor":"red","color":"gray"},"thickness":5,"color":"gray"}]}';
         let jsonGraph = JSON.parse(degOneGraph);
@@ -31,6 +40,7 @@ function predefinedClick(param) {
 
 function loadGraphFromJson(jsonGraph) {
     graph = new Graph();
+    vertexCount = 0;
     for (var i = 0; i < jsonGraph.vertices.length; i++) {
         var vertex = jsonGraph.vertices[i];
         graph.addVertex(new Vertex(vertex.x, vertex.y));
