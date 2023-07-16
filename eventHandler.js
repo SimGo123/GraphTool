@@ -23,6 +23,23 @@ const EdgeTools = {
 
 function modeClick(param) {
     currentMode = param;
+
+    let toolBoxFuncs = [changeVertexToolsVisible, changeEdgeToolsVisible, changeAlgorithmsVisible, changePredefinedVisible];
+
+    if (param == Modes.ALGORITHMS) {
+        $.each(toolBoxFuncs, function(_i, func) {
+            func(false);
+        });
+        changeAlgorithmsVisible(true);
+    } else if (param == Modes.PREDEFINED) {
+        $.each(toolBoxFuncs, function(_i, func) {
+            func(false);
+        });
+        changePredefinedVisible(true);
+    } else {
+        changeAlgorithmsVisible(false);
+        changePredefinedVisible(false);
+    }
     
     for (var i = 0; i < modeItems.length; i++) {
         var item = modeItems[i];

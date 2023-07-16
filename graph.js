@@ -46,9 +46,10 @@ class Vertex {
 }
 
 class Edge {
-    constructor(v1, v2) {
+    constructor(v1, v2, id=null) {
         this.v1 = v1;
         this.v2 = v2;
+        this.id = id;
         this.thickness = 5;
         this.color = "gray";
     }
@@ -109,7 +110,8 @@ class Edge {
     }
 
     print() {
-        return "Edge " + this.v1.number + " " + this.v2.number;
+        let idString = (this.id == null ? "" : " id: " + this.id);
+        return "Edge " + this.v1.number + " " + this.v2.number + idString;
     }
 }
 
@@ -246,6 +248,16 @@ class Graph {
         //console.log("getAllNeighbours: " + JSON.stringify(sortClockwise(vertex, neighbours)));
 
         return sortClockwise(vertex, neighbours);
+    }
+
+    getEmbedding() {
+        let embedding = [];
+        for (let i = 0; i < this.vertices.length; i++) {
+            let vertex = this.vertices[i];
+            let neighbours = this.getAllNeighbours(vertex);
+            embedding.push([vertex, neighbours]);
+        }
+        return embedding;
     }
 
     getMultiEdges() {

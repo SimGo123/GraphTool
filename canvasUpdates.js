@@ -91,14 +91,6 @@ fgCanvas.addEventListener("click", function (event) {
                 changeVertexToolsVisible(false);
             }
         }
-    } else if (currentMode == Modes.ALGORITHMS){
-        changeVertexToolsVisible(false);
-        changeEdgeToolsVisible(false);
-        changePredefinedVisible(false);
-    } else if (currentMode == Modes.PREDEFINED) {
-        changeVertexToolsVisible(false);
-        changeEdgeToolsVisible(false);
-        changeAlgorithmsVisible(false);
     }
 
     redrawAll();
