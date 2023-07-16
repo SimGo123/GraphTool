@@ -46,7 +46,7 @@ class Vertex {
 }
 
 class Edge {
-    constructor(v1, v2, id=null) {
+    constructor(v1, v2, id = null) {
         this.v1 = v1;
         this.v2 = v2;
         this.id = id;
@@ -54,7 +54,7 @@ class Edge {
         this.color = "gray";
     }
 
-    draw(selectedEdge, multiEdge = false) {
+    draw(selectedEdge, occurences = 1) {
         var ctx = fgCanvas.getContext("2d");
         if (selectedEdge == this) {
             ctx.strokeStyle = "red";
@@ -63,50 +63,59 @@ class Edge {
             ctx.strokeStyle = this.color;
             ctx.lineWidth = 3;
         }
-        if (!multiEdge) {
+        if (occurences == 1 || occurences % 2 != 0) {
             ctx.beginPath();
             ctx.moveTo(this.v1.x, this.v1.y);
             ctx.lineTo(this.v2.x, this.v2.y);
             ctx.stroke();
             ctx.closePath();
-        } else {
+        }
+        if (occurences > 1) { // => Multi-edge
             // Draw multiple edges with bezier curves
             let dx = this.v2.x - this.v1.x;
             let dy = this.v2.y - this.v1.y;
             let vectorLen = 60;
-            
-            // Control points are perpendicular to edge
-            let controlVec = new Point(dy, -dx);
-            controlVec = changeVectorLength(controlVec, vectorLen);
-            
-            let control1 = new Point(this.v1.x + controlVec.x, this.v1.y + controlVec.y);
-            let control2 = new Point(this.v2.x + controlVec.x, this.v2.y + controlVec.y);
+            let occursEven = occurences % 2 == 0;
+            let steps = vectorLen * 2 / (occurences - 1);
+            console.log("occurences " + occurences);
+            console.log("step " + steps);
 
-            ctx.moveTo(this.v1.x, this.v1.y);
-            ctx.beginPath();
-            ctx.moveTo(this.v1.x, this.v1.y);
-            ctx.bezierCurveTo(control1.x, control1.y, control2.x, control2.y, this.v2.x, this.v2.y);
-            ctx.stroke();
-            ctx.closePath();
+            for (let i = vectorLen; i > 0; i -= steps) {
+                console.log(i);
+                // Control points are perpendicular to edge
+                let controlVec = new Point(dy, -dx);
+                controlVec = changeVectorLength(controlVec, i);
 
-            controlVec = new Point(-dy, dx);
-            controlVec = changeVectorLength(controlVec, vectorLen);
-            
-            control1 = new Point(this.v1.x + controlVec.x, this.v1.y + controlVec.y);
-            control2 = new Point(this.v2.x + controlVec.x, this.v2.y + controlVec.y);
+                let control1 = new Point(this.v1.x + controlVec.x, this.v1.y + controlVec.y);
+                let control2 = new Point(this.v2.x + controlVec.x, this.v2.y + controlVec.y);
 
-            ctx.beginPath();
-            ctx.moveTo(this.v1.x, this.v1.y);
-            ctx.bezierCurveTo(control1.x, control1.y, control2.x, control2.y, this.v2.x, this.v2.y);
-            ctx.stroke();
-            ctx.closePath();
+                ctx.beginPath();
+                ctx.moveTo(this.v1.x, this.v1.y);
+                ctx.bezierCurveTo(control1.x, control1.y, control2.x, control2.y, this.v2.x, this.v2.y);
+                ctx.stroke();
+                ctx.closePath();
+
+                controlVec = new Point(-dy, dx);
+                controlVec = changeVectorLength(controlVec, i);
+
+                control1 = new Point(this.v1.x + controlVec.x, this.v1.y + controlVec.y);
+                control2 = new Point(this.v2.x + controlVec.x, this.v2.y + controlVec.y);
+
+                ctx.beginPath();
+                ctx.moveTo(this.v1.x, this.v1.y);
+                ctx.bezierCurveTo(control1.x, control1.y, control2.x, control2.y, this.v2.x, this.v2.y);
+                ctx.stroke();
+                ctx.closePath();
+            }
+        } else {
+            console.log("Error: occurences must be >= 1, but was " + occurences);
         }
     }
 
     eq(other) {
         // Also equal if edges are reversed
-        return (this.v1.x == other.v1.x && this.v1.y == other.v1.y && this.v2.x == other.v2.x && this.v2.y == other.v2.y)
-            || (this.v1.x == other.v2.x && this.v1.y == other.v2.y && this.v2.x == other.v1.x && this.v2.y == other.v1.y);
+        return (this.v1.eq(other.v1) && this.v2.eq(other.v2))
+            || (this.v1.eq(other.v2) && this.v2.eq(other.v1));
     }
 
     print() {
@@ -172,11 +181,20 @@ class Graph {
     draw(selectedVertex, selectedEdge) {
         console.log("drawGraph");
         let multiEdges = this.getMultiEdges();
-        $.each(multiEdges, function (_i, edge) {
-            edge.draw(selectedEdge, true);
-        });
+        for (let i = 0; i < multiEdges.length; i++) {
+            let multiEdge = multiEdges[i];
+            let occurrences = 0;
+            console.log(this.edges.length + " edges");
+            $.each(this.edges, function (_j, otherEdge) {
+                console.log("edge " + multiEdge.print() + " otherEdge " + otherEdge.print());
+                if (multiEdge.eq(otherEdge)) {
+                    occurrences++;
+                }
+            });
+            multiEdge.draw(selectedEdge, occurrences);
+        }
         let otherEdgesToDraw = [];
-        $.each(graph.edges, function (_i, edge) {
+        $.each(this.edges, function (_i, edge) {
             if (eqIndexOf(multiEdges, edge) == -1) {
                 otherEdgesToDraw.push(edge);
             }
@@ -261,6 +279,7 @@ class Graph {
     }
 
     getMultiEdges() {
+        console.log("multiCheck");
         let multiEdges = [];
         for (let i = 0; i < this.edges.length; i++) {
             let edge = this.edges[i];

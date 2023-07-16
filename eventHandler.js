@@ -106,3 +106,11 @@ function showAnyModal(anyModal) {
     stopPlaying();
     anyModal.modal('show');
 }
+
+function printArr(array) {
+    var str = "";
+    for (var i = 0; i < array.length; i++) {
+        str += array[i].print() + " ";
+    }
+    console.log(str);
+}
