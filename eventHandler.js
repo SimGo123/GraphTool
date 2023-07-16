@@ -36,9 +36,11 @@ function modeClick(param) {
             func(false);
         });
         changePredefinedVisible(true);
+        $("#stepButton").addClass("invisible");
     } else {
         changeAlgorithmsVisible(false);
         changePredefinedVisible(false);
+        $("#stepButton").addClass("invisible");
     }
     
     for (var i = 0; i < modeItems.length; i++) {

@@ -2,179 +2,233 @@ const ALGORITHMS = {
     TRIANGULATION: 0
 };
 
-var shouldContinue = false;
+var algorithm = null;
 
-function algorithmClick(param) {
+async function algorithmClick(param) {
     if (param == ALGORITHMS.TRIANGULATION) {
-        triangulation();
+        algorithm = new TriangulationAlgo();
+        $("#stepButton").removeClass("invisible");
+        $("#stepButton").removeClass("btn-secondary");
+        $("#stepButton").addClass("btn-primary");
+        await algorithm.run();
+        algorithm = null;
     }
 }
 
-function doStep() {
-    shouldContinue = true;
-}
-
-async function pause() {
-    console.log("pause");
-    while (!shouldContinue) {
-        console.log("waiting");
-        await sleep(1000);
+function stepClick() {
+    if (algorithm != null) {
+        algorithm.doStep();
     }
-    shouldContinue = false;
 }
 
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+class Algorithm {
+    constructor() {
+        this.shouldContinue = false;
+    }
+
+    async run() {
+
+    }
+    
+    doStep() {
+        this.shouldContinue = true;
+    }
+
+    onFinished() {
+        $("#stepButton").addClass("invisible");
+        $("#stepButton").removeClass("btn-primary");
+        $("#stepButton").addClass("btn-secondary");
+    }
+
+    async pause() {
+        console.log("pause");
+        $("#stepButton").removeClass("btn-secondary");
+        $("#stepButton").addClass("btn-primary");
+        while (!this.shouldContinue) {
+            console.log("waiting");
+            await this.sleep(1000);
+        }
+        this.shouldContinue = false;
+        $("#stepButton").removeClass("btn-primary");
+        $("#stepButton").addClass("btn-secondary");
+    }
+
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
 }
 
-async function triangulation() {
-    console.log("triangulation");
-    if (graph.vertices.length < 3) {
-        window.alert("can't triangulate, not enough vertices for triangulation");
+class TriangulationAlgo extends Algorithm {
+    async run() {
+        console.log("triangulation");
+        await super.pause();
+
+        if (graph.vertices.length < 3) {
+            window.alert("can't triangulate, not enough vertices for triangulation");
+            super.onFinished();
+            return;
+        }
+        if (!graph.isPlanarEmbedded()) {
+            window.alert("can't triangulate, graph is not planar embedded");
+            super.onFinished();
+            return;
+        }
+        if (graph.getConnectedComponents().length > 1) {
+            window.alert("can't triangulate, graph is not connected");
+            super.onFinished();
+            return;
+        }
+
+        this.connectDegOneVertices();
+        await super.pause();
+
+        let newFacets = this.uncleanTriangulation();
+        await super.pause();
+
+        this.cleanMultiEdges(newFacets);
+
+        // TODO Handle loops
+
+        super.onFinished();
+
         return;
     }
-    if (!graph.isPlanarEmbedded()) {
-        window.alert("can't triangulate, graph is not planar embedded");
-        return;
-    }
-    if (graph.getConnectedComponents().length > 1) {
-        window.alert("can't triangulate, graph is not connected");
-        return;
-    }
-    var vertex = getNextDegOneVertex();
-    // Add edges until there are no more vertices of degree 1
-    while (vertex != null) {
-        var neighbour = graph.getAllNeighbours(vertex)[0];
-        // console.log("neighbour " + JSON.stringify(neighbour));
-        var neighboursNeighbours = graph.getAllNeighbours(neighbour);
-        let neighboursNeighbour = nextVertexAfter(neighboursNeighbours, vertex, true);
-        // console.log("neighboursNeighbour " + JSON.stringify(neighboursNeighbour));
-        var edge = new Edge(vertex, neighboursNeighbour);
-        graph.addEdge(edge);
-        console.log("added edge " + JSON.stringify(edge));
-        vertex = getNextDegOneVertex();
-    }
-    redrawAll();
 
-    await pause();
+    connectDegOneVertices() {
+        var vertex = getNextDegOneVertex();
+        // Add edges until there are no more vertices of degree 1
+        while (vertex != null) {
+            var neighbour = graph.getAllNeighbours(vertex)[0];
+            // console.log("neighbour " + JSON.stringify(neighbour));
+            var neighboursNeighbours = graph.getAllNeighbours(neighbour);
+            let neighboursNeighbour = nextVertexAfter(neighboursNeighbours, vertex, true);
+            // console.log("neighboursNeighbour " + JSON.stringify(neighboursNeighbour));
+            var edge = new Edge(vertex, neighboursNeighbour);
+            graph.addEdge(edge);
+            console.log("added edge " + edge.print());
+            vertex = getNextDegOneVertex();
+        }
+        redrawAll();
+    }
 
     // Triangulate the graph without paying attention to loops/multi-edges
-    let allFacets = getAllFacets();
+    uncleanTriangulation() {
+        let allFacets = getAllFacets();
 
-    let newFacets = [];
-    $.each(allFacets, function (_index, facet) {
-        newFacets.push(facet);
-    });
-
-    $.each(allFacets, function (index, facet) {
-        if (facet.length > 3) {
-            var verticesOnFacet = [];
-            $.each(facet, function (_index, edge) {
-                verticesOnFacet.push(edge.v2);
-            });
-            let prevEdge = new Edge(verticesOnFacet[0], verticesOnFacet[1]);
-            for (var i = 2; i < verticesOnFacet.length - 1; i++) {
-                var edge = new Edge(verticesOnFacet[0], verticesOnFacet[i], index + "_" + i);
-                graph.addEdge(edge);
-                console.log("added edge " + edge.print());
-                var newFacet = [
-                    edge, new Edge(verticesOnFacet[i], verticesOnFacet[i - 1]),
-                    prevEdge];
-                newFacets.push(newFacet);
-                prevEdge = edge;
-            }
-            var lastFacet = [
-                prevEdge,
-                new Edge(verticesOnFacet[verticesOnFacet.length - 2], verticesOnFacet[verticesOnFacet.length - 1]),
-                new Edge(verticesOnFacet[verticesOnFacet.length - 1], verticesOnFacet[0])];
-            newFacets.push(lastFacet);
-            newFacets.splice(newFacets.indexOf(facet), 1);
-        }
-    });
-
-    $.each(newFacets, function (_index, facet) {
-        console.log("Facet " + _index);
-        let str = "";
-        $.each(facet, function (_index, edge) {
-            str += edge.print() + " ";
+        let newFacets = [];
+        $.each(allFacets, function (_index, facet) {
+            newFacets.push(facet);
         });
-        console.log(str);
-    });
-    redrawAll();
 
-    await pause();
+        $.each(allFacets, function (index, facet) {
+            if (facet.length > 3) {
+                var verticesOnFacet = [];
+                $.each(facet, function (_index, edge) {
+                    verticesOnFacet.push(edge.v2);
+                });
+                let prevEdge = new Edge(verticesOnFacet[0], verticesOnFacet[1]);
+                for (var i = 2; i < verticesOnFacet.length - 1; i++) {
+                    var edge = new Edge(verticesOnFacet[0], verticesOnFacet[i], index + "_" + i);
+                    graph.addEdge(edge);
+                    console.log("added edge " + edge.print());
+                    var newFacet = [
+                        edge, new Edge(verticesOnFacet[i], verticesOnFacet[i - 1]),
+                        prevEdge];
+                    newFacets.push(newFacet);
+                    prevEdge = edge;
+                }
+                var lastFacet = [
+                    prevEdge,
+                    new Edge(verticesOnFacet[verticesOnFacet.length - 2], verticesOnFacet[verticesOnFacet.length - 1]),
+                    new Edge(verticesOnFacet[verticesOnFacet.length - 1], verticesOnFacet[0])];
+                newFacets.push(lastFacet);
+                newFacets.splice(newFacets.indexOf(facet), 1);
+            }
+        });
+
+        $.each(newFacets, function (_index, facet) {
+            console.log("Facet " + _index);
+            let str = "";
+            $.each(facet, function (_index, edge) {
+                str += edge.print() + " ";
+            });
+            console.log(str);
+        });
+        redrawAll();
+
+        return newFacets;
+    }
+
 
     // Remove multiple edges by performing edge exchanges
-    // TODO Handle loops
+    cleanMultiEdges(newFacets) {
+        let multiEdges = graph.getMultiEdges();
+        let noIdOccured = [];
+        $.each(multiEdges, function (_index, multiEdge) {
+            graph.deleteEdge(multiEdge);
+            console.log("Looking for multi-edge " + multiEdge.print());
 
-    let multiEdges = graph.getMultiEdges();
-    let noIdOccured = [];
-    $.each(multiEdges, function (_index, multiEdge) {
-        graph.deleteEdge(multiEdge);
-        console.log("Looking for multi-edge " + multiEdge.print());
-
-        for (var i = 0; i < newFacets.length; i++) {
-            let facet = newFacets[i];
-            let index = eqIndexOf(facet, multiEdge);
-            if (index != -1) {
-                let id = facet[index].id;
-                if (id != null) {
-                    for (var j = i + 1; j < newFacets.length; j++) {
-                        let facet2 = newFacets[j];
-                        let index2 = eqIndexOf(facet2, multiEdge);
-                        if (index2 != -1) {
-                            let id2 = facet2[index2].id;
-                            if (id == id2) {
-                                console.log("found both facets w/multi-edge: " + i + " and " + j);
-                                let verticesOnFacet = [];
-                                $.each(facet, function (_index, edge) {
-                                    verticesOnFacet.push(edge.v2);
-                                });
-                                verticesOnFacet.splice(eqIndexOf(verticesOnFacet, multiEdge.v1), 1);
-                                verticesOnFacet.splice(eqIndexOf(verticesOnFacet, multiEdge.v2), 1);
-                                let verticesOnFacet2 = [];
-                                $.each(facet2, function (_index, edge) {
-                                    verticesOnFacet2.push(edge.v2);
-                                });
-                                verticesOnFacet2.splice(eqIndexOf(verticesOnFacet2, multiEdge.v1), 1);
-                                verticesOnFacet2.splice(eqIndexOf(verticesOnFacet2, multiEdge.v2), 1);
-                                let newEdge = new Edge(verticesOnFacet[0], verticesOnFacet2[0]);
-                                graph.addEdge(newEdge);
-                                console.log("added edge " + newEdge.print());
-                                let newFacet = [
-                                    newEdge, new
-                                        Edge(verticesOnFacet[0], multiEdge.v1),
-                                    new Edge(multiEdge.v1, verticesOnFacet2[0])];
-                                newFacets.push(newFacet);
-                                let newFacet2 = [
-                                    newEdge, new
-                                        Edge(verticesOnFacet[0], multiEdge.v2),
-                                    new Edge(multiEdge.v2, verticesOnFacet2[0])];
-                                newFacets.push(newFacet2);
-                                newFacets.splice(newFacets.indexOf(facet), 1);
-                                newFacets.splice(newFacets.indexOf(facet2), 1);
-                                break;
+            for (var i = 0; i < newFacets.length; i++) {
+                let facet = newFacets[i];
+                let index = eqIndexOf(facet, multiEdge);
+                if (index != -1) {
+                    let id = facet[index].id;
+                    if (id != null) {
+                        for (var j = i + 1; j < newFacets.length; j++) {
+                            let facet2 = newFacets[j];
+                            let index2 = eqIndexOf(facet2, multiEdge);
+                            if (index2 != -1) {
+                                let id2 = facet2[index2].id;
+                                if (id == id2) {
+                                    console.log("found both facets w/multi-edge: " + i + " and " + j);
+                                    let verticesOnFacet = [];
+                                    $.each(facet, function (_index, edge) {
+                                        verticesOnFacet.push(edge.v2);
+                                    });
+                                    verticesOnFacet.splice(eqIndexOf(verticesOnFacet, multiEdge.v1), 1);
+                                    verticesOnFacet.splice(eqIndexOf(verticesOnFacet, multiEdge.v2), 1);
+                                    let verticesOnFacet2 = [];
+                                    $.each(facet2, function (_index, edge) {
+                                        verticesOnFacet2.push(edge.v2);
+                                    });
+                                    verticesOnFacet2.splice(eqIndexOf(verticesOnFacet2, multiEdge.v1), 1);
+                                    verticesOnFacet2.splice(eqIndexOf(verticesOnFacet2, multiEdge.v2), 1);
+                                    let newEdge = new Edge(verticesOnFacet[0], verticesOnFacet2[0]);
+                                    graph.addEdge(newEdge);
+                                    console.log("added edge " + newEdge.print());
+                                    let newFacet = [
+                                        newEdge, new
+                                            Edge(verticesOnFacet[0], multiEdge.v1),
+                                        new Edge(multiEdge.v1, verticesOnFacet2[0])];
+                                    newFacets.push(newFacet);
+                                    let newFacet2 = [
+                                        newEdge, new
+                                            Edge(verticesOnFacet[0], multiEdge.v2),
+                                        new Edge(multiEdge.v2, verticesOnFacet2[0])];
+                                    newFacets.push(newFacet2);
+                                    newFacets.splice(newFacets.indexOf(facet), 1);
+                                    newFacets.splice(newFacets.indexOf(facet2), 1);
+                                    break;
+                                }
                             }
                         }
-                    }
-                } else {
-                    // id == 0
-                    if (eqIndexOf(noIdOccured, multiEdge) == -1) {
-                        noIdOccured.push(multiEdge);
+                    } else {
+                        // id == 0
+                        if (eqIndexOf(noIdOccured, multiEdge) == -1) {
+                            noIdOccured.push(multiEdge);
+                        }
                     }
                 }
             }
-        }
-    });
+        });
 
-    $.each(noIdOccured, function (_index, edge) {
-        graph.addEdge(edge);
-        console.log("re-added original edge " + edge.print());
-    }); 
+        $.each(noIdOccured, function (_index, edge) {
+            graph.addEdge(edge);
+            console.log("re-added original edge " + edge.print());
+        });
 
-    redrawAll();
-
-    return;
+        redrawAll();
+    }
 }
 
 function getNextDegOneVertex() {
