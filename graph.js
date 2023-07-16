@@ -246,7 +246,7 @@ class Graph {
         let middleVertex = new Vertex((edge.v1.x + edge.v2.x) / 2, (edge.v1.y + edge.v2.y) / 2);
         let edge1 = new Edge(edge.v1, middleVertex);
         let edge2 = new Edge(middleVertex, edge.v2);
-        addVertex(middleVertex);
+        this.addVertex(middleVertex);
         this.edges.push(edge1);
         this.edges.push(edge2);
         this.edges.splice(this.edges.indexOf(edge), 1);
@@ -264,15 +264,13 @@ class Graph {
                 edge.v2 = middleVertex;
             }
         });
-        deleteVertex(vertexLeft);
-        deleteVertex(vertexRight);
-        addVertex(middleVertex);
+        this.deleteVertex(vertexLeft);
+        this.deleteVertex(vertexRight);
+        this.addVertex(middleVertex);
     }
 
     // Gets all edges incident to vertex
     getIncidentEdges(vertex) {
-        let x = vertex.x;
-        let y = vertex.y;
         let incidentEdges = [];
         for (let i = 0; i < this.edges.length; i++) {
             let edge = this.edges[i];
