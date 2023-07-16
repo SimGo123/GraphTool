@@ -13,7 +13,6 @@ class Vertex {
 
     draw(selectedVertex) {
         var ctx = fgCanvas.getContext("2d");
-        console.log("drawing vertex " + this.number);
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
         ctx.fillStyle = "white";
@@ -69,7 +68,6 @@ class Edge {
             ctx.lineTo(this.v2.x, this.v2.y);
             ctx.stroke();
             ctx.closePath();
-            console.log("not a multi edge");
         } else {
             // Draw multiple edges with bezier curves
             let dx = this.v2.x - this.v1.x;

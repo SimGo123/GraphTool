@@ -22,37 +22,40 @@
 
   <p class="h3">Graph Tool</h1>
 
-    <ul class="list-group list-group-horizontal my-3" id="graphModes">
-      <li class="list-group-item list-group-item-action active" onclick="modeClick(0)">Selection</li>
-      <li class="list-group-item list-group-item-action" onclick="modeClick(1)">Vertices</li>
-      <li class="list-group-item list-group-item-action" onclick="modeClick(2)">Edges</li>
-      <li class="list-group-item list-group-item-action" onclick="modeClick(3); changeAlgorithmsVisible(true)">Algorithms</li>
-      <li class="list-group-item list-group-item-action" onclick="modeClick(4); changePredefinedVisible(true)">Predefined</li>
-    </ul>
+  <ul class="list-group list-group-horizontal my-3" id="graphModes">
+    <li class="list-group-item list-group-item-action active" onclick="modeClick(0)">Selection</li>
+    <li class="list-group-item list-group-item-action" onclick="modeClick(1)">Vertices</li>
+    <li class="list-group-item list-group-item-action" onclick="modeClick(2)">Edges</li>
+    <li class="list-group-item list-group-item-action" onclick="modeClick(3); changeAlgorithmsVisible(true)">Algorithms
+    </li>
+    <li class="list-group-item list-group-item-action" onclick="modeClick(4); changePredefinedVisible(true)">Predefined
+    </li>
+  </ul>
 
-    <ul class="list-group list-group-horizontal my-3 collapse" id="vertexTools">
-      <li class="list-group-item list-group-item-action" onclick="vertexToolClick(0)">Delete</li>
-    </ul>
+  <ul class="list-group list-group-horizontal my-3 collapse" id="vertexTools">
+    <li class="list-group-item list-group-item-action" onclick="vertexToolClick(0)">Delete</li>
+  </ul>
 
-    <ul class="list-group list-group-horizontal my-3 collapse" id="edgeTools">
-      <li class="list-group-item list-group-item-action" onclick="edgeToolClick(0)">Delete</li>
-      <li class="list-group-item list-group-item-action" onclick="edgeToolClick(1)">Expand</li>
-      <li class="list-group-item list-group-item-action" onclick="edgeToolClick(2)">Contract</li>
-    </ul>
+  <ul class="list-group list-group-horizontal my-3 collapse" id="edgeTools">
+    <li class="list-group-item list-group-item-action" onclick="edgeToolClick(0)">Delete</li>
+    <li class="list-group-item list-group-item-action" onclick="edgeToolClick(1)">Expand</li>
+    <li class="list-group-item list-group-item-action" onclick="edgeToolClick(2)">Contract</li>
+  </ul>
 
-    <ul class="list-group list-group-horizontal my-3 collapse" id="algorithms">
-      <li class="list-group-item list-group-item-action" onclick="algorithmClick(0)">Triangulate</li>
-    </ul>
+  <ul class="list-group list-group-horizontal my-3 collapse" id="algorithms">
+    <li class="list-group-item list-group-item-action" onclick="algorithmClick(0)">Triangulate</li>
+  </ul>
 
-    <ul class="list-group list-group-horizontal my-3 collapse" id="predefinedGraphs">
-      <li class="list-group-item list-group-item-action" onclick="predefinedClick(0)">Get current graph representation</li>
-      <li class="list-group-item list-group-item-action" onclick="predefinedClick(1)">Degree One Graph</li>
-      <li class="list-group-item list-group-item-action" onclick="predefinedClick(2)">Star Graph</li>
-    </ul>
+  <ul class="list-group list-group-horizontal my-3 collapse" id="predefinedGraphs">
+    <li class="list-group-item list-group-item-action" onclick="predefinedClick(0)">Get current graph representation
+    </li>
+    <li class="list-group-item list-group-item-action" onclick="predefinedClick(1)">Degree One Graph</li>
+    <li class="list-group-item list-group-item-action" onclick="predefinedClick(2)">Star Graph</li>
+  </ul>
 
-    <canvas id="fgCanvas"></canvas>
+  <canvas id="fgCanvas"></canvas>
 
-  </div>
+  <button id="stepButton" type="button" class="btn btn-primary" onclick="doStep()">Step</button>
 
   <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
     integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"

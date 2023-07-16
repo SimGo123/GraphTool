@@ -2,13 +2,32 @@ const ALGORITHMS = {
     TRIANGULATION: 0
 };
 
+var shouldContinue = false;
+
 function algorithmClick(param) {
     if (param == ALGORITHMS.TRIANGULATION) {
         triangulation();
     }
 }
 
-function triangulation() {
+function doStep() {
+    shouldContinue = true;
+}
+
+async function pause() {
+    console.log("pause");
+    while (!shouldContinue) {
+        console.log("waiting");
+        await sleep(1000);
+    }
+    shouldContinue = false;
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function triangulation() {
     console.log("triangulation");
     if (graph.vertices.length < 3) {
         window.alert("can't triangulate, not enough vertices for triangulation");
@@ -37,8 +56,11 @@ function triangulation() {
     }
     redrawAll();
 
-    // Triangulate the graph without paying attention to loops/multiple edges
+    await pause();
+
+    // Triangulate the graph without paying attention to loops/multi-edges
     let allFacets = getAllFacets();
+
     $.each(allFacets, function (_index, facet) {
         console.log("facet " + _index);
         if (facet.length > 3) {
@@ -56,7 +78,13 @@ function triangulation() {
     });
     redrawAll();
 
+    await pause();
+
     // Remove multiple edges by performing edge exchanges
+    // TODO Double multi-edges
+    // TODO Handle loops
+    // TODO New previously created facets
+
     let multiEdges = graph.getMultiEdges();
     $.each(multiEdges, function (_index, multiEdge) {
         graph.deleteEdge(multiEdge);
@@ -148,8 +176,7 @@ function getAllFacets() {
         let statusEdge = statusEdges[statusEdgeIndex(statusEdges, edge)];
         console.log("edge " + edge.print() + " " + statusEdge[1] + " " + statusEdge[2]);
         if (!statusEdge[1]) {
-            console.log("1");
-            let rightFacet = facetWalk(edge, true);
+            let rightFacet = facetWalk(edge, true, statusEdges);
             console.log("rightFacet " + rightFacet.length);
             facets.push(rightFacet);
             $.each(rightFacet, function (_index, edge) {
@@ -170,8 +197,7 @@ function getAllFacets() {
         }
         statusEdge = statusEdges[statusEdgeIndex(statusEdges, edge)];
         if (!statusEdge[2]) {
-            console.log("2");
-            let leftFacet = facetWalk(edge, false);
+            let leftFacet = facetWalk(edge, false, statusEdges);
             console.log("leftFacet " + leftFacet.length);
             facets.push(leftFacet);
             $.each(leftFacet, function (_index, edge) {
@@ -203,17 +229,38 @@ function getAllFacets() {
 }
 
 // Follow a facet from a vertex back to itself, return edges on facet
-function facetWalk(edge, rightDir) {
+function facetWalk(edge, rightDir, statusEdges) {
     let startVertex = edge.v1;
-    console.log("startVertex " + startVertex.number + " v1 " + edge.v1.number + " v2 " + edge.v2.number);
+    console.log("startVertex " + startVertex.number + " v2 " + edge.v2.number);
     let facet = [];
-    facet.push(edge);
     let prevVertex = edge.v1;
     let currentVertex = edge.v2;
-    while (!currentVertex.eq(startVertex)) {
+    let statusEdgeVisited = false;
+    while (!statusEdgeVisited) {
         let neighbours = graph.getAllNeighbours(currentVertex);
         let nextVertex = nextVertexAfter(neighbours, prevVertex, rightDir);
-        facet.push(new Edge(currentVertex, nextVertex));
+
+        let newEdge = new Edge(currentVertex, nextVertex);
+        let edgeIndex = statusEdgeIndex(statusEdges, newEdge);
+
+        let sameDirIndex = rightDir ? 1 : 2;
+        let oppDirIndex = rightDir ? 2 : 1;
+        if (statusEdges[edgeIndex][0].v1 == newEdge.v1) {
+            statusEdgeVisited = statusEdges[edgeIndex][sameDirIndex];
+        } else {
+            statusEdgeVisited = statusEdges[edgeIndex][oppDirIndex];
+        }
+
+        if (!statusEdgeVisited) {
+            facet.push(newEdge);
+
+            if (statusEdges[edgeIndex][0].v1 == newEdge.v1) {
+                statusEdges[edgeIndex][sameDirIndex] = true;
+            } else {
+                statusEdges[edgeIndex][oppDirIndex] = true;
+            }
+        }
+
         prevVertex = currentVertex;
         currentVertex = nextVertex;
     }
@@ -226,7 +273,7 @@ function eqIndexOf(array, element) {
             return i;
         }
     }
-    console.log("eq index not found");
+    //console.log("eq index not found");
     return -1;
 }
 
