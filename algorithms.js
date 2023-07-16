@@ -7,9 +7,9 @@ var algorithm = null;
 async function algorithmClick(param) {
     if (param == ALGORITHMS.TRIANGULATION) {
         algorithm = new TriangulationAlgo();
-        $("#stepButton").removeClass("invisible");
-        $("#stepButton").removeClass("btn-secondary");
-        $("#stepButton").addClass("btn-primary");
+        $("#algoControlPanel").removeClass("invisible");
+        $("#stepButton").removeClass("disabled");
+        $("#runCompleteButton").removeClass("disabled");
         await algorithm.run();
         algorithm = null;
     }
@@ -17,44 +17,51 @@ async function algorithmClick(param) {
 
 function stepClick() {
     if (algorithm != null) {
-        algorithm.doStep();
+        algorithm.shouldContinue = true;
+    }
+}
+
+function runCompleteClick() {
+    if (algorithm != null) {
+        algorithm.runComplete = true;
+        algorithm.shouldContinue = true;
     }
 }
 
 class Algorithm {
     constructor() {
         this.shouldContinue = false;
+        this.runComplete = false;
     }
 
     async run() {
 
     }
-    
-    doStep() {
-        this.shouldContinue = true;
-    }
-
-    onFinished() {
-        $("#stepButton").addClass("invisible");
-        $("#stepButton").removeClass("btn-primary");
-        $("#stepButton").addClass("btn-secondary");
-    }
 
     async pause() {
         console.log("pause");
-        $("#stepButton").removeClass("btn-secondary");
-        $("#stepButton").addClass("btn-primary");
+        if (this.runComplete) {
+            return;
+        }
+        $("#stepButton").removeClass("disabled");
+        $("#runCompleteButton").removeClass("disabled");
         while (!this.shouldContinue) {
             console.log("waiting");
             await this.sleep(1000);
         }
         this.shouldContinue = false;
-        $("#stepButton").removeClass("btn-primary");
-        $("#stepButton").addClass("btn-secondary");
+        $("#stepButton").addClass("disabled");
+        $("#runCompleteButton").addClass("disabled");
     }
 
     sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    onFinished() {
+        $("#algoControlPanel").addClass("invisible");
+        // $("#stepButton").removeClass("disabled");
+        // $("#runCompleteButton").removeClass("disabled");
     }
 }
 
