@@ -312,7 +312,6 @@ class Graph {
     }
 
     getMultiEdges() {
-        console.log("multiCheck");
         let multiEdges = [];
         for (let i = 0; i < this.edges.length; i++) {
             let edge = this.edges[i];
