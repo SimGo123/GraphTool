@@ -112,5 +112,5 @@ function printArr(array) {
     for (var i = 0; i < array.length; i++) {
         str += array[i].print() + " ";
     }
-    console.log(str);
+    return str;
 }

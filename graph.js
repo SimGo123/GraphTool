@@ -54,7 +54,7 @@ class Edge {
         this.color = "gray";
     }
 
-    draw(selectedEdge, multiEdge=false, loop=false, occurences = 1) {
+    draw(selectedEdge, multiEdge = false, loop = false, occurences = 1) {
         var ctx = fgCanvas.getContext("2d");
         if (selectedEdge == this) {
             ctx.strokeStyle = "red";
@@ -81,7 +81,7 @@ class Edge {
             ctx.bezierCurveTo(vertex.x + length / 2, vertex.y + height, vertex.x + length, vertex.y + height, vertex.x + length, vertex.y);
             ctx.stroke();
             ctx.closePath();
-            
+
             ctx.beginPath();
             ctx.moveTo(vertex.x, vertex.y);
             ctx.bezierCurveTo(vertex.x + length / 2, vertex.y - height, vertex.x + length, vertex.y - height, vertex.x + length, vertex.y);
@@ -133,10 +133,11 @@ class Edge {
         }
     }
 
-    eq(other) {
+    eq(other, withId = false) {
+        let idEq = withId ? this.id == other.id : true;
         // Also equal if edges are reversed
-        return (this.v1.eq(other.v1) && this.v2.eq(other.v2))
-            || (this.v1.eq(other.v2) && this.v2.eq(other.v1));
+        return (this.v1.eq(other.v1) && this.v2.eq(other.v2) && idEq)
+            || (this.v1.eq(other.v2) && this.v2.eq(other.v1) && idEq);
     }
 
     print() {
@@ -221,7 +222,6 @@ class Graph {
             let occurrences = 0;
             console.log(this.edges.length + " edges");
             $.each(this.edges, function (_j, otherEdge) {
-                console.log("edge " + multiEdge.print() + " otherEdge " + otherEdge.print());
                 if (multiEdge.eq(otherEdge)) {
                     occurrences++;
                 }

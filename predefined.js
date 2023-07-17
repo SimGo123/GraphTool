@@ -1,8 +1,9 @@
 const PREDEFINEDS = {
     GET_CURR: 0,
     FROM_JSON: 1,
-    DEG_ONE_GRAPH: 2,
-    STAR_GRAPH: 3
+    DEBUG_GRAPH: 2,
+    SIGMA_GRAPH: 3,
+    STAR_GRAPH: 4
 };
 
 function predefinedClick(param) {
@@ -27,18 +28,20 @@ function predefinedClick(param) {
         } catch (e) {
             window.alert("Invalid JSON graph!");
         }
-    } else if (param == PREDEFINEDS.DEG_ONE_GRAPH) {
-        const degOneGraph = '{"vertices":[{"x":100,"y":300,"radius":15,"highlightColor":"red","color":"gray"},{"x":200,"y":300,"radius":15,"highlightColor":"red","color":"gray"},{"x":300,"y":300,"radius":15,"highlightColor":"red","color":"gray"},{"x":200,"y":200,"radius":15,"highlightColor":"red","color":"gray"},{"x":200,"y":100,"radius":15,"highlightColor":"red","color":"gray"}],"edges":[{"v1":{"x":200,"y":100,"radius":15,"highlightColor":"red","color":"gray"},"v2":{"x":200,"y":200,"radius":15,"highlightColor":"red","color":"gray"},"thickness":5,"color":"gray"},{"v1":{"x":200,"y":200,"radius":15,"highlightColor":"red","color":"gray"},"v2":{"x":100,"y":300,"radius":15,"highlightColor":"red","color":"gray"},"thickness":5,"color":"gray"},{"v1":{"x":100,"y":300,"radius":15,"highlightColor":"red","color":"gray"},"v2":{"x":200,"y":300,"radius":15,"highlightColor":"red","color":"gray"},"thickness":5,"color":"gray"},{"v1":{"x":200,"y":300,"radius":15,"highlightColor":"red","color":"gray"},"v2":{"x":300,"y":300,"radius":15,"highlightColor":"red","color":"gray"},"thickness":5,"color":"gray"},{"v1":{"x":300,"y":300,"radius":15,"highlightColor":"red","color":"gray"},"v2":{"x":200,"y":200,"radius":15,"highlightColor":"red","color":"gray"},"thickness":5,"color":"gray"},{"v1":{"x":200,"y":200,"radius":15,"highlightColor":"red","color":"gray"},"v2":{"x":200,"y":300,"radius":15,"highlightColor":"red","color":"gray"},"thickness":5,"color":"gray"}]}';
-        let jsonGraph = JSON.parse(degOneGraph);
-        loadGraphFromJson(jsonGraph);
+    } else if (param == PREDEFINEDS.DEBUG_GRAPH) {
+        const debugGraph = '{"vertices":[{"x":100,"y":300},{"x":200,"y":300},{"x":300,"y":300},{"x":200,"y":200},{"x":200,"y":100}],"edges":[{"v1":{"x":200,"y":100},"v2":{"x":200,"y":200}},{"v1":{"x":200,"y":200},"v2":{"x":100,"y":300}},{"v1":{"x":100,"y":300},"v2":{"x":200,"y":300}},{"v1":{"x":200,"y":300},"v2":{"x":300,"y":300}},{"v1":{"x":300,"y":300},"v2":{"x":200,"y":200}},{"v1":{"x":200,"y":200},"v2":{"x":200,"y":300}}]}';
+        loadGraphFromJson(debugGraph);
+    } else if (param == PREDEFINEDS.SIGMA_GRAPH) {
+        const sigmaGraph = '{"vertices":[{"x":242,"y":121.80000305175781},{"x":534,"y":135.8000030517578},{"x":394,"y":259.8000030517578},{"x":255,"y":348.8000030517578},{"x":515,"y":339.8000030517578}],"edges":[{"v1":{"x":242,"y":121.80000305175781},"v2":{"x":534,"y":135.8000030517578}},{"v1":{"x":534,"y":135.8000030517578},"v2":{"x":394,"y":259.8000030517578}},{"v1":{"x":394,"y":259.8000030517578},"v2":{"x":515,"y":339.8000030517578}},{"v1":{"x":515,"y":339.8000030517578},"v2":{"x":255,"y":348.8000030517578}}]}';
+        loadGraphFromJson(sigmaGraph);
     } else if (param == PREDEFINEDS.STAR_GRAPH) {
         const starGraph = '{"vertices":[{"x":348,"y":251.8000030517578},{"x":351,"y":140.8000030517578},{"x":456,"y":198.8000030517578},{"x":445,"y":308.8000030517578},{"x":299,"y":327.8000030517578},{"x":252,"y":215.8000030517578}],"edges":[{"v1":{"x":351,"y":140.8000030517578},"v2":{"x":348,"y":251.8000030517578}},{"v1":{"x":348,"y":251.8000030517578},"v2":{"x":456,"y":198.8000030517578}},{"v1":{"x":348,"y":251.8000030517578},"v2":{"x":445,"y":308.8000030517578}},{"v1":{"x":348,"y":251.8000030517578},"v2":{"x":299,"y":327.8000030517578}},{"v1":{"x":348,"y":251.8000030517578},"v2":{"x":252,"y":215.8000030517578}}]}';
-        let jsonGraph = JSON.parse(starGraph);
-        loadGraphFromJson(jsonGraph);
+        loadGraphFromJson(starGraph);
     }
 }
 
-function loadGraphFromJson(jsonGraph) {
+function loadGraphFromJson(graphString) {
+    let jsonGraph = JSON.parse(graphString);
     graph = new Graph();
     vertexCount = 0;
     for (var i = 0; i < jsonGraph.vertices.length; i++) {
