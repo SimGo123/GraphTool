@@ -1,5 +1,6 @@
 const ALGORITHMS = {
-    TRIANGULATION: 0
+    TRIANGULATION: 0,
+    PLANAR_SEPARATOR: 1,
 };
 
 var algorithm = null;
@@ -7,6 +8,13 @@ var algorithm = null;
 async function algorithmClick(param) {
     if (param == ALGORITHMS.TRIANGULATION) {
         algorithm = new TriangulationAlgo();
+        $("#algoControlPanel").removeClass("invisible");
+        $("#stepButton").removeClass("disabled");
+        $("#runCompleteButton").removeClass("disabled");
+        await algorithm.run();
+        algorithm = null;
+    } else if (param == ALGORITHMS.PLANAR_SEPARATOR) {
+        algorithm = new PlanarSeparatorAlgo();
         $("#algoControlPanel").removeClass("invisible");
         $("#stepButton").removeClass("disabled");
         $("#runCompleteButton").removeClass("disabled");
@@ -77,23 +85,7 @@ class TriangulationAlgo extends Algorithm {
 
         await super.pause("Connect degree 1 vertices", "Connect vertices of degree 1 to the next clockwise neighbour of their neighbour");
 
-        if (graph.vertices.length < 3) {
-            window.alert("can't triangulate, not enough vertices for triangulation");
-            super.onFinished();
-            return;
-        }
-        if (!graph.isPlanarEmbedded()) {
-            window.alert("can't triangulate, graph is not planar embedded");
-            super.onFinished();
-            return;
-        }
-        if (graph.getConnectedComponents().length > 1) {
-            window.alert("can't triangulate, graph is not connected");
-            super.onFinished();
-            return;
-        }
-        if (graph.getMultiEdges().length > 0 || graph.getLoops().length > 0) {
-            window.alert("can't triangulate, graph has multi-edges or loops");
+        if (!this.preconditionsCheck()) {
             super.onFinished();
             return;
         }
@@ -112,6 +104,24 @@ class TriangulationAlgo extends Algorithm {
         super.onFinished();
 
         return;
+    }
+
+    preconditionsCheck() {
+        let fulfilled = true;
+        if (graph.vertices.length < 3) {
+            window.alert("can't triangulate, not enough vertices for triangulation");
+            fulfilled = false;
+        } else if (!graph.isPlanarEmbedded()) {
+            window.alert("can't triangulate, graph is not planar embedded");
+            fulfilled = false;
+        } else if (graph.getConnectedComponents().length > 1) {
+            window.alert("can't triangulate, graph is not connected");
+            fulfilled = false;
+        } else if (graph.getMultiEdges().length > 0 || graph.getLoops().length > 0) {
+            window.alert("can't triangulate, graph has multi-edges or loops");
+            fulfilled = false;
+        }
+        return fulfilled;
     }
 
     connectDegOneVertices() {
@@ -200,7 +210,7 @@ class TriangulationAlgo extends Algorithm {
                             if (index2 != -1) {
                                 let id2 = facet2[index2].id;
                                 if (id == id2) {
-                                    console.log("found both facets w/" + str + ": " 
+                                    console.log("found both facets w/" + str + ": "
                                         + i + " and " + j);
                                     newFacets = self.edgeExchange(
                                         facet, index, facet2, index2,
@@ -292,5 +302,173 @@ class TriangulationAlgo extends Algorithm {
             newFacets.splice(newFacets.indexOf(facet2), 1);
         }
         return newFacets;
+    }
+}
+
+class PlanarSeparatorAlgo extends Algorithm {
+
+    async run() {
+        super.numSteps = "X";
+
+        if (!this.preconditionsCheck()) {
+            super.onFinished();
+            return;
+        }
+
+        await super.pause("Construct breadth-first search tree", "Construct tree");
+        let startVertexNr = window.prompt("Enter start vertex number", "0");
+        let startVertex = graph.vertices[0];
+        $.each(graph.vertices, function (_index, vertex) {
+            if (vertex.number == startVertexNr) {
+                startVertex = vertex;
+                return;
+            }
+        });
+        console.log('start vertex: ' + startVertex.print());
+        let layers = breadthFirstSearchTree(startVertex);
+        this.showBFSTree(layers);
+
+        await super.pause("Draw layers", "First layer on top, other layers below");
+        this.drawLayerStructure(layers);
+
+        await super.pause("Check if a layer in the tree is a separator", "Check if a layer in the tree is a separator");
+        let layerMyIdx = this.getLayerMy(layers);
+        const n = graph.vertices.length;
+        const maxSeparatorSize = 4 * Math.sqrt(n);
+        console.log('layerMyIdx: ' + layerMyIdx + ' maxSeparatorSize: ' + maxSeparatorSize + ' mySize ' + layers[layerMyIdx].length);
+        if (layers[layerMyIdx].length <= maxSeparatorSize) {
+            this.rectAroundLayer(layers, layerMyIdx, "red");
+            alert('Layer ' + layerMyIdx + ' is a separator');
+
+            super.onFinished();
+            return;
+        }
+        console.log('Layer my (' + layerMyIdx + ') is not a separator');
+        this.rectAroundLayer(layers, layerMyIdx, "green");
+
+        await super.pause("Find layers m and M", "Find layers m and M");
+        let layersMmIndexes = this.getLayersMm(layers, layerMyIdx);
+        this.rectAroundLayer(layers, layersMmIndexes[0], "blue");
+        this.rectAroundLayer(layers, layersMmIndexes[1], "blue");
+
+        super.onFinished();
+    }
+
+    preconditionsCheck() {
+        let fulfilled = true;
+        if (!graph.isPlanarEmbedded()) {
+            alert("Graph is not planar embedded!");
+            fulfilled = false;
+        } else if (!graph.isTriangulated()) {
+            alert("Graph is not triangulated!");
+            fulfilled = false;
+        }
+        return fulfilled;
+    }
+
+    showBFSTree(layers) {
+        console.log('layers: ' + layers.length);
+        for (var i = 0; i < layers.length; i++) {
+            for (var j = 0; j < layers[i].length; j++) {
+                console.log(i + ' ' + layers[i][j].vertex.print());
+            }
+        }
+        for (var i = 1; i < layers.length; i++) {
+            let layer = layers[i];
+            console.log('layer ' + i + ': ' + layer.length);
+            for (var j = 0; j < layer.length; j++) {
+                let bsVertex = layer[j];
+                console.log('edge from ' + bsVertex.vertex.print() + ' to ' + bsVertex.parent.print());
+                let edgeIndex = eqIndexOf(graph.edges, new Edge(bsVertex.vertex, bsVertex.parent));
+                graph.edges[edgeIndex].color = "orange";
+            }
+        }
+        redrawAll();
+    }
+
+    drawLayerStructure(layers) {
+        let minPoint = new Point(graph.vertices[0].x, graph.vertices[0].y);
+        let maxPoint = new Point(graph.vertices[0].x, graph.vertices[0].y);
+        $.each(graph.vertices, function (_index, vertex) {
+            if (vertex.x < minPoint.x) {
+                minPoint.x = vertex.x;
+            }
+            if (vertex.y < minPoint.y) {
+                minPoint.y = vertex.y;
+            }
+            if (vertex.x > maxPoint.x) {
+                maxPoint.x = vertex.x;
+            }
+            if (vertex.y > maxPoint.y) {
+                maxPoint.y = vertex.y;
+            }
+        });
+        let width = maxPoint.x - minPoint.x;
+        let height = maxPoint.y - minPoint.y;
+        let layerHeight = height / layers.length;
+        console.log('width=' + width + ' height=' + height + ' layerHeight=' + layerHeight);
+        $.each(layers, function (layerIndex, layer) {
+            $.each(layer, function (bsVertexIndex, bsVertex) {
+                let vertexIndex = eqIndexOf(graph.vertices, bsVertex.vertex);
+                graph.vertices[vertexIndex].x = minPoint.x + width / (layer.length + 1) * (bsVertexIndex + 1);
+                graph.vertices[vertexIndex].y = minPoint.y + layerHeight * layerIndex;
+                console.log('y ' + layerHeight * layerIndex);
+            });
+        });
+        redrawAll();
+    }
+
+    // Finds the index of the layer so that there are < (n/2) vertices before it
+    // and >= (n/2) vertices before and in it
+    getLayerMy(layers) {
+        const n = graph.vertices.length;
+        let seperatorIndex = -1;
+        let verticesBefore = 0;
+        $.each(layers, function (layerIndex, layer) {
+            console.log('n/2=' + n / 2 + ' verticesBefore=' + verticesBefore + ' verticesInclusive=' + (verticesBefore + layer.length));
+            console.log('layer.length=' + layer.length + ' 4*sqrt(n)=' + 4 * Math.sqrt(n));
+            if (verticesBefore < n / 2 && verticesBefore + layer.length > n / 2) {
+                seperatorIndex = layerIndex;
+                return;
+            }
+            verticesBefore += layer.length;
+        });
+        return seperatorIndex;
+    }
+
+    // Finds layers M above and m below my, so that m and M < sqrt(n)
+    // Returns the indices in an array [m_idx, M_idx]
+    getLayersMm(layers, layerMyIdx) {
+        const n = graph.vertices.length;
+        let m_idx = -1;
+        for (let i = layerMyIdx - 1; i >= 0; i--) {
+            if (layers[i].length < Math.sqrt(n)) {
+                m_idx = i;
+                break;
+            }
+        }
+        let M_idx = -1;
+        for (let i = layerMyIdx + 1; i < layers.length; i++) {
+            if (layers[i].length < Math.sqrt(n)) {
+                M_idx = i;
+                break;
+            }
+        }
+        return [m_idx, M_idx];
+    }
+
+    rectAroundLayer(layers, layerIndex, color) {
+        var ctx = $("#fgCanvas")[0].getContext("2d");
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        let layerY = layers[layerIndex][0].vertex.y;
+        let layerMinX = layers[layerIndex][0].vertex.x - 20;
+        let layerMaxX = layers[layerIndex][layers[layerIndex].length - 1].vertex.x + 20;
+        let width = layerMaxX - layerMinX;
+        let height = 40;
+        ctx.rect(layerMinX, layerY - 20, width, height);
+        ctx.stroke();
+        ctx.closePath();
     }
 }

@@ -3,7 +3,8 @@ const PREDEFINEDS = {
     FROM_JSON: 1,
     DEBUG_GRAPH: 2,
     SIGMA_GRAPH: 3,
-    STAR_GRAPH: 4
+    STAR_GRAPH: 4,
+    TRIANGULATED_STAR_GRAPH: 5,
 };
 
 function predefinedClick(param) {
@@ -21,10 +22,9 @@ function predefinedClick(param) {
         }
         window.alert(JSON.stringify(jsonGraph));
     } else if (param == PREDEFINEDS.FROM_JSON) {
-        let jsonGraph = window.prompt("Enter JSON graph:");
+        let jsonGraphStr = window.prompt("Enter JSON graph:");
         try {
-            jsonGraph = JSON.parse(jsonGraph);
-            loadGraphFromJson(jsonGraph);
+            loadGraphFromJson(jsonGraphStr);
         } catch (e) {
             window.alert("Invalid JSON graph!");
         }
@@ -37,6 +37,9 @@ function predefinedClick(param) {
     } else if (param == PREDEFINEDS.STAR_GRAPH) {
         const starGraph = '{"vertices":[{"x":348,"y":251.8000030517578},{"x":351,"y":140.8000030517578},{"x":456,"y":198.8000030517578},{"x":445,"y":308.8000030517578},{"x":299,"y":327.8000030517578},{"x":252,"y":215.8000030517578}],"edges":[{"v1":{"x":351,"y":140.8000030517578},"v2":{"x":348,"y":251.8000030517578}},{"v1":{"x":348,"y":251.8000030517578},"v2":{"x":456,"y":198.8000030517578}},{"v1":{"x":348,"y":251.8000030517578},"v2":{"x":445,"y":308.8000030517578}},{"v1":{"x":348,"y":251.8000030517578},"v2":{"x":299,"y":327.8000030517578}},{"v1":{"x":348,"y":251.8000030517578},"v2":{"x":252,"y":215.8000030517578}}]}';
         loadGraphFromJson(starGraph);
+    } else if (param == PREDEFINEDS.TRIANGULATED_STAR_GRAPH) {
+        const triangulatedStarGraph = '{"vertices":[{"x":210,"y":89.19999694824219},{"x":542,"y":80.19999694824219},{"x":608,"y":337.1999969482422},{"x":505,"y":227.1999969482422},{"x":465,"y":174.1999969482422},{"x":397,"y":125.19999694824219}],"edges":[{"v1":{"x":210,"y":89.19999694824219},"v2":{"x":608,"y":337.1999969482422}},{"v1":{"x":210,"y":89.19999694824219},"v2":{"x":505,"y":227.1999969482422}},{"v1":{"x":210,"y":89.19999694824219},"v2":{"x":465,"y":174.1999969482422}},{"v1":{"x":210,"y":89.19999694824219},"v2":{"x":397,"y":125.19999694824219}},{"v1":{"x":542,"y":80.19999694824219},"v2":{"x":608,"y":337.1999969482422}},{"v1":{"x":505,"y":227.1999969482422},"v2":{"x":465,"y":174.1999969482422}},{"v1":{"x":397,"y":125.19999694824219},"v2":{"x":542,"y":80.19999694824219}},{"v1":{"x":542,"y":80.19999694824219},"v2":{"x":465,"y":174.1999969482422}},{"v1":{"x":542,"y":80.19999694824219},"v2":{"x":505,"y":227.1999969482422}},{"v1":{"x":397,"y":125.19999694824219},"v2":{"x":465,"y":174.1999969482422}},{"v1":{"x":505,"y":227.1999969482422},"v2":{"x":608,"y":337.1999969482422}},{"v1":{"x":542,"y":80.19999694824219},"v2":{"x":210,"y":89.19999694824219}}]}';
+        loadGraphFromJson(triangulatedStarGraph);
     }
 }
 
@@ -54,7 +57,14 @@ function loadGraphFromJson(graphString) {
         let v2 = edge.v2;
         let v1Idx = eqIndexOf(graph.vertices, v1);
         let v2Idx = eqIndexOf(graph.vertices, v2);
-        console.log("idx " + graph.vertices.indexOf(v2));
+        for (var j = 0; j < graph.vertices.length; j++) {
+            if (graph.vertices[j].x == v1.x && graph.vertices[j].y == v1.y) {
+                v1Idx = j;
+            }
+            if (graph.vertices[j].x == v2.x && graph.vertices[j].y == v2.y) {
+                v2Idx = j;
+            }
+        }
         graph.addEdge(new Edge(graph.vertices[v1Idx], graph.vertices[v2Idx]));
     }
     redrawAll();

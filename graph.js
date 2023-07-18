@@ -37,7 +37,9 @@ class Vertex {
     }
 
     eq(other) {
-        return this.x == other.x && this.y == other.y;
+        return this.number == other.number;
+        // console.log('eq ' + this + ' ' + other);
+        // return this.x == other.x && this.y == other.y;
     }
 
     print() {
@@ -363,37 +365,23 @@ class Graph {
         console.log("Found " + components.length + " connected components");
         return components;
     }
+
+    isTriangulated() {
+        if (this.getMultiEdges().length > 0 || this.getLoops().length > 0
+            || this.getConnectedComponents().length > 1) {
+            console.log('isTriangulated: preconditions failed');
+            return false;
+        }
+        let isTriangulated = true;
+        let allFacets = getAllFacets();
+        for (let i = 0; i < allFacets.length; i++) {
+            let facet = allFacets[i];
+            if (facet.length != 3) {
+                isTriangulated = false;
+            }
+        }
+        return isTriangulated;
+    }
 }
 
 graph = new Graph();
-
-function sortClockwise(vertex, vertices) {
-    return vertices.sort(function (x, y) {
-        if (getAngle(vertex, x) < getAngle(vertex, y)) {
-            return -1;
-        }
-        if (getAngle(vertex, x) > getAngle(vertex, y)) {
-            return 1;
-        }
-        return 0;
-    });
-}
-
-// Get the angle in degrees between 0 o'clock from the vertex and the vertex's neighbor
-function getAngle(vertex, neighbour) {
-    var dAx = 0;
-    var dAy = -1;
-    var dBx = neighbour.x - vertex.x;
-    var dBy = neighbour.y - vertex.y;
-    var angle = Math.atan2(dAx * dBy - dAy * dBx, dAx * dBx + dAy * dBy);
-
-    var degree_angle = Math.abs(angle * (180 / Math.PI));
-    if (angle < 0) degree_angle = 360 - Math.abs(degree_angle);
-
-    return degree_angle;
-}
-
-function changeVectorLength(vector, length) {
-    let vectorLength = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
-    return new Point(vector.x * length / vectorLength, vector.y * length / vectorLength);
-}
