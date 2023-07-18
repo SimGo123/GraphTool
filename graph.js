@@ -2,10 +2,17 @@ var fgCanvas = $("#fgCanvas")[0];
 var vertexCount = 0;
 
 class Vertex {
-    constructor(x, y) {
+    constructor(x, y, number = -1) {
         this.x = x;
         this.y = y;
-        this.number = vertexCount++;
+        if (number != -1) {
+            this.number = number;
+            if (number >= vertexCount) {
+                vertexCount = number + 1;
+            }
+        } else {
+            this.number = vertexCount++;
+        }
         this.radius = 15;
         this.highlightColor = "red";
         this.color = "gray";

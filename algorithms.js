@@ -348,8 +348,34 @@ class PlanarSeparatorAlgo extends Algorithm {
 
         await super.pause("Find layers m and M", "Find layers m and M");
         let layersMmIndexes = this.getLayersMm(layers, layerMyIdx);
-        this.rectAroundLayer(layers, layersMmIndexes[0], "blue");
-        this.rectAroundLayer(layers, layersMmIndexes[1], "blue");
+        let m_idx = layersMmIndexes[0];
+        let M_idx = layersMmIndexes[1];
+        if (m_idx != -1) {
+            this.rectAroundLayer(layers, m_idx, "blue");
+        }
+        if (M_idx != -1) {
+            this.rectAroundLayer(layers, M_idx, "blue");
+        }
+        let a2 = this.getA2(layers, m_idx, M_idx);
+        let a2_len = 0;
+        for (var i = 0; i < a2.length; i++) {
+            a2_len += a2[i].length;
+        }
+
+        if (a2_len <= (2 / 3) * n) {
+            // Case 1
+            console.log('Case 1');
+            // m u M is a separator
+            if (m_idx != -1) {
+                this.rectAroundLayer(layers, m_idx, "red");
+            }
+            if (M_idx != -1) {
+                this.rectAroundLayer(layers, M_idx, "red");
+            }
+        } else {
+            // Case 2
+            console.log('Case 2');
+        }
 
         super.onFinished();
     }
@@ -455,6 +481,20 @@ class PlanarSeparatorAlgo extends Algorithm {
             }
         }
         return [m_idx, M_idx];
+    }
+
+    // Gets all the layers which are between m and M (=A2).
+    // If m is -1, m is considered to be -1; if M is -1, M is considered to be layers.length
+    // Returns an array of layers [m+1, m+2, ..., M-1]
+    getA2(layers, m_idx, M_idx) {
+        let a2 = [];
+        if (M_idx == -1) {
+            M_idx = layers.length;
+        }
+        for (let i = m_idx + 1; i < M_idx; i++) {
+            a2.push(layers[i]);
+        }
+        return a2;
     }
 
     rectAroundLayer(layers, layerIndex, color) {
