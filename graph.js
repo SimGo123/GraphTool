@@ -1,6 +1,8 @@
 var fgCanvas = $("#fgCanvas")[0];
 var vertexCount = 0;
 
+var vertexRadius = 15;
+
 class Vertex {
     constructor(x, y, number = -1) {
         this.x = x;
@@ -13,11 +15,9 @@ class Vertex {
         } else {
             this.number = vertexCount++;
         }
-        this.radius = 15;
+        this.radius = vertexRadius;
         this.highlightColor = "red";
         this.color = "gray";
-        const n = graph.vertices.length;
-        console.log("4sqrt(n) = " + 4 * Math.sqrt(n) + " n/2=" + n / 2);
     }
 
     draw(selectedVertex) {
@@ -31,7 +31,11 @@ class Vertex {
         ctx.stroke();
         ctx.closePath();
         ctx.fillStyle = this.color;
-        ctx.fillText(this.number, this.x, this.y);
+        let metrics = ctx.measureText(this.number);
+        let txtWidth = metrics.width;
+        let txtHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+        console.log('txtWidth ' + txtWidth);
+        ctx.fillText(this.number, this.x - txtWidth / 2, this.y + txtHeight / 2);
         ctx.closePath();
 
         if (selectedVertex == this) {

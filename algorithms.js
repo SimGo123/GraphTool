@@ -366,12 +366,13 @@ class PlanarSeparatorAlgo extends Algorithm {
         for (var i = 0; i < a2.length; i++) {
             a2_len += layers[a2[i]].length;
         }
+        // console.log('a2_len: ' + a2_len + ' 2/3 * n: ' + (2 / 3) * n);
 
         if (a2_len <= (2 / 3) * n) {
             // Case 1
             console.log('Case 1');
             // m u M is a separator
-            await super.pause("Case 1: m u M is a separator", "S = m u M, V1 = max(|A1|, |A2|, |A3|), V2=V-{S,V1}");
+            await super.pause("Case 1: m u M is a separator", "S = m u M, V1 = max(|A1|, |A2|, |A3|), V2=V \ {S,V1}");
             let a_lengths = [a1.length, a2.length, a3.length];
             let max_a_idx = a_lengths.indexOf(Math.max(...a_lengths));
             let v1 = a_s[max_a_idx];
