@@ -360,16 +360,28 @@ class PlanarSeparatorAlgo extends Algorithm {
         }
 
         await super.pause("Check if m u M is a separator", "Check if A2 (all layers between m and M) has <= 2/3 * n vertices");
-        let a2 = this.getA2(layers, m_idx, M_idx);
+        let a_s = this.getAs(layers, m_idx, M_idx);
+        let [a1,a2,a3] = a_s;
         let a2_len = 0;
         for (var i = 0; i < a2.length; i++) {
-            a2_len += a2[i].length;
+            a2_len += layers[a2[i]].length;
         }
 
         if (a2_len <= (2 / 3) * n) {
             // Case 1
             console.log('Case 1');
             // m u M is a separator
+            await super.pause("Case 1: m u M is a separator", "S = m u M, V1 = max(|A1|, |A2|, |A3|), V2=V-{S,V1}");
+            let a_lengths = [a1.length, a2.length, a3.length];
+            let max_a_idx = a_lengths.indexOf(Math.max(...a_lengths));
+            let v1 = a_s[max_a_idx];
+            let v2 = [];
+            for (var i = 0; i < layers.length; i++) {
+                if (i != m_idx && i != M_idx && !v1.includes(i)) {
+                    v2.push(i);
+                }
+            }
+            alert('m u M is a separator, V1=layers(' + v1 + '), V2=layers('+ v2 + ')');
             if (m_idx != -1) {
                 this.rectAroundLayer(layers, m_idx, "red");
             }
@@ -487,18 +499,26 @@ class PlanarSeparatorAlgo extends Algorithm {
         return [m_idx, M_idx];
     }
 
-    // Gets all the layers which are between m and M (=A2).
+    // Gets all the layers which are before (A1) between (A2) and after (A3) m and M.
     // If m is -1, m is considered to be -1; if M is -1, M is considered to be layers.length
-    // Returns an array of layers [m+1, m+2, ..., M-1]
-    getA2(layers, m_idx, M_idx) {
+    // Returns an array [A1, A2, A3], where each element is an array of indices of layers
+    getAs(layers, m_idx, M_idx) {
+        let a1 = [];
         let a2 = [];
+        let a3 = [];
         if (M_idx == -1) {
             M_idx = layers.length;
         }
-        for (let i = m_idx + 1; i < M_idx; i++) {
-            a2.push(layers[i]);
+        for (let i = 0; i < m_idx; i++) {
+            a1.push(i);
         }
-        return a2;
+        for (let i = m_idx + 1; i < M_idx; i++) {
+            a2.push(i);
+        }
+        for (let i = M_idx + 1; i < layers.length; i++) {
+            a3.push(i);
+        }
+        return [a1, a2, a3];
     }
 
     rectAroundLayer(layers, layerIndex, color) {

@@ -16,6 +16,8 @@ class Vertex {
         this.radius = 15;
         this.highlightColor = "red";
         this.color = "gray";
+        const n = graph.vertices.length;
+        console.log("4sqrt(n) = " + 4 * Math.sqrt(n) + " n/2=" + n / 2);
     }
 
     draw(selectedVertex) {
