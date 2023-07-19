@@ -331,8 +331,11 @@ class PlanarSeparatorAlgo extends Algorithm {
         await super.pause("Draw layers", "First layer on top, other layers below");
         this.drawLayerStructure(layers);
 
-        await super.pause("Check if a layer in the tree is a separator", "Check if a layer in the tree is a separator");
+        await super.pause("Find layer my", "Find layer my so that all layers below together have <= n/2 vertices, and together with my have > n/2 vertices");
         let layerMyIdx = this.getLayerMy(layers);
+        this.rectAroundLayer(layers, layerMyIdx, "green");
+            
+        await super.pause("Check if layer my is a separator", "Check if layer my has <= 4*sqrt(n) vertices");
         const n = graph.vertices.length;
         const maxSeparatorSize = 4 * Math.sqrt(n);
         console.log('layerMyIdx: ' + layerMyIdx + ' maxSeparatorSize: ' + maxSeparatorSize + ' mySize ' + layers[layerMyIdx].length);
@@ -344,9 +347,8 @@ class PlanarSeparatorAlgo extends Algorithm {
             return;
         }
         console.log('Layer my (' + layerMyIdx + ') is not a separator');
-        this.rectAroundLayer(layers, layerMyIdx, "green");
 
-        await super.pause("Find layers m and M", "Find layers m and M");
+        await super.pause("Find layers m and M", "Layer my was not a separator. Now find layers m before and M after my with |m|, |M| < sqrt(n)");
         let layersMmIndexes = this.getLayersMm(layers, layerMyIdx);
         let m_idx = layersMmIndexes[0];
         let M_idx = layersMmIndexes[1];
@@ -356,6 +358,8 @@ class PlanarSeparatorAlgo extends Algorithm {
         if (M_idx != -1) {
             this.rectAroundLayer(layers, M_idx, "blue");
         }
+
+        await super.pause("Check if m u M is a separator", "Check if A2 (all layers between m and M) has <= 2/3 * n vertices");
         let a2 = this.getA2(layers, m_idx, M_idx);
         let a2_len = 0;
         for (var i = 0; i < a2.length; i++) {
