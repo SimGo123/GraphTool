@@ -133,7 +133,7 @@ class TriangulationAlgo extends Algorithm {
             var neighboursNeighbours = graph.getAllNeighbours(neighbour);
             let neighboursNeighbour = nextVertexAfter(neighboursNeighbours, vertex, true);
             // console.log("neighboursNeighbour " + JSON.stringify(neighboursNeighbour));
-            var edge = new Edge(vertex, neighboursNeighbour);
+            var edge = new Edge(vertex.number, neighboursNeighbour.number);
             graph.addEdge(edge);
             console.log("added edge " + edge.print());
             vertex = getNextDegOneVertex();
@@ -154,7 +154,7 @@ class TriangulationAlgo extends Algorithm {
             if (facet.length > 3) {
                 var verticesOnFacet = [];
                 $.each(facet, function (_index, edge) {
-                    verticesOnFacet.push(edge.v2);
+                    verticesOnFacet.push(edge.v2nr);
                 });
                 let prevEdge = new Edge(verticesOnFacet[0], verticesOnFacet[1]);
                 for (var i = 2; i < verticesOnFacet.length - 1; i++) {
@@ -254,28 +254,29 @@ class TriangulationAlgo extends Algorithm {
     }
 
     edgeExchange(facet, index, facet2, index2, newFacets, deleteElem, mEdge) {
-        let verticesOnFacet = getUniqueVerticesOnFacet(facet);
-        safeArrEqDel(verticesOnFacet, deleteElem.v1);
-        safeArrEqDel(verticesOnFacet, deleteElem.v2);
+        let verticesOnFacet = getUniqueVerticeNrsOnFacet(facet);
+        safeArrDel(verticesOnFacet, deleteElem.v1nr);
+        safeArrDel(verticesOnFacet, deleteElem.v2nr);
 
-        let verticesOnFacet2 = getUniqueVerticesOnFacet(facet2);
-        safeArrEqDel(verticesOnFacet2, deleteElem.v1);
-        safeArrEqDel(verticesOnFacet2, deleteElem.v2);
+        let verticesOnFacet2 = getUniqueVerticeNrsOnFacet(facet2);
+        safeArrDel(verticesOnFacet2, deleteElem.v1nr);
+        safeArrDel(verticesOnFacet2, deleteElem.v2nr);
         let newEdge = new Edge(verticesOnFacet[0], verticesOnFacet2[0]);
         graph.addEdge(newEdge);
         console.log("added edge " + newEdge.print());
 
         if (mEdge) {
-            let eIdxOne = eqIndexOf(facet, new Edge(verticesOnFacet[0], deleteElem.v1));
-            let eIdxTwo = eqIndexOf(facet2, new Edge(deleteElem.v1, verticesOnFacet2[0]));
+            let eIdxOne = eqIndexOf(facet, new Edge(verticesOnFacet[0], deleteElem.v1nr));
+            let eIdxTwo = eqIndexOf(facet2, new Edge(deleteElem.v1nr, verticesOnFacet2[0]));
+            console.log('eIdxOne=' + eIdxOne + ' eIdxTwo=' + eIdxTwo);
             let newFacet = [
                 newEdge,
                 facet[eIdxOne],
                 facet2[eIdxTwo]];
             newFacets.push(newFacet);
             console.log("added facet " + printArr(newFacet));
-            eIdxOne = eqIndexOf(facet, new Edge(verticesOnFacet[0], deleteElem.v2));
-            eIdxTwo = eqIndexOf(facet2, new Edge(deleteElem.v2, verticesOnFacet2[0]));
+            eIdxOne = eqIndexOf(facet, new Edge(verticesOnFacet[0], deleteElem.v2nr));
+            eIdxTwo = eqIndexOf(facet2, new Edge(deleteElem.v2nr, verticesOnFacet2[0]));
             let newFacet2 = [
                 newEdge,
                 facet[eIdxOne],
@@ -288,13 +289,13 @@ class TriangulationAlgo extends Algorithm {
             let facet2WithoutLoop = facet2.slice(0, index2).concat(facet2.slice(index2 + 1));
             //console.log('sl ' + printArr(facet.slice(0, index)) + ' + ' + printArr(facet2WithoutLoop) + ' + ' + printArr(facet.slice(index + 1)));
             let newFacet = facet.slice(0, index).concat(facet2WithoutLoop).concat(facet.slice(index + 1));
-            let edgeToReplaceIdx = eqIndexOf(newFacet, new Edge(newEdge.v1, deleteElem.v1), true);
+            let edgeToReplaceIdx = eqIndexOf(newFacet, new Edge(newEdge.v1nr, deleteElem.v1nr), true);
             newFacet[edgeToReplaceIdx] = newEdge;
-            safeArrEqDel(newFacet, new Edge(newEdge.v2, deleteElem.v2), true);
+            safeArrEqDel(newFacet, new Edge(newEdge.v2nr, deleteElem.v2nr), true);
             newFacets.push(newFacet);
             console.log('added facet ' + printArr(newFacet));
 
-            let newFacet2 = [newEdge, new Edge(newEdge.v2, deleteElem.v1), new Edge(deleteElem.v1, newEdge.v1)];
+            let newFacet2 = [newEdge, new Edge(newEdge.v2nr, deleteElem.v1nr), new Edge(deleteElem.v1nr, newEdge.v1nr)];
             newFacets.push(newFacet2);
             console.log('added facet ' + printArr(newFacet2));
 
@@ -432,7 +433,7 @@ class PlanarSeparatorAlgo extends Algorithm {
             for (var j = 0; j < layer.length; j++) {
                 let bsVertex = layer[j];
                 console.log('edge from ' + bsVertex.vertex.print() + ' to ' + bsVertex.parent.print());
-                let edgeIndex = eqIndexOf(graph.edges, new Edge(bsVertex.vertex, bsVertex.parent));
+                let edgeIndex = eqIndexOf(graph.edges, new Edge(bsVertex.vertex.number, bsVertex.parent.number));
                 graph.edges[edgeIndex].color = "orange";
             }
         }

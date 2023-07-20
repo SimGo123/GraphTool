@@ -50,7 +50,7 @@ fgCanvas.addEventListener("click", function (event) {
         } else if (selectedVertex != null) {
             var vertex = graph.getVertexAt(x, y);
             if (vertex != null) {
-                var edge = new Edge(selectedVertex, vertex);
+                var edge = new Edge(selectedVertex.number, vertex.number);
                 graph.addEdge(edge);
                 selectedVertex = null;
             }
@@ -140,43 +140,6 @@ function onresize() {
 function drawCanvases() {
     fgCanvas.width = window.innerWidth - 50;
     fgCanvas.height = window.innerHeight - 310;
-}
-
-function drawEdges() {
-    console.log("drawEdges");
-    for (let i = 0; i < edges.length; i++) {
-        drawEdge(edges[i]);
-    }
-}
-
-function drawEdge(edge) {
-    var ctx = fgCanvas.getContext("2d");
-
-    if (selectedEdge == edge) {
-        // Highlighting edge
-        ctx.strokeStyle = "red";
-        ctx.lineWidth = 7;
-    } else {
-        ctx.strokeStyle = edge.color;
-        ctx.lineWidth = 3;
-    }
-    ctx.beginPath();
-    ctx.moveTo(edge.v1.x, edge.v1.y);
-    ctx.lineTo(edge.v2.x, edge.v2.y);
-    ctx.stroke();
-}
-
-function getEdgeAt(x, y) {
-    const clickPoint = new Point(x, y);
-    for (let i = 0; i < edges.length; i++) {
-        let edge = edges[i];
-        console.log("edge dist " + pointLineDist(edge.v1, edge.v2, clickPoint));
-        if (pointLineDist(edge.v1, edge.v2, clickPoint) <= 20) {
-            return edge;
-        }
-    }
-    console.log("getEdgeAt: no edge found");
-    return null;
 }
 
 // Draw the outer walls of the canvas
