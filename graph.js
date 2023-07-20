@@ -58,17 +58,11 @@ class Vertex {
 }
 
 class Edge {
-    // constructor(v1, v2, id = null) {
-    //     this.v1 = v1;
-    //     this.v2 = v2;
-    //     this.id = id;
-    //     this.thickness = 5;
-    //     this.color = "gray";
-    // }
-    constructor(v1nr, v2nr, id = null) {
+    constructor(v1nr, v2nr, id = null, weight = null) {
         this.v1nr = v1nr;
         this.v2nr = v2nr;
         this.id = id;
+        this.weight = weight;
         this.thickness = 5;
         this.color = "gray";
     }
@@ -76,6 +70,9 @@ class Edge {
     draw(selectedEdge, multiEdge = false, loop = false, occurences = 1) {
         let v1 = graph.getVertexByNumber(this.v1nr);
         let v2 = graph.getVertexByNumber(this.v2nr);
+        let dx = v2.x - v1.x;
+        let dy = v2.y - v1.y;
+        console.log('dx: ' + dx + ' dy ' + dy);
         var ctx = fgCanvas.getContext("2d");
         if (selectedEdge == this) {
             ctx.strokeStyle = "red";
@@ -90,6 +87,14 @@ class Edge {
             ctx.lineTo(v2.x, v2.y);
             ctx.stroke();
             ctx.closePath();
+            if (this.weight != null) {
+                let vecLen = this.weight.toString().length * 7;
+                ctx.fillStyle = "gray";
+                let controlVec = new Point(dy, -dx);
+                controlVec = changeVectorLength(controlVec, vecLen);
+                controlVec = controlVec.y < 0 ? controlVec : changeVectorLength(new Point(-dy, dx), vecLen);
+                ctx.fillText(this.weight, (v1.x + v2.x) / 2 + controlVec.x, (v1.y + v2.y) / 2 + controlVec.y);
+            }
         }
         if (loop) {
             // Draw loop
@@ -116,8 +121,6 @@ class Edge {
             }
         } else if (multiEdge) {
             // Draw multiple edges with bezier curves
-            let dx = v2.x - v1.x;
-            let dy = v2.y - v1.y;
             let vectorLen = 60;
             let steps = vectorLen * 2 / (occurences - 1);
             console.log("occurences " + occurences);
