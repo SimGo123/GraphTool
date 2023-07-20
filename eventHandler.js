@@ -98,6 +98,12 @@ $("body").keypress(function(e){
         case "s":
             modeClick(Modes.SELECTION);
             break;
+        case "a":
+            modeClick(Modes.ALGORITHMS);
+            break;
+        case "p":
+            modeClick(Modes.PREDEFINED);
+            break;
     }
 });
 

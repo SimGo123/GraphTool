@@ -1,6 +1,7 @@
 const ALGORITHMS = {
     TRIANGULATION: 0,
     PLANAR_SEPARATOR: 1,
+    MIXED_MAX_CUT: 2
 };
 
 var algorithm = null;
@@ -15,6 +16,13 @@ async function algorithmClick(param) {
         algorithm = null;
     } else if (param == ALGORITHMS.PLANAR_SEPARATOR) {
         algorithm = new PlanarSeparatorAlgo();
+        $("#algoControlPanel").removeClass("invisible");
+        $("#stepButton").removeClass("disabled");
+        $("#runCompleteButton").removeClass("disabled");
+        await algorithm.run();
+        algorithm = null;
+    } else if (param == ALGORITHMS.MIXED_MAX_CUT) {
+        algorithm = new MixedMaxCutAlgo();
         $("#algoControlPanel").removeClass("invisible");
         $("#stepButton").removeClass("disabled");
         $("#runCompleteButton").removeClass("disabled");
@@ -80,7 +88,6 @@ class Algorithm {
 
 class TriangulationAlgo extends Algorithm {
     async run() {
-        console.log("triangulation");
         super.numSteps = 4;
 
         await super.pause("Connect degree 1 vertices", "Connect vertices of degree 1 to the next clockwise neighbour of their neighbour");
@@ -307,7 +314,6 @@ class TriangulationAlgo extends Algorithm {
 }
 
 class PlanarSeparatorAlgo extends Algorithm {
-
     async run() {
         super.numSteps = "X";
 
@@ -546,5 +552,37 @@ class PlanarSeparatorAlgo extends Algorithm {
         ctx.rect(layerMinX, layerY - 20, width, height);
         ctx.stroke();
         ctx.closePath();
+    }
+}
+
+class MixedMaxCutAlgo extends Algorithm {
+    async run() {
+        super.numSteps = "X";
+
+        if (!this.preconditionsCheck()) {
+            super.onFinished();
+            return;
+        }
+
+        super.onFinished();
+    }
+
+    preconditionsCheck() {
+        let fulfilled = true;
+        if (!graph.isPlanarEmbedded()) {
+            alert("Graph is not planar embedded!");
+            fulfilled = false;
+        } else if (!graph.isTriangulated()) {
+            alert("Graph is not triangulated!");
+            fulfilled = false;
+        }
+        $.each(graph.edges, function (_index, edge) {
+            if (edge.weight == null) {
+                alert("can't calculate mixed max cut, " + edge.print() + " has no weight!");
+                fulfilled = false;
+                return false;
+            }
+        });
+        return fulfilled;
     }
 }

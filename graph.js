@@ -72,7 +72,6 @@ class Edge {
         let v2 = graph.getVertexByNumber(this.v2nr);
         let dx = v2.x - v1.x;
         let dy = v2.y - v1.y;
-        console.log('dx: ' + dx + ' dy ' + dy);
         var ctx = fgCanvas.getContext("2d");
         if (selectedEdge == this) {
             ctx.strokeStyle = "red";

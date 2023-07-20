@@ -103,33 +103,33 @@ function getAllFacets() {
     $.each(graph.edges, function (_index, edge) {
         let statusEdge = statusEdges[statusEdgeIndex(statusEdges, edge)];
         if (!statusEdge.rightVisited) {
-            console.log('right facet');
+            // console.log('right facet');
             let rightFacet = facetWalk(edge, true, statusEdges);
             facets.push(rightFacet);
             $.each(rightFacet, function (_index, edge) {
                 let edgeIndex = statusEdgeIndex(statusEdges, edge);
                 if (statusEdges[edgeIndex].edge.v1nr == edge.v1nr) {
                     statusEdges[edgeIndex].rightVisited = true;
-                    console.log("r");
+                    // console.log("r");
                 } else {
                     statusEdges[edgeIndex].leftVisited = true;
-                    console.log("l");
+                    // console.log("l");
                 }
             });
         }
         statusEdge = statusEdges[statusEdgeIndex(statusEdges, edge)];
         if (!statusEdge.leftVisited) {
-            console.log('left facet');
+            // console.log('left facet');
             let leftFacet = facetWalk(edge, false, statusEdges);
             facets.push(leftFacet);
             $.each(leftFacet, function (_index, edge) {
                 let edgeIndex = statusEdgeIndex(statusEdges, edge);
                 if (statusEdges[edgeIndex].edge.v1nr == edge.v1nr) {
                     statusEdges[edgeIndex].leftVisited = true;
-                    console.log("l");
+                    // console.log("l");
                 } else {
                     statusEdges[edgeIndex].rightVisited = true;
-                    console.log("r");
+                    // console.log("r");
                 }
             });
         }
@@ -140,7 +140,7 @@ function getAllFacets() {
         $.each(facet, function (_index, edge) {
             facetStr += edge.print() + " ";
         });
-        console.log(facetStr);
+        // console.log(facetStr);
     });
     return facets;
 }
