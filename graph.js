@@ -50,8 +50,6 @@ class Vertex {
 
     eq(other) {
         return this.number == other.number;
-        // console.log('eq ' + this + ' ' + other);
-        // return this.x == other.x && this.y == other.y;
     }
 
     print() {
@@ -60,15 +58,24 @@ class Vertex {
 }
 
 class Edge {
-    constructor(v1, v2, id = null) {
-        this.v1 = v1;
-        this.v2 = v2;
+    // constructor(v1, v2, id = null) {
+    //     this.v1 = v1;
+    //     this.v2 = v2;
+    //     this.id = id;
+    //     this.thickness = 5;
+    //     this.color = "gray";
+    // }
+    constructor(v1nr, v2nr, id = null) {
+        this.v1nr = v1nr;
+        this.v2nr = v2nr;
         this.id = id;
         this.thickness = 5;
         this.color = "gray";
     }
 
     draw(selectedEdge, multiEdge = false, loop = false, occurences = 1) {
+        let v1 = graph.getVertexByNumber(this.v1nr);
+        let v2 = graph.getVertexByNumber(this.v2nr);
         var ctx = fgCanvas.getContext("2d");
         if (selectedEdge == this) {
             ctx.strokeStyle = "red";
@@ -79,14 +86,14 @@ class Edge {
         }
         if (occurences == 1 || occurences % 2 != 0) {
             ctx.beginPath();
-            ctx.moveTo(this.v1.x, this.v1.y);
-            ctx.lineTo(this.v2.x, this.v2.y);
+            ctx.moveTo(v1.x, v1.y);
+            ctx.lineTo(v2.x, v2.y);
             ctx.stroke();
             ctx.closePath();
         }
         if (loop) {
             // Draw loop
-            let vertex = this.v1;
+            let vertex = v1;
             let length = 50;
             let height = 20;
 
@@ -109,10 +116,9 @@ class Edge {
             }
         } else if (multiEdge) {
             // Draw multiple edges with bezier curves
-            let dx = this.v2.x - this.v1.x;
-            let dy = this.v2.y - this.v1.y;
+            let dx = v2.x - v1.x;
+            let dy = v2.y - v1.y;
             let vectorLen = 60;
-            let occursEven = occurences % 2 == 0;
             let steps = vectorLen * 2 / (occurences - 1);
             console.log("occurences " + occurences);
             console.log("step " + steps);
@@ -123,24 +129,24 @@ class Edge {
                 let controlVec = new Point(dy, -dx);
                 controlVec = changeVectorLength(controlVec, i);
 
-                let control1 = new Point(this.v1.x + controlVec.x, this.v1.y + controlVec.y);
-                let control2 = new Point(this.v2.x + controlVec.x, this.v2.y + controlVec.y);
+                let control1 = new Point(v1.x + controlVec.x, v1.y + controlVec.y);
+                let control2 = new Point(v2.x + controlVec.x, v2.y + controlVec.y);
 
                 ctx.beginPath();
-                ctx.moveTo(this.v1.x, this.v1.y);
-                ctx.bezierCurveTo(control1.x, control1.y, control2.x, control2.y, this.v2.x, this.v2.y);
+                ctx.moveTo(v1.x, v1.y);
+                ctx.bezierCurveTo(control1.x, control1.y, control2.x, control2.y, v2.x, v2.y);
                 ctx.stroke();
                 ctx.closePath();
 
                 controlVec = new Point(-dy, dx);
                 controlVec = changeVectorLength(controlVec, i);
 
-                control1 = new Point(this.v1.x + controlVec.x, this.v1.y + controlVec.y);
-                control2 = new Point(this.v2.x + controlVec.x, this.v2.y + controlVec.y);
+                control1 = new Point(v1.x + controlVec.x, v1.y + controlVec.y);
+                control2 = new Point(v2.x + controlVec.x, v2.y + controlVec.y);
 
                 ctx.beginPath();
-                ctx.moveTo(this.v1.x, this.v1.y);
-                ctx.bezierCurveTo(control1.x, control1.y, control2.x, control2.y, this.v2.x, this.v2.y);
+                ctx.moveTo(v1.x, v1.y);
+                ctx.bezierCurveTo(control1.x, control1.y, control2.x, control2.y, v2.x, v2.y);
                 ctx.stroke();
                 ctx.closePath();
             }
@@ -149,14 +155,16 @@ class Edge {
 
     eq(other, withId = false) {
         let idEq = withId ? this.id == other.id : true;
+        return (this.v1nr == other.v1nr && this.v2nr == other.v2nr && idEq)
+            || (this.v1nr == other.v2nr && this.v2nr == other.v1nr && idEq);
         // Also equal if edges are reversed
-        return (this.v1.eq(other.v1) && this.v2.eq(other.v2) && idEq)
-            || (this.v1.eq(other.v2) && this.v2.eq(other.v1) && idEq);
+        // return (this.v1.eq(other.v1) && this.v2.eq(other.v2) && idEq)
+        //     || (this.v1.eq(other.v2) && this.v2.eq(other.v1) && idEq);
     }
 
     print() {
         let idString = (this.id == null ? "" : " id: " + this.id);
-        return "Edge " + this.v1.number + " " + this.v2.number + idString;
+        return "Edge " + this.v1nr + " " + this.v2nr + idString;
     }
 }
 
@@ -205,8 +213,10 @@ class Graph {
         const clickPoint = new Point(x, y);
         for (let i = 0; i < this.edges.length; i++) {
             let edge = this.edges[i];
-            console.log("edge dist " + pointLineDist(edge.v1, edge.v2, clickPoint));
-            if (pointLineDist(edge.v1, edge.v2, clickPoint) <= 20) {
+            let v1 = this.getVertexByNumber(edge.v1nr);
+            let v2 = this.getVertexByNumber(edge.v2nr);
+            console.log("edge dist " + pointLineDist(v1, v2, clickPoint));
+            if (pointLineDist(v1, v2, clickPoint) <= 20) {
                 return edge;
             }
         }
@@ -257,29 +267,34 @@ class Graph {
     }
 
     expandEdge(edge) {
-        let middleVertex = new Vertex((edge.v1.x + edge.v2.x) / 2, (edge.v1.y + edge.v2.y) / 2);
-        let edge1 = new Edge(edge.v1, middleVertex);
-        let edge2 = new Edge(middleVertex, edge.v2);
+        let v1 = this.getVertexByNumber(edge.v1nr);
+        let v2 = this.getVertexByNumber(edge.v2nr);
+        let middleVertex = new Vertex((v1.x + v2.x) / 2, (v1.y + v2.y) / 2);
         this.addVertex(middleVertex);
+        let edge1 = new Edge(edge.v1nr, middleVertex.number);
+        let edge2 = new Edge(middleVertex.number, edge.v2nr);
         this.edges.push(edge1);
         this.edges.push(edge2);
         this.edges.splice(this.edges.indexOf(edge), 1);
     }
 
     contractEdge(edge) {
-        let middleVertex = new Vertex((edge.v1.x + edge.v2.x) / 2, (edge.v1.y + edge.v2.y) / 2);
-        let vertexLeft = edge.v1;
-        let vertexRight = edge.v2;
+        let v1 = this.getVertexByNumber(edge.v1nr);
+        let v2 = this.getVertexByNumber(edge.v2nr);
+        let vertexLeft = edge.v1nr;
+        let vertexRight = edge.v2nr;
+        let middleVertex = new Vertex((v1.x + v2.x) / 2, (v1.y + v2.y) / 2);
         $.each(this.edges, function (_index, edge) {
-            if (edge.v1 == vertexLeft || edge.v1 == vertexRight) {
-                edge.v1 = middleVertex;
+            if (edge.v1nr == vertexLeft || edge.v1nr == vertexRight) {
+                edge.v1nr = middleVertex.number;
             }
-            if (edge.v2 == vertexLeft || edge.v2 == vertexRight) {
-                edge.v2 = middleVertex;
+            if (edge.v2nr == vertexLeft || edge.v2nr == vertexRight) {
+                edge.v2nr = middleVertex.number;
             }
         });
-        this.deleteVertex(vertexLeft);
-        this.deleteVertex(vertexRight);
+        this.deleteVertex(v1);
+        this.deleteVertex(v2);
+        this.deleteEdge(edge);
         this.addVertex(middleVertex);
     }
 
@@ -288,7 +303,7 @@ class Graph {
         let incidentEdges = [];
         for (let i = 0; i < this.edges.length; i++) {
             let edge = this.edges[i];
-            if (edge.v1.eq(vertex) || edge.v2.eq(vertex)) {
+            if (edge.v1nr == vertex.number || edge.v2nr == vertex.number) {
                 incidentEdges.push(edge);
             }
         }
@@ -302,14 +317,15 @@ class Graph {
     // Returns an array of all vertices connected to vertex, in clockwise embedding order
     getAllNeighbours(vertex) {
         let neighbours = [];
-        $.each(this.getIncidentEdges(vertex), function (_index, edge) {
-            if (edge.v1.eq(vertex)) {
-                neighbours.push(edge.v2);
+        for (let i = 0; i < this.getIncidentEdges(vertex).length; i++) {
+            let edge = this.getIncidentEdges(vertex)[i];
+            if (edge.v1nr == vertex.number) {
+                neighbours.push(this.getVertexByNumber(edge.v2nr));
             }
-            if (edge.v2.eq(vertex)) {
-                neighbours.push(edge.v1);
+            if (edge.v2nr == vertex.number) {
+                neighbours.push(this.getVertexByNumber(edge.v1nr));
             }
-        });
+        }
         //console.log("getAllNeighbours: " + JSON.stringify(sortClockwise(vertex, neighbours)));
 
         return sortClockwise(vertex, neighbours);
@@ -343,7 +359,7 @@ class Graph {
         let loops = [];
         for (let i = 0; i < this.edges.length; i++) {
             let edge = this.edges[i];
-            if (edge.v1.eq(edge.v2)) {
+            if (edge.v1nr == edge.v2nr) {
                 loops.push(edge);
             }
         }
@@ -355,7 +371,11 @@ class Graph {
             let edge = this.edges[i];
             for (let j = i + 1; j < this.edges.length; j++) {
                 let other = this.edges[j];
-                if (doIntersect(edge.v1, edge.v2, other.v1, other.v2)) {
+                let v1 = this.getVertexByNumber(edge.v1nr);
+                let v2 = this.getVertexByNumber(edge.v2nr);
+                let otherv1 = this.getVertexByNumber(other.v1nr);
+                let otherv2 = this.getVertexByNumber(other.v2nr);
+                if (doIntersect(v1, v2, otherv1, otherv2)) {
                     console.log("isPlanarEmbedded: " + edge.print() + " and " + other.print() + " intersect");
                     return false;
                 }
@@ -389,10 +409,31 @@ class Graph {
         for (let i = 0; i < allFacets.length; i++) {
             let facet = allFacets[i];
             if (facet.length != 3) {
+                console.log('Facet ' + printArr(facet) + ' is not a triangle');
                 isTriangulated = false;
             }
         }
         return isTriangulated;
+    }
+
+    getVertexByNumber(number) {
+        for (let i = 0; i < this.vertices.length; i++) {
+            let vertex = this.vertices[i];
+            if (vertex.number == number) {
+                return vertex;
+            }
+        }
+        return null;
+    }
+
+    getVertexIdByNumber(number) {
+        for (let i = 0; i < this.vertices.length; i++) {
+            let vertex = this.vertices[i];
+            if (vertex.number == number) {
+                return i;
+            }
+        }
+        return -1;
     }
 }
 

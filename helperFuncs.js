@@ -80,6 +80,14 @@ function breadthFirstSearchTree(vertex) {
     return layers;
 }
 
+class StatusEdge {
+    constructor(edge, rightVisited, leftVisited) {
+        this.edge = edge;
+        this.rightVisited = rightVisited;
+        this.leftVisited = leftVisited;
+    }
+}
+
 // Returns an array of facet walks
 // Requires: graph is planar embedded, only one connected component
 // TODO Handle one degree vertices
@@ -89,38 +97,38 @@ function getAllFacets() {
     let statusEdges = [];
     $.each(graph.edges, function (_index, edge) {
         // Status edges are [edge, rightVisited, leftVisited]
-        statusEdges.push([edge, false, false]);
+        statusEdges.push(new StatusEdge(edge, false, false));
     });
     let facets = [];
     $.each(graph.edges, function (_index, edge) {
         let statusEdge = statusEdges[statusEdgeIndex(statusEdges, edge)];
-        if (!statusEdge[1]) {
+        if (!statusEdge.rightVisited) {
             console.log('right facet');
             let rightFacet = facetWalk(edge, true, statusEdges);
             facets.push(rightFacet);
             $.each(rightFacet, function (_index, edge) {
                 let edgeIndex = statusEdgeIndex(statusEdges, edge);
-                if (statusEdges[edgeIndex][0].v1 == edge.v1) {
-                    statusEdges[edgeIndex][1] = true;
+                if (statusEdges[edgeIndex].edge.v1nr == edge.v1nr) {
+                    statusEdges[edgeIndex].rightVisited = true;
                     console.log("r");
                 } else {
-                    statusEdges[edgeIndex][2] = true;
+                    statusEdges[edgeIndex].leftVisited = true;
                     console.log("l");
                 }
             });
         }
         statusEdge = statusEdges[statusEdgeIndex(statusEdges, edge)];
-        if (!statusEdge[2]) {
+        if (!statusEdge.leftVisited) {
             console.log('left facet');
             let leftFacet = facetWalk(edge, false, statusEdges);
             facets.push(leftFacet);
             $.each(leftFacet, function (_index, edge) {
                 let edgeIndex = statusEdgeIndex(statusEdges, edge);
-                if (statusEdges[edgeIndex][0].v1 == edge.v1) {
-                    statusEdges[edgeIndex][2] = true;
+                if (statusEdges[edgeIndex].edge.v1nr == edge.v1nr) {
+                    statusEdges[edgeIndex].leftVisited = true;
                     console.log("l");
                 } else {
-                    statusEdges[edgeIndex][1] = true;
+                    statusEdges[edgeIndex].rightVisited = true;
                     console.log("r");
                 }
             });
@@ -140,31 +148,45 @@ function getAllFacets() {
 // Follow a facet from a vertex back to itself, return edges on facet
 function facetWalk(edge, rightDir, statusEdges) {
     let facet = [];
-    let prevVertex = edge.v1;
-    let currentVertex = edge.v2;
+    let prevVertex = graph.getVertexByNumber(edge.v1nr);
+    let currentVertex = graph.getVertexByNumber(edge.v2nr);
     let statusEdgeVisited = false;
     while (!statusEdgeVisited) {
         let neighbours = graph.getAllNeighbours(currentVertex);
         let nextVertex = nextVertexAfter(neighbours, prevVertex, rightDir);
 
-        let newEdge = new Edge(currentVertex, nextVertex);
+        let newEdge = new Edge(currentVertex.number, nextVertex.number);
         let edgeIndex = statusEdgeIndex(statusEdges, newEdge);
 
-        let sameDirIndex = rightDir ? 1 : 2;
-        let oppDirIndex = rightDir ? 2 : 1;
-        if (statusEdges[edgeIndex][0].v1 == newEdge.v1) {
-            statusEdgeVisited = statusEdges[edgeIndex][sameDirIndex];
+        if (rightDir) {
+            if (statusEdges[edgeIndex].edge.v1nr == newEdge.v1nr) {
+                statusEdgeVisited = statusEdges[edgeIndex].rightVisited;
+            } else {
+                statusEdgeVisited = statusEdges[edgeIndex].leftVisited;
+            }
         } else {
-            statusEdgeVisited = statusEdges[edgeIndex][oppDirIndex];
+            if (statusEdges[edgeIndex].edge.v1nr == newEdge.v1nr) {
+                statusEdgeVisited = statusEdges[edgeIndex].leftVisited;
+            } else {
+                statusEdgeVisited = statusEdges[edgeIndex].rightVisited;
+            }
         }
 
         if (!statusEdgeVisited) {
             facet.push(newEdge);
 
-            if (statusEdges[edgeIndex][0].v1 == newEdge.v1) {
-                statusEdges[edgeIndex][sameDirIndex] = true;
+            if (rightDir) {
+                if (statusEdges[edgeIndex].edge.v1nr == newEdge.v1nr) {
+                    statusEdges[edgeIndex].rightVisited = true;
+                } else {
+                    statusEdges[edgeIndex].leftVisited = true;
+                }
             } else {
-                statusEdges[edgeIndex][oppDirIndex] = true;
+                if (statusEdges[edgeIndex].edge.v1nr == newEdge.v1nr) {
+                    statusEdges[edgeIndex].leftVisited = true;
+                } else {
+                    statusEdges[edgeIndex].rightVisited = true;
+                }
             }
         }
 
@@ -174,14 +196,14 @@ function facetWalk(edge, rightDir, statusEdges) {
     return facet;
 }
 
-function getUniqueVerticesOnFacet(facet) {
+function getUniqueVerticeNrsOnFacet(facet) {
     let verticesOnFacet = [];
     $.each(facet, function (_index, edge) {
-        if (eqIndexOf(verticesOnFacet, edge.v1) == -1) {
-            verticesOnFacet.push(edge.v1);
+        if (verticesOnFacet.indexOf(edge.v1nr) == -1) {
+            verticesOnFacet.push(edge.v1nr);
         }
-        if (eqIndexOf(verticesOnFacet, edge.v2) == -1) {
-            verticesOnFacet.push(edge.v2);
+        if (verticesOnFacet.indexOf(edge.v2nr) == -1) {
+            verticesOnFacet.push(edge.v2nr);
         }
     });
     return verticesOnFacet;
@@ -201,7 +223,7 @@ function statusEdgeIndex(statusEdges, edge) {
     //console.log("looking for " + edge.print());
     for (var i = 0; i < statusEdges.length; i++) {
         //console.log("statusEdge " + statusEdges[i][0].v1.number + " " + statusEdges[i][0].v2.number);
-        if (statusEdges[i][0].eq(edge)) {
+        if (statusEdges[i].edge.eq(edge)) {
             //console.log("found se");
             return i;
         }
@@ -210,6 +232,12 @@ function statusEdgeIndex(statusEdges, edge) {
     return -1;
 }
 
+function safeArrDel(arr, elem) {
+    let index = arr.indexOf(elem);
+    if (index > -1) {
+        arr.splice(index, 1);
+    }
+}
 function safeArrEqDel(arr, elem, withId = false) {
     let index = eqIndexOf(arr, elem, withId);
     if (index > -1) {

@@ -21,17 +21,7 @@ function predefinedClick(param) {
         jsonGraph.edges = [];
         for (let i = 0; i < graph.edges.length; i++) {
             let edge = graph.edges[i];
-            let v1nr = -1;
-            let v2nr = -1;
-            for (let j = 0; j < graph.vertices.length; j++) {
-                if (graph.vertices[j].eq(edge.v1)) {
-                    v1nr = graph.vertices[j].number;
-                }
-                if (graph.vertices[j].eq(edge.v2)) {
-                    v2nr = graph.vertices[j].number;
-                }
-            }
-            jsonGraph.edges.push({ "v1nr": v1nr, "v2nr": v2nr });
+            jsonGraph.edges.push({ "v1nr": edge.v1nr, "v2nr": edge.v2nr });
         }
         window.alert(JSON.stringify(jsonGraph));
     } else if (param == PREDEFINEDS.FROM_JSON) {
@@ -78,12 +68,12 @@ function predefinedClick(param) {
         }
 
         for (let i = 0; i < nodes; i++) {
-            graph.addEdge(new Edge(graph.vertices[0], graph.vertices[i + 1]));
+            graph.addEdge(new Edge(graph.vertices[0].number, graph.vertices[i + 1].number));
             if (i < nodes - 1) {
-                graph.addEdge(new Edge(graph.vertices[i + 1], graph.vertices[i + 1 + 1]));
+                graph.addEdge(new Edge(graph.vertices[i + 1].number, graph.vertices[i + 1 + 1].number));
             }
         }
-        graph.addEdge(new Edge(graph.vertices[0 + 1], graph.vertices[nodes + 1 - 1]));
+        graph.addEdge(new Edge(graph.vertices[0 + 1].number, graph.vertices[nodes + 1 - 1].number));
         redrawAll();
     }
     // const Graph = '{"vertices":[{"x":318,"y":262.8000030517578,"nr":0},{"x":289,"y":160.8000030517578,"nr":1},{"x":315,"y":162.8000030517578,"nr":2},{"x":349,"y":168.8000030517578,"nr":3},{"x":370,"y":177.8000030517578,"nr":4},{"x":385,"y":200.8000030517578,"nr":5},{"x":398,"y":234.8000030517578,"nr":6},{"x":398,"y":257.8000030517578,"nr":7},{"x":389,"y":289.8000030517578,"nr":8},{"x":378,"y":310.8000030517578,"nr":9},{"x":350,"y":330.8000030517578,"nr":10},{"x":317,"y":335.8000030517578,"nr":11},{"x":291,"y":334.8000030517578,"nr":12},{"x":274,"y":330.8000030517578,"nr":13},{"x":258,"y":314.8000030517578,"nr":14},{"x":238,"y":284.8000030517578,"nr":15},{"x":230,"y":263.8000030517578,"nr":16},{"x":226,"y":237.8000030517578,"nr":17},{"x":227,"y":212.8000030517578,"nr":18},{"x":233,"y":186.8000030517578,"nr":19},{"x":254,"y":169.8000030517578,"nr":20},{"x":312,"y":22.800003051757812,"nr":21},{"x":34,"y":494.8000030517578,"nr":22},{"x":658,"y":505.8000030517578,"nr":23}],"edges":[{"v1nr":22,"v2nr":23},{"v1nr":23,"v2nr":21},{"v1nr":21,"v2nr":22},{"v1nr":14,"v2nr":22},{"v1nr":14,"v2nr":13},{"v1nr":13,"v2nr":12},{"v1nr":12,"v2nr":11},{"v1nr":11,"v2nr":10},{"v1nr":10,"v2nr":9},{"v1nr":9,"v2nr":8},{"v1nr":8,"v2nr":7},{"v1nr":7,"v2nr":6},{"v1nr":6,"v2nr":5},{"v1nr":5,"v2nr":4},{"v1nr":4,"v2nr":3},{"v1nr":3,"v2nr":2},{"v1nr":2,"v2nr":1},{"v1nr":1,"v2nr":20},{"v1nr":20,"v2nr":19},{"v1nr":19,"v2nr":18},{"v1nr":18,"v2nr":17},{"v1nr":17,"v2nr":16},{"v1nr":16,"v2nr":15},{"v1nr":15,"v2nr":14},{"v1nr":2,"v2nr":21},{"v1nr":9,"v2nr":23},{"v1nr":14,"v2nr":0},{"v1nr":0,"v2nr":13},{"v1nr":0,"v2nr":12},{"v1nr":0,"v2nr":11},{"v1nr":0,"v2nr":10},{"v1nr":0,"v2nr":9}]}';
@@ -137,7 +127,7 @@ function loadGraphFromJson(graphString) {
                 }
             }
         }
-        graph.addEdge(new Edge(graph.vertices[v1idx], graph.vertices[v2idx]));
+        graph.addEdge(new Edge(graph.vertices[v1idx].number, graph.vertices[v2idx].number));
     }
     redrawAll();
 }
