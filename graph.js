@@ -34,7 +34,6 @@ class Vertex {
         let metrics = ctx.measureText(this.number);
         let txtWidth = metrics.width;
         let txtHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
-        console.log('txtWidth ' + txtWidth);
         ctx.fillText(this.number, this.x - txtWidth / 2, this.y + txtHeight / 2);
         ctx.closePath();
 

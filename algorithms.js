@@ -331,14 +331,17 @@ class PlanarSeparatorAlgo extends Algorithm {
         await super.pause("Draw layers", "First layer on top, other layers below");
         this.drawLayerStructure(layers);
 
-        await super.pause("Find layer my", "Find layer my so that all layers below together have <= n/2 vertices, and together with my have > n/2 vertices");
+        const n = graph.vertices.length;
+        await super.pause("Find layer my",
+            "Find layer my so that all layers below together have <= n/2="
+            + (n / 2) + " vertices, and together with my have > n/2 vertices");
         let layerMyIdx = this.getLayerMy(layers);
         this.rectAroundLayer(layers, layerMyIdx, "green");
-            
-        await super.pause("Check if layer my is a separator", "Check if layer my has <= 4*sqrt(n) vertices");
-        const n = graph.vertices.length;
+
         const maxSeparatorSize = 4 * Math.sqrt(n);
-        console.log('layerMyIdx: ' + layerMyIdx + ' maxSeparatorSize: ' + maxSeparatorSize + ' mySize ' + layers[layerMyIdx].length);
+        await super.pause("Check if layer my is a separator",
+            "Check if layer my has <= 4*sqrt(n) vertices."
+            + " In this case: |my|=" + layers[layerMyIdx].length + " <= 4*sqrt(n)=" + +maxSeparatorSize.toFixed(1) + "?");
         if (layers[layerMyIdx].length <= maxSeparatorSize) {
             this.rectAroundLayer(layers, layerMyIdx, "red");
             alert('Layer ' + layerMyIdx + ' is a separator');
@@ -346,9 +349,10 @@ class PlanarSeparatorAlgo extends Algorithm {
             super.onFinished();
             return;
         }
-        console.log('Layer my (' + layerMyIdx + ') is not a separator');
 
-        await super.pause("Find layers m and M", "Layer my was not a separator. Now find layers m before and M after my with |m|, |M| < sqrt(n)");
+        await super.pause("Find layers m and M",
+            "Layer my was not a separator."
+            + " Now find layers m before and M after my with |m|, |M| < sqrt(n)=" + +Math.sqrt(n).toFixed(1));
         let layersMmIndexes = this.getLayersMm(layers, layerMyIdx);
         let m_idx = layersMmIndexes[0];
         let M_idx = layersMmIndexes[1];
@@ -358,21 +362,23 @@ class PlanarSeparatorAlgo extends Algorithm {
         if (M_idx != -1) {
             this.rectAroundLayer(layers, M_idx, "blue");
         }
-
-        await super.pause("Check if m u M is a separator", "Check if A2 (all layers between m and M) has <= 2/3 * n vertices");
         let a_s = this.getAs(layers, m_idx, M_idx);
-        let [a1,a2,a3] = a_s;
+        let [a1, a2, a3] = a_s;
         let a2_len = 0;
         for (var i = 0; i < a2.length; i++) {
             a2_len += layers[a2[i]].length;
         }
-        // console.log('a2_len: ' + a2_len + ' 2/3 * n: ' + (2 / 3) * n);
 
         if (a2_len <= (2 / 3) * n) {
             // Case 1
             console.log('Case 1');
+            await super.pause("Check if m u M is a separator",
+                "Check if A2 (all layers between m and M) has <= 2/3 * n vertices."
+                + " In this case: |A2|=" + a2_len + " <= 2/3 * n=" + +((2 / 3) * n).toFixed(1) 
+                + " -> Go to Case 1");
             // m u M is a separator
-            await super.pause("Case 1: m u M is a separator", "S = m u M, V1 = max(|A1|, |A2|, |A3|), V2=V \ {S,V1}");
+            await super.pause("Case 1: m u M is a separator",
+                "S = m u M, V1 = max(|A1|, |A2|, |A3|), V2=V \ {S,V1}");
             let a_lengths = [a1.length, a2.length, a3.length];
             let max_a_idx = a_lengths.indexOf(Math.max(...a_lengths));
             let v1 = a_s[max_a_idx];
@@ -382,7 +388,7 @@ class PlanarSeparatorAlgo extends Algorithm {
                     v2.push(i);
                 }
             }
-            alert('m u M is a separator, V1=layers(' + v1 + '), V2=layers('+ v2 + ')');
+            alert('m u M is a separator, V1=layers(' + v1 + '), V2=layers(' + v2 + ')');
             if (m_idx != -1) {
                 this.rectAroundLayer(layers, m_idx, "red");
             }
@@ -391,7 +397,11 @@ class PlanarSeparatorAlgo extends Algorithm {
             }
         } else {
             // Case 2
-            console.log('Case 2');
+            await super.pause("Check if m u M is a separator",
+                "Check if A2 (all layers between m and M) has <= 2/3 * n vertices."
+                + " In this case: |A2|=" + a2_len + " > 2/3 * n=" + +((2 / 3) * n).toFixed(1) 
+                + " -> Go to Case 2");
+            alert('Case 2: Not implemented yet');
         }
 
         super.onFinished();
