@@ -152,25 +152,25 @@ class TriangulationAlgo extends Algorithm {
 
         $.each(allFacets, function (index, facet) {
             if (facet.length > 3) {
-                var verticeNrsOnFacet = [];
+                var verticesOnFacet = [];
                 $.each(facet, function (_index, edge) {
-                    verticeNrsOnFacet.push(edge.v2nr);
+                    verticesOnFacet.push(edge.v2nr);
                 });
-                let prevEdge = new Edge(verticeNrsOnFacet[0], verticeNrsOnFacet[1]);
-                for (var i = 2; i < verticeNrsOnFacet.length - 1; i++) {
-                    var edge = new Edge(verticeNrsOnFacet[0], verticeNrsOnFacet[i], index + "_" + i);
+                let prevEdge = new Edge(verticesOnFacet[0], verticesOnFacet[1]);
+                for (var i = 2; i < verticesOnFacet.length - 1; i++) {
+                    var edge = new Edge(verticesOnFacet[0], verticesOnFacet[i], index + "_" + i);
                     graph.addEdge(edge);
                     console.log("added edge " + edge.print());
                     var newFacet = [
-                        edge, new Edge(verticeNrsOnFacet[i], verticeNrsOnFacet[i - 1]),
+                        edge, new Edge(verticesOnFacet[i], verticesOnFacet[i - 1]),
                         prevEdge];
                     newFacets.push(newFacet);
                     prevEdge = edge;
                 }
                 var lastFacet = [
                     prevEdge,
-                    new Edge(verticeNrsOnFacet[verticeNrsOnFacet.length - 2], verticeNrsOnFacet[verticeNrsOnFacet.length - 1]),
-                    new Edge(verticeNrsOnFacet[verticeNrsOnFacet.length - 1], verticeNrsOnFacet[0])];
+                    new Edge(verticesOnFacet[verticesOnFacet.length - 2], verticesOnFacet[verticesOnFacet.length - 1]),
+                    new Edge(verticesOnFacet[verticesOnFacet.length - 1], verticesOnFacet[0])];
                 newFacets.push(lastFacet);
                 newFacets.splice(newFacets.indexOf(facet), 1);
             }

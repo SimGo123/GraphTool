@@ -225,7 +225,6 @@ class Graph {
     }
 
     draw(selectedVertex, selectedEdge) {
-        console.log("drawGraph");
         let loops = this.getLoops();
         for (let i = 0; i < loops.length; i++) {
             let loop = loops[i];
