@@ -48,6 +48,7 @@ class Algorithm {
     constructor() {
         this.shouldContinue = false;
         this.runComplete = false;
+        this.isSubAlgo = false; // Set to true if this algo is run as part of another algo
         this.numSteps = 0;
         this.currentStep = 0;
     }
@@ -80,9 +81,11 @@ class Algorithm {
     }
 
     onFinished() {
-        $("#algoControlPanel").addClass("invisible");
-        // $("#stepButton").removeClass("disabled");
-        // $("#runCompleteButton").removeClass("disabled");
+        if (!this.isSubAlgo) {
+            $("#algoControlPanel").addClass("invisible");
+            // $("#stepButton").removeClass("disabled");
+            // $("#runCompleteButton").removeClass("disabled");
+        }
     }
 }
 
@@ -381,7 +384,7 @@ class PlanarSeparatorAlgo extends Algorithm {
             console.log('Case 1');
             await super.pause("Check if m u M is a separator",
                 "Check if A2 (all layers between m and M) has <= 2/3 * n vertices."
-                + " In this case: |A2|=" + a2_len + " <= 2/3 * n=" + +((2 / 3) * n).toFixed(1) 
+                + " In this case: |A2|=" + a2_len + " <= 2/3 * n=" + +((2 / 3) * n).toFixed(1)
                 + " -> Go to Case 1");
             // m u M is a separator
             await super.pause("Case 1: m u M is a separator",
@@ -406,7 +409,7 @@ class PlanarSeparatorAlgo extends Algorithm {
             // Case 2
             await super.pause("Check if m u M is a separator",
                 "Check if A2 (all layers between m and M) has <= 2/3 * n vertices."
-                + " In this case: |A2|=" + a2_len + " > 2/3 * n=" + +((2 / 3) * n).toFixed(1) 
+                + " In this case: |A2|=" + a2_len + " > 2/3 * n=" + +((2 / 3) * n).toFixed(1)
                 + " -> Go to Case 2");
             alert('Case 2: Not implemented yet');
         }
@@ -564,6 +567,54 @@ class MixedMaxCutAlgo extends Algorithm {
             return;
         }
 
+        await super.pause("Triangulate the graph", "Triangulate the graph, new edges get weight 0");
+        let triangulationAlgo = new TriangulationAlgo();
+        triangulationAlgo.shouldContinue = true;
+        triangulationAlgo.runComplete = true;
+        triangulationAlgo.isSubAlgo = true;
+        await triangulationAlgo.run();
+        for (var i = 0; i < graph.edges.length; i++) {
+            if (graph.edges[i].weight == null) {
+                graph.edges[i].weight = 0;
+            }
+        }
+        redrawAll();
+
+        await super.pause("Calculate dual graph", "Build the dual graph from the current graph, keep edges");
+        let dualGraph = graph.getDualGraph();
+        graph = dualGraph;
+        redrawAll();
+
+        await super.pause("Out of one vertex, make three", "Replace every vertex by three interconnected (w=0) vertices");
+        let newVertices = [];
+        let newEdges = [];
+        for (var i = 0; i < graph.vertices.length; i++) {
+            let vertex = graph.vertices[i];
+            let dist = 40;
+            let v1 = new Vertex(vertex.x + dist, vertex.y);
+            let v2 = new Vertex(vertex.x, vertex.y + dist);
+            let v3 = new Vertex(vertex.x + dist, vertex.y + dist);
+            let currNewVertices = [v1, v2, v3];
+            newVertices.push(v1);
+            newVertices.push(v2);
+            newVertices.push(v3);
+            newEdges.push(new Edge(v1.number, v2.number, 0));
+            newEdges.push(new Edge(v2.number, v3.number, 0));
+            newEdges.push(new Edge(v1.number, v3.number, 0));
+            let edges = graph.getIncidentEdges(vertex);
+            for (let j = 0; j < edges.length; j++) {
+                let edge = edges[j];
+                if (edge.v1nr == vertex.number) {
+                    edge.v1nr = currNewVertices[j].number;
+                } else {
+                    edge.v2nr = currNewVertices[j].number;
+                }
+            }
+        }
+        graph.vertices = newVertices;
+        graph.edges = graph.edges.concat(newEdges);
+        redrawAll();
+
         super.onFinished();
     }
 
@@ -571,9 +622,6 @@ class MixedMaxCutAlgo extends Algorithm {
         let fulfilled = true;
         if (!graph.isPlanarEmbedded()) {
             alert("Graph is not planar embedded!");
-            fulfilled = false;
-        } else if (!graph.isTriangulated()) {
-            alert("Graph is not triangulated!");
             fulfilled = false;
         }
         $.each(graph.edges, function (_index, edge) {

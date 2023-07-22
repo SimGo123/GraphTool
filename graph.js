@@ -67,9 +67,9 @@ class Edge {
         this.color = "gray";
     }
 
-    draw(selectedEdge, multiEdge = false, loop = false, occurences = 1) {
-        let v1 = graph.getVertexByNumber(this.v1nr);
-        let v2 = graph.getVertexByNumber(this.v2nr);
+    draw(pGraph, selectedEdge, multiEdge = false, loop = false, occurences = 1) {
+        let v1 = pGraph.getVertexByNumber(this.v1nr);
+        let v2 = pGraph.getVertexByNumber(this.v2nr);
         let dx = v2.x - v1.x;
         let dy = v2.y - v1.y;
         var ctx = fgCanvas.getContext("2d");
@@ -236,7 +236,7 @@ class Graph {
                     occurrences++;
                 }
             });
-            loop.draw(selectedEdge, false, true, occurrences);
+            loop.draw(this, selectedEdge, false, true, occurrences);
         }
         let multiEdges = this.getMultiEdges();
         for (let i = 0; i < multiEdges.length; i++) {
@@ -251,7 +251,7 @@ class Graph {
                     occurrences++;
                 }
             });
-            multiEdge.draw(selectedEdge, true, false, occurrences);
+            multiEdge.draw(this, selectedEdge, true, false, occurrences);
         }
         let otherEdgesToDraw = [];
         $.each(this.edges, function (_i, edge) {
@@ -259,9 +259,10 @@ class Graph {
                 otherEdgesToDraw.push(edge);
             }
         });
-        $.each(otherEdgesToDraw, function (_i, edge) {
-            edge.draw(selectedEdge);
-        });
+        for (let i = 0; i < otherEdgesToDraw.length; i++) {
+            let edge = otherEdgesToDraw[i];
+            edge.draw(this, selectedEdge);
+        }
         for (let i = 0; i < this.vertices.length; i++) {
             this.vertices[i].draw(selectedVertex);
         }
@@ -415,6 +416,47 @@ class Graph {
             }
         }
         return isTriangulated;
+    }
+
+    getDualGraph() {
+        let dualGraph = new Graph();
+        let allFacets = getAllFacets();
+        let vertexFacets = [];
+        for (let i = 0; i < allFacets.length; i++) {
+            let facet = allFacets[i];
+            let facetCenter = getFacetCenter(facet);
+            let vertex = new Vertex(facetCenter.x, facetCenter.y);
+            dualGraph.addVertex(vertex);
+            vertexFacets.push(new VertexFacet(vertex.number, facet));
+        }
+        $.each(graph.edges, function (_index, edge) {
+            let v1nr = -1;
+            let v2nr = -1;
+            for (let i = 0; i < allFacets.length; i++) {
+                if (eqIndexOf(allFacets[i], edge) != -1) {
+                    for (let j = i + 1; j < allFacets.length; j++) {
+                        if (eqIndexOf(allFacets[j], edge) != -1) {
+                            $.each(vertexFacets, function (_index, vFac) {
+                                if (allFacets[i] == vFac.facet) {
+                                    v1nr = vFac.vertexNumber;
+                                }
+                                if (allFacets[j] == vFac.facet) {
+                                    v2nr = vFac.vertexNumber;
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+            if (v1nr == -1 || v2nr == -1) {
+                console.log("Error: didn't find adjacent facets of edge " + edge.print());
+                console.log('v1 ' + v1nr + ' v2 ' + v2nr);
+            } else {
+                // Keep weights in dual graph
+                dualGraph.addEdge(new Edge(v1nr, v2nr, null, edge.weight));
+            }
+        });
+        return dualGraph;
     }
 
     getVertexByNumber(number) {

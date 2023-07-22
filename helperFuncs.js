@@ -209,6 +209,19 @@ function getUniqueVerticeNrsOnFacet(facet) {
     return verticesOnFacet;
 }
 
+function getFacetCenter(facet) {
+    let facetCenter = new Point(0, 0);
+    let verticesOnFacet = getUniqueVerticeNrsOnFacet(facet);
+    $.each(verticesOnFacet, function (_index, vertexNr) {
+        let vertex = graph.getVertexByNumber(vertexNr);
+        facetCenter.x += vertex.x;
+        facetCenter.y += vertex.y;
+    });
+    facetCenter.x /= verticesOnFacet.length;
+    facetCenter.y /= verticesOnFacet.length;
+    return facetCenter;
+}
+
 function eqIndexOf(array, element, withId = false) {
     for (var i = 0; i < array.length; i++) {
         if (array[i].eq(element, withId)) {
@@ -274,4 +287,11 @@ function getAngle(vertex, neighbour) {
 function changeVectorLength(vector, length) {
     let vectorLength = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
     return new Point(vector.x * length / vectorLength, vector.y * length / vectorLength);
+}
+
+class VertexFacet {
+    constructor(vertexNumber, facet) {
+        this.vertexNumber = vertexNumber;
+        this.facet = facet;
+    }
 }
