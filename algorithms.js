@@ -586,6 +586,53 @@ class MixedMaxCutAlgo extends Algorithm {
         redrawAll();
 
         await super.pause("Out of one vertex, make three", "Replace every vertex by three interconnected (w=0) vertices");
+        this.oneVertexToThree();
+
+        await super.pause("Calculate weight min. 1-factor",
+            "C in the original graph is a cut <-> C* in the dual graph is an even set"
+            + "C' in current graph is weight max. 2-factor <-> E'-C' is weight min. 1-factor");
+        
+        await super.pause("Calculate weight min. 1-factor",
+            "First, w'(e) = -w(e), so that we can calc. a weight max. 1-factor");
+        for (var i = 0; i < graph.edges.length; i++) {
+            graph.edges[i].weight = -graph.edges[i].weight;
+        }
+        redrawAll();
+
+        const W = graph.vertices.length * Math.max(...graph.edges.map(e => Math.abs(e.weight))) + 1;
+        await super.pause("Calculate weight min. 1-factor",
+            "Next, w''(e) = W + w'(e), with W > |V| * max(|w(e)|) = " + (W - 1)
+            + ". This leads to every matching having the max. amount of edges, therefore being perfect");
+        for (var i = 0; i < graph.edges.length; i++) {
+            graph.edges[i].weight += W;
+        }
+        redrawAll();
+
+        await super.pause("Calculate weight min. 1-factor",
+            "Run max matching algorithm to get a weight max. 1-factor for w'' in O(n^(3/2))");
+        // TODO Run max matching algorithm
+        alert("Max matching not implemented yet");
+
+        super.onFinished();
+    }
+
+    preconditionsCheck() {
+        let fulfilled = true;
+        if (!graph.isPlanarEmbedded()) {
+            alert("Graph is not planar embedded!");
+            fulfilled = false;
+        }
+        $.each(graph.edges, function (_index, edge) {
+            if (edge.weight == null) {
+                alert("can't calculate mixed max cut, " + edge.print() + " has no weight!");
+                fulfilled = false;
+                return false;
+            }
+        });
+        return fulfilled;
+    }
+
+    oneVertexToThree() {
         let newVertices = [];
         let newEdges = [];
         for (var i = 0; i < graph.vertices.length; i++) {
@@ -614,23 +661,5 @@ class MixedMaxCutAlgo extends Algorithm {
         graph.vertices = newVertices;
         graph.edges = graph.edges.concat(newEdges);
         redrawAll();
-
-        super.onFinished();
-    }
-
-    preconditionsCheck() {
-        let fulfilled = true;
-        if (!graph.isPlanarEmbedded()) {
-            alert("Graph is not planar embedded!");
-            fulfilled = false;
-        }
-        $.each(graph.edges, function (_index, edge) {
-            if (edge.weight == null) {
-                alert("can't calculate mixed max cut, " + edge.print() + " has no weight!");
-                fulfilled = false;
-                return false;
-            }
-        });
-        return fulfilled;
     }
 }
