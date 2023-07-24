@@ -324,30 +324,48 @@ class TriangulationAlgo extends Algorithm {
     }
 }
 
+// TODO: Transform graph back to original
 class PlanarSeparatorAlgo extends Algorithm {
     async run() {
         super.numSteps = "X";
 
         if (!this.preconditionsCheck()) {
             super.onFinished();
-            return;
+            return null;
         }
 
+        await super.pause("Triangulate the graph", "Triangulate the graph");
+        let triangulationAlgo = new TriangulationAlgo();
+        triangulationAlgo.shouldContinue = true;
+        triangulationAlgo.runComplete = true;
+        triangulationAlgo.isSubAlgo = true;
+        await triangulationAlgo.run();
+
         await super.pause("Construct breadth-first search tree", "Construct tree");
-        let startVertexNr = window.prompt("Enter start vertex number", "0");
         let startVertex = graph.vertices[0];
-        $.each(graph.vertices, function (_index, vertex) {
-            if (vertex.number == startVertexNr) {
-                startVertex = vertex;
-                return;
-            }
-        });
+        if (!this.isSubAlgo) {
+            let startVertexNr = window.prompt("Enter start vertex number", "0");
+            $.each(graph.vertices, function (_index, vertex) {
+                if (vertex.number == startVertexNr) {
+                    startVertex = vertex;
+                    return false;
+                }
+            });
+        }
         console.log('start vertex: ' + startVertex.print());
         let layers = breadthFirstSearchTree(startVertex);
         this.showBFSTree(layers);
 
         await super.pause("Draw layers", "First layer on top, other layers below");
         this.drawLayerStructure(layers);
+
+        for (var i = 0; i < layers.length; i++) {
+            let vertexLayer = [];
+            for (var j = 0; j < layers[i].length; j++) {
+                vertexLayer.push(layers[i][j].vertex);
+            }
+            layers[i] = vertexLayer;
+        }
 
         const n = graph.vertices.length;
         await super.pause("Find layer my",
@@ -364,8 +382,19 @@ class PlanarSeparatorAlgo extends Algorithm {
             this.rectAroundLayer(layers, layerMyIdx, "red");
             alert('Layer ' + layerMyIdx + ' is a separator');
 
+            let s_vertices = layers[layerMyIdx];
+            let v1_vertices = [];
+            let v2_vertices = [];
+            for (var i = 0; i < layers.length; i++) {
+                if (i < layerMyIdx) {
+                    v1_vertices = v1_vertices.concat(layers[i]);
+                } else if (i > layerMyIdx) {
+                    v2_vertices = v2_vertices.concat(layers[i]);
+                }
+            }
+
             super.onFinished();
-            return;
+            return [v1_vertices, s_vertices, v2_vertices];
         }
 
         await super.pause("Find layers m and M",
@@ -413,6 +442,26 @@ class PlanarSeparatorAlgo extends Algorithm {
             if (M_idx != -1) {
                 this.rectAroundLayer(layers, M_idx, "red");
             }
+
+            let v1_vertices = [];
+            for (var i = 0; i < v1.length; i++) {
+                v1_vertices = v1_vertices.concat(layers[v1[i]]);
+            }
+            let v2_vertices = [];
+            for (var i = 0; i < v2.length; i++) {
+                v2_vertices = v2_vertices.concat(layers[v2[i]]);
+            }
+            let s_vertices = [];
+            if (m_idx != -1) {
+                s_vertices = s_vertices.concat(layers[m_idx]);
+            }
+            if (M_idx != -1) {
+                s_vertices = s_vertices.concat(layers[M_idx]);
+            }
+
+            super.onFinished();
+
+            return [v1_vertices, s_vertices, v2_vertices];
         } else {
             // Case 2
             await super.pause("Check if m u M is a separator",
@@ -420,18 +469,16 @@ class PlanarSeparatorAlgo extends Algorithm {
                 + " In this case: |A2|=" + a2_len + " > 2/3 * n=" + +((2 / 3) * n).toFixed(1)
                 + " -> Go to Case 2");
             alert('Case 2: Not implemented yet');
-        }
 
-        super.onFinished();
+            super.onFinished();
+            return null;
+        }
     }
 
     preconditionsCheck() {
         let fulfilled = true;
         if (!graph.isPlanarEmbedded()) {
             alert("Graph is not planar embedded!");
-            fulfilled = false;
-        } else if (!graph.isTriangulated()) {
-            alert("Graph is not triangulated!");
             fulfilled = false;
         }
         return fulfilled;
@@ -555,9 +602,9 @@ class PlanarSeparatorAlgo extends Algorithm {
         ctx.strokeStyle = color;
         ctx.lineWidth = 5;
         ctx.beginPath();
-        let layerY = layers[layerIndex][0].vertex.y;
-        let layerMinX = layers[layerIndex][0].vertex.x - 20;
-        let layerMaxX = layers[layerIndex][layers[layerIndex].length - 1].vertex.x + 20;
+        let layerY = layers[layerIndex][0].y;
+        let layerMinX = layers[layerIndex][0].x - 20;
+        let layerMaxX = layers[layerIndex][layers[layerIndex].length - 1].x + 20;
         let width = layerMaxX - layerMinX;
         let height = 40;
         ctx.rect(layerMinX, layerY - 20, width, height);
@@ -577,15 +624,33 @@ class WeightMaxMatchingAlgo extends Algorithm {
         }
 
         const N = graph.vertices.length;
-        await super.pause("Check if n <= 5", "If n <= 5, use brute force, else use algorithm");
+        await super.pause("Check if n <= 5", "If n <= 5, use brute force");
         if (N <= 5) {
             await super.pause("Brute force", "Brute force in O(1)");
-            this.bruteForce();
+            let maxWeightEdges = this.bruteForce();
+
+            super.onFinished();
+            return maxWeightEdges;
         }
+
+        await super.pause("Calculate planar separator", "Calculate planar separator");
+        let planarSeparatorAlgo = new PlanarSeparatorAlgo();
+        planarSeparatorAlgo.shouldContinue = true;
+        planarSeparatorAlgo.runComplete = true;
+        planarSeparatorAlgo.isSubAlgo = true;
+        let result = await planarSeparatorAlgo.run();
+        if (result == null) {
+            alert("No separator found, can't calculate weight max matching");
+            super.onFinished();
+            return;
+        }
+        console.log('result=' + result);
+        let [v1, separator, v2] = result;
+        console.log('v1=' + printArr(v1) + ' separator=' + printArr(separator) + ' v2=' + printArr(v2));
 
         super.onFinished();
     }
-    
+
     preconditionsCheck() {
         let fulfilled = true;
         if (!graph.isPlanarEmbedded()) {
@@ -644,7 +709,6 @@ class WeightMaxMatchingAlgo extends Algorithm {
 
             includeEdge = bfNextIter(includeEdge);
         }
-        console.log('mWes ' + maxWeightEdges.length);
         $.each(maxWeightEdges, function (_index, edge) {
             edge.color = "red";
         });
@@ -686,7 +750,7 @@ class MixedMaxCutAlgo extends Algorithm {
         await super.pause("Calculate weight min. 1-factor",
             "C in the original graph is a cut <-> C* in the dual graph is an even set"
             + "C' in current graph is weight max. 2-factor <-> E'-C' is weight min. 1-factor");
-        
+
         await super.pause("Calculate weight min. 1-factor",
             "First, w'(e) = -w(e), so that we can calc. a weight max. 1-factor");
         for (var i = 0; i < graph.edges.length; i++) {
