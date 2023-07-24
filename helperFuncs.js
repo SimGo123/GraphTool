@@ -303,6 +303,7 @@ function bfNextIter(array) {
     for (let i = 0; i < index; i++) {
         array[i] = false;
     }
+    return array;
 }
 
 class VertexFacet {

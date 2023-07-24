@@ -22,6 +22,20 @@ async function algorithmClick(param) {
         $("#runCompleteButton").removeClass("disabled");
         await algorithm.run();
         algorithm = null;
+    } else if (param == ALGORITHMS.WEIGHT_MAX_MATCHING) {
+        algorithm = new WeightMaxMatchingAlgo();
+        $("#algoControlPanel").removeClass("invisible");
+        $("#stepButton").removeClass("disabled");
+        $("#runCompleteButton").removeClass("disabled");
+        await algorithm.run();
+        algorithm = null;
+    } else if (param == ALGORITHMS.MIXED_MAX_CUT) {
+        algorithm = new MixedMaxCutAlgo();
+        $("#algoControlPanel").removeClass("invisible");
+        $("#stepButton").removeClass("disabled");
+        $("#runCompleteButton").removeClass("disabled");
+        await algorithm.run();
+        algorithm = null;
     }
 }
 
@@ -577,13 +591,10 @@ class WeightMaxMatchingAlgo extends Algorithm {
         if (!graph.isPlanarEmbedded()) {
             alert("Graph is not planar embedded!");
             fulfilled = false;
-        } else if (!graph.isTriangulated()) {
-            alert("Graph is not triangulated!");
-            fulfilled = false;
         }
         $.each(graph.edges, function (_index, edge) {
             if (edge.weight == null) {
-                alert("can't calculate mixed max cut, " + edge.print() + " has no weight!");
+                alert("can't calculate weight max matching, " + edge.print() + " has no weight!");
                 fulfilled = false;
                 return false;
             }
@@ -592,11 +603,53 @@ class WeightMaxMatchingAlgo extends Algorithm {
     }
 
     bruteForce() {
-        let start = [false, false, false, false, false];
-        while (start != null) {
-            console.log('start: ' + start);
-            start = bfNextIter(start);
+        let includeEdge = [];
+        for (var i = 0; i < graph.edges.length; i++) {
+            includeEdge.push(false);
         }
+        let maxWeight = 0;
+        let maxWeightEdges = [];
+        while (includeEdge != null) {
+            // Valid if no two edges to same vertex
+            let valid = true;
+            for (var i = 0; i < graph.edges.length; i++) {
+                if (includeEdge[i]) {
+                    let edge = graph.edges[i];
+                    let v1nr = edge.v1nr;
+                    let v2nr = edge.v2nr;
+                    for (var j = i + 1; j < graph.edges.length; j++) {
+                        if (includeEdge[j]) {
+                            let edge2 = graph.edges[j];
+                            if (edge2.v1nr == v1nr || edge2.v1nr == v2nr || edge2.v2nr == v1nr || edge2.v2nr == v2nr) {
+                                valid = false;
+                            }
+                        }
+                    }
+                }
+            }
+            if (valid) {
+                let weight = 0;
+                let edges = [];
+                for (var i = 0; i < graph.edges.length; i++) {
+                    if (includeEdge[i]) {
+                        weight += graph.edges[i].weight;
+                        edges.push(graph.edges[i]);
+                    }
+                }
+                if (weight > maxWeight) {
+                    maxWeight = weight;
+                    maxWeightEdges = edges;
+                }
+            }
+
+            includeEdge = bfNextIter(includeEdge);
+        }
+        console.log('mWes ' + maxWeightEdges.length);
+        $.each(maxWeightEdges, function (_index, edge) {
+            edge.color = "red";
+        });
+        redrawAll();
+        return maxWeightEdges;
     }
 }
 
