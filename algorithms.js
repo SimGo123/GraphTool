@@ -324,8 +324,10 @@ class TriangulationAlgo extends Algorithm {
     }
 }
 
-// TODO: Transform graph back to original
 class PlanarSeparatorAlgo extends Algorithm {
+
+    originalGraph = null;
+
     async run() {
         super.numSteps = "X";
 
@@ -333,6 +335,8 @@ class PlanarSeparatorAlgo extends Algorithm {
             super.onFinished();
             return null;
         }
+
+        this.originalGraph = graph.getCopy();
 
         await super.pause("Triangulate the graph", "Triangulate the graph");
         let triangulationAlgo = new TriangulationAlgo();
@@ -382,19 +386,17 @@ class PlanarSeparatorAlgo extends Algorithm {
             this.rectAroundLayer(layers, layerMyIdx, "red");
             alert('Layer ' + layerMyIdx + ' is a separator');
 
-            let s_vertices = layers[layerMyIdx];
-            let v1_vertices = [];
-            let v2_vertices = [];
+            let v1 = [];
+            let v2 = [];
             for (var i = 0; i < layers.length; i++) {
                 if (i < layerMyIdx) {
-                    v1_vertices = v1_vertices.concat(layers[i]);
+                    v1.push(i);
                 } else if (i > layerMyIdx) {
-                    v2_vertices = v2_vertices.concat(layers[i]);
+                    v2.push(i);
                 }
             }
 
-            super.onFinished();
-            return [v1_vertices, s_vertices, v2_vertices];
+            return this.transformBackAndGetReturnValues(layers, v1, [layerMyIdx], v2);
         }
 
         await super.pause("Find layers m and M",
@@ -443,25 +445,7 @@ class PlanarSeparatorAlgo extends Algorithm {
                 this.rectAroundLayer(layers, M_idx, "red");
             }
 
-            let v1_vertices = [];
-            for (var i = 0; i < v1.length; i++) {
-                v1_vertices = v1_vertices.concat(layers[v1[i]]);
-            }
-            let v2_vertices = [];
-            for (var i = 0; i < v2.length; i++) {
-                v2_vertices = v2_vertices.concat(layers[v2[i]]);
-            }
-            let s_vertices = [];
-            if (m_idx != -1) {
-                s_vertices = s_vertices.concat(layers[m_idx]);
-            }
-            if (M_idx != -1) {
-                s_vertices = s_vertices.concat(layers[M_idx]);
-            }
-
-            super.onFinished();
-
-            return [v1_vertices, s_vertices, v2_vertices];
+            return this.transformBackAndGetReturnValues(layers, v1, [m_idx, M_idx], v2);
         } else {
             // Case 2
             await super.pause("Check if m u M is a separator",
@@ -610,6 +594,47 @@ class PlanarSeparatorAlgo extends Algorithm {
         ctx.rect(layerMinX, layerY - 20, width, height);
         ctx.stroke();
         ctx.closePath();
+    }
+
+    async transformBackAndGetReturnValues(layers, v1, s, v2) {
+        let v1_vertices = [];
+        for (var i = 0; i < v1.length; i++) {
+            v1_vertices = v1_vertices.concat(layers[v1[i]]);
+        }
+        let v2_vertices = [];
+        for (var i = 0; i < v2.length; i++) {
+            v2_vertices = v2_vertices.concat(layers[v2[i]]);
+        }
+        let s_vertices = [];
+        for (var i = 0; i < s.length; i++) {
+            s_vertices = s_vertices.concat(layers[s[i]]);
+        }
+
+        await super.pause("Transform back", "Transform back to original graph");
+        this.transformBack();
+
+        for (var i = 0; i < graph.vertices.length; i++) {
+            let vertex = graph.vertices[i];
+            if (eqIndexOf(v1_vertices, vertex) != -1) {
+                vertex.color = "blue";
+            }
+            if (eqIndexOf(s_vertices, vertex) != -1) {
+                vertex.color = "red";
+            }
+            if (eqIndexOf(v2_vertices, vertex) != -1) {
+                vertex.color = "green";
+            }
+        }
+        redrawAll();
+
+        super.onFinished();
+
+        return [v1_vertices, s_vertices, v2_vertices];
+    }
+
+    transformBack() {
+        graph = this.originalGraph;
+        redrawAll();
     }
 }
 

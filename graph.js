@@ -459,6 +459,17 @@ class Graph {
         return dualGraph;
     }
 
+    getCopy() {
+        let copy = new Graph();
+        $.each(this.vertices, function (_index, vertex) {
+            copy.addVertex(new Vertex(vertex.x, vertex.y, vertex.number));
+        });
+        $.each(this.edges, function (_index, edge) {
+            copy.addEdge(new Edge(edge.v1nr, edge.v2nr, edge.id, edge.weight));
+        });
+        return copy;
+    }
+
     getVertexByNumber(number) {
         for (let i = 0; i < this.vertices.length; i++) {
             let vertex = this.vertices[i];
