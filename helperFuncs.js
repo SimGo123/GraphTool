@@ -275,3 +275,19 @@ function changeVectorLength(vector, length) {
     let vectorLength = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
     return new Point(vector.x * length / vectorLength, vector.y * length / vectorLength);
 }
+
+// Start with [false, false, ...]
+// End with [true, true, ...]
+// Return null if done
+function bfNextIter(array) {
+    let done = !array.includes(false);
+    if (done) {
+        return null;
+    }
+    
+    let index = array.indexOf(false);
+    array[index] = true;
+    for (let i = 0; i < index; i++) {
+        array[i] = false;
+    }
+}
