@@ -1,7 +1,8 @@
 const ALGORITHMS = {
     TRIANGULATION: 0,
     PLANAR_SEPARATOR: 1,
-    WEIGHT_MAX_MATCHING: 2
+    WEIGHT_MAX_MATCHING: 2,
+    MIXED_MAX_CUT: 3
 };
 
 var algorithm = null;
@@ -16,13 +17,6 @@ async function algorithmClick(param) {
         algorithm = null;
     } else if (param == ALGORITHMS.PLANAR_SEPARATOR) {
         algorithm = new PlanarSeparatorAlgo();
-        $("#algoControlPanel").removeClass("invisible");
-        $("#stepButton").removeClass("disabled");
-        $("#runCompleteButton").removeClass("disabled");
-        await algorithm.run();
-        algorithm = null;
-    } else if (param == ALGORITHMS.WEIGHT_MAX_MATCHING) {
-        algorithm = new WeightMaxMatchingAlgo();
         $("#algoControlPanel").removeClass("invisible");
         $("#stepButton").removeClass("disabled");
         $("#runCompleteButton").removeClass("disabled");
@@ -48,6 +42,7 @@ class Algorithm {
     constructor() {
         this.shouldContinue = false;
         this.runComplete = false;
+        this.isSubAlgo = false; // Set to true if this algo is run as part of another algo
         this.numSteps = 0;
         this.currentStep = 0;
     }
@@ -80,15 +75,16 @@ class Algorithm {
     }
 
     onFinished() {
-        $("#algoControlPanel").addClass("invisible");
-        // $("#stepButton").removeClass("disabled");
-        // $("#runCompleteButton").removeClass("disabled");
+        if (!this.isSubAlgo) {
+            $("#algoControlPanel").addClass("invisible");
+            // $("#stepButton").removeClass("disabled");
+            // $("#runCompleteButton").removeClass("disabled");
+        }
     }
 }
 
 class TriangulationAlgo extends Algorithm {
     async run() {
-        console.log("triangulation");
         super.numSteps = 4;
 
         await super.pause("Connect degree 1 vertices", "Connect vertices of degree 1 to the next clockwise neighbour of their neighbour");
@@ -315,7 +311,6 @@ class TriangulationAlgo extends Algorithm {
 }
 
 class PlanarSeparatorAlgo extends Algorithm {
-
     async run() {
         super.numSteps = "X";
 
@@ -383,7 +378,7 @@ class PlanarSeparatorAlgo extends Algorithm {
             console.log('Case 1');
             await super.pause("Check if m u M is a separator",
                 "Check if A2 (all layers between m and M) has <= 2/3 * n vertices."
-                + " In this case: |A2|=" + a2_len + " <= 2/3 * n=" + +((2 / 3) * n).toFixed(1) 
+                + " In this case: |A2|=" + a2_len + " <= 2/3 * n=" + +((2 / 3) * n).toFixed(1)
                 + " -> Go to Case 1");
             // m u M is a separator
             await super.pause("Case 1: m u M is a separator",
@@ -408,7 +403,7 @@ class PlanarSeparatorAlgo extends Algorithm {
             // Case 2
             await super.pause("Check if m u M is a separator",
                 "Check if A2 (all layers between m and M) has <= 2/3 * n vertices."
-                + " In this case: |A2|=" + a2_len + " > 2/3 * n=" + +((2 / 3) * n).toFixed(1) 
+                + " In this case: |A2|=" + a2_len + " > 2/3 * n=" + +((2 / 3) * n).toFixed(1)
                 + " -> Go to Case 2");
             alert('Case 2: Not implemented yet');
         }
@@ -602,5 +597,111 @@ class WeightMaxMatchingAlgo extends Algorithm {
             console.log('start: ' + start);
             start = bfNextIter(start);
         }
+    }
+}
+
+class MixedMaxCutAlgo extends Algorithm {
+    async run() {
+        super.numSteps = "X";
+
+        if (!this.preconditionsCheck()) {
+            super.onFinished();
+            return;
+        }
+
+        await super.pause("Triangulate the graph", "Triangulate the graph, new edges get weight 0");
+        let triangulationAlgo = new TriangulationAlgo();
+        triangulationAlgo.shouldContinue = true;
+        triangulationAlgo.runComplete = true;
+        triangulationAlgo.isSubAlgo = true;
+        await triangulationAlgo.run();
+        for (var i = 0; i < graph.edges.length; i++) {
+            if (graph.edges[i].weight == null) {
+                graph.edges[i].weight = 0;
+            }
+        }
+        redrawAll();
+
+        await super.pause("Calculate dual graph", "Build the dual graph from the current graph, keep edges");
+        let dualGraph = graph.getDualGraph();
+        graph = dualGraph;
+        redrawAll();
+
+        await super.pause("Out of one vertex, make three", "Replace every vertex by three interconnected (w=0) vertices");
+        this.oneVertexToThree();
+
+        await super.pause("Calculate weight min. 1-factor",
+            "C in the original graph is a cut <-> C* in the dual graph is an even set"
+            + "C' in current graph is weight max. 2-factor <-> E'-C' is weight min. 1-factor");
+        
+        await super.pause("Calculate weight min. 1-factor",
+            "First, w'(e) = -w(e), so that we can calc. a weight max. 1-factor");
+        for (var i = 0; i < graph.edges.length; i++) {
+            graph.edges[i].weight = -graph.edges[i].weight;
+        }
+        redrawAll();
+
+        const W = graph.vertices.length * Math.max(...graph.edges.map(e => Math.abs(e.weight))) + 1;
+        await super.pause("Calculate weight min. 1-factor",
+            "Next, w''(e) = W + w'(e), with W > |V| * max(|w(e)|) = " + (W - 1)
+            + ". This leads to every matching having the max. amount of edges, therefore being perfect");
+        for (var i = 0; i < graph.edges.length; i++) {
+            graph.edges[i].weight += W;
+        }
+        redrawAll();
+
+        await super.pause("Calculate weight min. 1-factor",
+            "Run max matching algorithm to get a weight max. 1-factor for w'' in O(n^(3/2))");
+        // TODO Run max matching algorithm
+        alert("Max matching not implemented yet");
+
+        super.onFinished();
+    }
+
+    preconditionsCheck() {
+        let fulfilled = true;
+        if (!graph.isPlanarEmbedded()) {
+            alert("Graph is not planar embedded!");
+            fulfilled = false;
+        }
+        $.each(graph.edges, function (_index, edge) {
+            if (edge.weight == null) {
+                alert("can't calculate mixed max cut, " + edge.print() + " has no weight!");
+                fulfilled = false;
+                return false;
+            }
+        });
+        return fulfilled;
+    }
+
+    oneVertexToThree() {
+        let newVertices = [];
+        let newEdges = [];
+        for (var i = 0; i < graph.vertices.length; i++) {
+            let vertex = graph.vertices[i];
+            let dist = 40;
+            let v1 = new Vertex(vertex.x + dist, vertex.y);
+            let v2 = new Vertex(vertex.x, vertex.y + dist);
+            let v3 = new Vertex(vertex.x + dist, vertex.y + dist);
+            let currNewVertices = [v1, v2, v3];
+            newVertices.push(v1);
+            newVertices.push(v2);
+            newVertices.push(v3);
+            newEdges.push(new Edge(v1.number, v2.number, 0));
+            newEdges.push(new Edge(v2.number, v3.number, 0));
+            newEdges.push(new Edge(v1.number, v3.number, 0));
+            let edges = graph.getIncidentEdges(vertex);
+            for (let j = 0; j < edges.length; j++) {
+                let edge = edges[j];
+                if (edge.v1nr == vertex.number) {
+                    edge.v1nr = currNewVertices[j].number;
+                } else {
+                    edge.v2nr = currNewVertices[j].number;
+                }
+            }
+        }
+        graph.vertices = newVertices;
+        graph.edges = graph.edges.concat(newEdges);
+        redrawAll();
     }
 }
