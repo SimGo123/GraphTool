@@ -57,7 +57,7 @@ class BreadthSearchVertex {
     }
 }
 
-function breadthFirstSearchTree(vertex) {
+function breadthFirstSearchTree(vertex, runGraph) {
     console.log("breadthFirstSearchTree");
     let visited = [vertex];
     let layers = [];
@@ -66,7 +66,7 @@ function breadthFirstSearchTree(vertex) {
         let nextLayer = [];
         layers.push(prevLayer);
         $.each(prevLayer, function (_index, prevLayerBSVertex) {
-            let neighbours = graph.getAllNeighbours(prevLayerBSVertex.vertex);
+            let neighbours = runGraph.getAllNeighbours(prevLayerBSVertex.vertex);
             console.log('neighbours: ' + neighbours.length);
             $.each(neighbours, function (_index, neighbourVertex) {
                 if (eqIndexOf(visited, neighbourVertex) == -1) {

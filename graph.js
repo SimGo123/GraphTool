@@ -470,6 +470,22 @@ class Graph {
         return copy;
     }
 
+    getSubgraph(vertices) {
+        let subgraph = new Graph();
+        $.each(vertices, function (_index, vertex) {
+            subgraph.addVertex(vertex);
+        });
+        for (let i = 0; i < this.edges.length; i++) {
+            let edge = this.edges[i];
+            let v1 = this.getVertexByNumber(edge.v1nr);
+            let v2 = this.getVertexByNumber(edge.v2nr);
+            if (eqIndexOf(vertices, v1) != -1 && eqIndexOf(vertices, v2) != -1) {
+                subgraph.addEdge(edge);
+            }
+        }
+        return subgraph;
+    }
+
     getVertexByNumber(number) {
         for (let i = 0; i < this.vertices.length; i++) {
             let vertex = this.vertices[i];
