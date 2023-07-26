@@ -312,3 +312,17 @@ class VertexFacet {
         this.facet = facet;
     }
 }
+
+class VertexEquality {
+    constructor(vertexNumber1, vertexNumber2) {
+        this.vertexNumber1 = vertexNumber1;
+        this.vertexNumber2 = vertexNumber2;
+    }
+}
+
+class EdgeEquality {
+    constructor(edge1, edge2) {
+        this.edge1 = edge1;
+        this.edge2 = edge2;
+    }
+}

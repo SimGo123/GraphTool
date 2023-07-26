@@ -422,6 +422,7 @@ class Graph {
         let dualGraph = new Graph();
         let allFacets = getAllFacets();
         let vertexFacets = [];
+        let edgeEqualities = [];
         for (let i = 0; i < allFacets.length; i++) {
             let facet = allFacets[i];
             let facetCenter = getFacetCenter(facet);
@@ -454,9 +455,10 @@ class Graph {
             } else {
                 // Keep weights in dual graph
                 dualGraph.addEdge(new Edge(v1nr, v2nr, null, edge.weight));
+                edgeEqualities.push(new EdgeEquality(new Edge(v1nr, v2nr, null, edge.weight), edge));
             }
         });
-        return dualGraph;
+        return [dualGraph, edgeEqualities];
     }
 
     getCopy() {
