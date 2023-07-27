@@ -1,6 +1,8 @@
 const ALGORITHMS = {
     TRIANGULATION: 0,
     PLANAR_SEPARATOR: 1,
+    WEIGHT_MAX_MATCHING: 2,
+    MIXED_MAX_CUT: 3
 };
 
 var algorithm = null;
@@ -15,6 +17,20 @@ async function algorithmClick(param) {
         algorithm = null;
     } else if (param == ALGORITHMS.PLANAR_SEPARATOR) {
         algorithm = new PlanarSeparatorAlgo();
+        $("#algoControlPanel").removeClass("invisible");
+        $("#stepButton").removeClass("disabled");
+        $("#runCompleteButton").removeClass("disabled");
+        await algorithm.run();
+        algorithm = null;
+    } else if (param == ALGORITHMS.WEIGHT_MAX_MATCHING) {
+        algorithm = new WeightMaxMatchingAlgo();
+        $("#algoControlPanel").removeClass("invisible");
+        $("#stepButton").removeClass("disabled");
+        $("#runCompleteButton").removeClass("disabled");
+        await algorithm.run();
+        algorithm = null;
+    } else if (param == ALGORITHMS.MIXED_MAX_CUT) {
+        algorithm = new MixedMaxCutAlgo();
         $("#algoControlPanel").removeClass("invisible");
         $("#stepButton").removeClass("disabled");
         $("#runCompleteButton").removeClass("disabled");
@@ -40,6 +56,7 @@ class Algorithm {
     constructor() {
         this.shouldContinue = false;
         this.runComplete = false;
+        this.isSubAlgo = false; // Set to true if this algo is run as part of another algo
         this.numSteps = 0;
         this.currentStep = 0;
     }
@@ -72,15 +89,16 @@ class Algorithm {
     }
 
     onFinished() {
-        $("#algoControlPanel").addClass("invisible");
-        // $("#stepButton").removeClass("disabled");
-        // $("#runCompleteButton").removeClass("disabled");
+        if (!this.isSubAlgo) {
+            $("#algoControlPanel").addClass("invisible");
+            // $("#stepButton").removeClass("disabled");
+            // $("#runCompleteButton").removeClass("disabled");
+        }
     }
 }
 
 class TriangulationAlgo extends Algorithm {
     async run() {
-        console.log("triangulation");
         super.numSteps = 4;
 
         await super.pause("Connect degree 1 vertices", "Connect vertices of degree 1 to the next clockwise neighbour of their neighbour");
@@ -308,31 +326,52 @@ class TriangulationAlgo extends Algorithm {
 
 class PlanarSeparatorAlgo extends Algorithm {
 
-    async run() {
+    originalGraph = null;
+
+    async run(runGraph = graph) {
         super.numSteps = "X";
 
         if (!this.preconditionsCheck()) {
             super.onFinished();
-            return;
+            return null;
         }
 
+        this.originalGraph = graph.getCopy();
+
+        await super.pause("Triangulate the graph", "Triangulate the graph");
+        let triangulationAlgo = new TriangulationAlgo();
+        triangulationAlgo.shouldContinue = true;
+        triangulationAlgo.runComplete = true;
+        triangulationAlgo.isSubAlgo = true;
+        await triangulationAlgo.run();
+
         await super.pause("Construct breadth-first search tree", "Construct tree");
-        let startVertexNr = window.prompt("Enter start vertex number", "0");
-        let startVertex = graph.vertices[0];
-        $.each(graph.vertices, function (_index, vertex) {
-            if (vertex.number == startVertexNr) {
-                startVertex = vertex;
-                return;
-            }
-        });
+        let startVertex = runGraph.vertices[0];
+        if (!this.isSubAlgo) {
+            let startVertexNr = window.prompt("Enter start vertex number", "0");
+            $.each(runGraph.vertices, function (_index, vertex) {
+                if (vertex.number == startVertexNr) {
+                    startVertex = vertex;
+                    return false;
+                }
+            });
+        }
         console.log('start vertex: ' + startVertex.print());
-        let layers = breadthFirstSearchTree(startVertex);
+        let layers = breadthFirstSearchTree(startVertex, runGraph);
         this.showBFSTree(layers);
 
         await super.pause("Draw layers", "First layer on top, other layers below");
         this.drawLayerStructure(layers);
 
-        const n = graph.vertices.length;
+        for (var i = 0; i < layers.length; i++) {
+            let vertexLayer = [];
+            for (var j = 0; j < layers[i].length; j++) {
+                vertexLayer.push(layers[i][j].vertex);
+            }
+            layers[i] = vertexLayer;
+        }
+
+        const n = runGraph.vertices.length;
         await super.pause("Find layer my",
             "Find layer my so that all layers below together have <= n/2="
             + (n / 2) + " vertices, and together with my have > n/2 vertices");
@@ -345,10 +384,21 @@ class PlanarSeparatorAlgo extends Algorithm {
             + " In this case: |my|=" + layers[layerMyIdx].length + " <= 4*sqrt(n)=" + +maxSeparatorSize.toFixed(1) + "?");
         if (layers[layerMyIdx].length <= maxSeparatorSize) {
             this.rectAroundLayer(layers, layerMyIdx, "red");
-            alert('Layer ' + layerMyIdx + ' is a separator');
+            if (!this.isSubAlgo) {
+                alert('Layer ' + layerMyIdx + ' is a separator');
+            }
 
-            super.onFinished();
-            return;
+            let v1 = [];
+            let v2 = [];
+            for (var i = 0; i < layers.length; i++) {
+                if (i < layerMyIdx) {
+                    v1.push(i);
+                } else if (i > layerMyIdx) {
+                    v2.push(i);
+                }
+            }
+
+            return this.transformBackAndGetReturnValues(layers, v1, [layerMyIdx], v2);
         }
 
         await super.pause("Find layers m and M",
@@ -375,7 +425,7 @@ class PlanarSeparatorAlgo extends Algorithm {
             console.log('Case 1');
             await super.pause("Check if m u M is a separator",
                 "Check if A2 (all layers between m and M) has <= 2/3 * n vertices."
-                + " In this case: |A2|=" + a2_len + " <= 2/3 * n=" + +((2 / 3) * n).toFixed(1) 
+                + " In this case: |A2|=" + a2_len + " <= 2/3 * n=" + +((2 / 3) * n).toFixed(1)
                 + " -> Go to Case 1");
             // m u M is a separator
             await super.pause("Case 1: m u M is a separator",
@@ -396,25 +446,25 @@ class PlanarSeparatorAlgo extends Algorithm {
             if (M_idx != -1) {
                 this.rectAroundLayer(layers, M_idx, "red");
             }
+
+            return this.transformBackAndGetReturnValues(layers, v1, [m_idx, M_idx], v2);
         } else {
             // Case 2
             await super.pause("Check if m u M is a separator",
                 "Check if A2 (all layers between m and M) has <= 2/3 * n vertices."
-                + " In this case: |A2|=" + a2_len + " > 2/3 * n=" + +((2 / 3) * n).toFixed(1) 
+                + " In this case: |A2|=" + a2_len + " > 2/3 * n=" + +((2 / 3) * n).toFixed(1)
                 + " -> Go to Case 2");
             alert('Case 2: Not implemented yet');
-        }
 
-        super.onFinished();
+            super.onFinished();
+            return null;
+        }
     }
 
     preconditionsCheck() {
         let fulfilled = true;
         if (!graph.isPlanarEmbedded()) {
             alert("Graph is not planar embedded!");
-            fulfilled = false;
-        } else if (!graph.isTriangulated()) {
-            alert("Graph is not triangulated!");
             fulfilled = false;
         }
         return fulfilled;
@@ -538,13 +588,54 @@ class PlanarSeparatorAlgo extends Algorithm {
         ctx.strokeStyle = color;
         ctx.lineWidth = 5;
         ctx.beginPath();
-        let layerY = layers[layerIndex][0].vertex.y;
-        let layerMinX = layers[layerIndex][0].vertex.x - 20;
-        let layerMaxX = layers[layerIndex][layers[layerIndex].length - 1].vertex.x + 20;
+        let layerY = layers[layerIndex][0].y;
+        let layerMinX = layers[layerIndex][0].x - 20;
+        let layerMaxX = layers[layerIndex][layers[layerIndex].length - 1].x + 20;
         let width = layerMaxX - layerMinX;
         let height = 40;
         ctx.rect(layerMinX, layerY - 20, width, height);
         ctx.stroke();
         ctx.closePath();
+    }
+
+    async transformBackAndGetReturnValues(layers, v1, s, v2) {
+        let v1_vertices = [];
+        for (var i = 0; i < v1.length; i++) {
+            v1_vertices = v1_vertices.concat(layers[v1[i]]);
+        }
+        let v2_vertices = [];
+        for (var i = 0; i < v2.length; i++) {
+            v2_vertices = v2_vertices.concat(layers[v2[i]]);
+        }
+        let s_vertices = [];
+        for (var i = 0; i < s.length; i++) {
+            s_vertices = s_vertices.concat(layers[s[i]]);
+        }
+
+        await super.pause("Transform back", "Transform back to original graph");
+        this.transformBack();
+
+        for (var i = 0; i < graph.vertices.length; i++) {
+            let vertex = graph.vertices[i];
+            if (eqIndexOf(v1_vertices, vertex) != -1) {
+                vertex.color = "blue";
+            }
+            if (eqIndexOf(s_vertices, vertex) != -1) {
+                vertex.color = "red";
+            }
+            if (eqIndexOf(v2_vertices, vertex) != -1) {
+                vertex.color = "green";
+            }
+        }
+        redrawAll();
+
+        super.onFinished();
+
+        return [v1_vertices, s_vertices, v2_vertices];
+    }
+
+    transformBack() {
+        graph = this.originalGraph;
+        redrawAll();
     }
 }

@@ -58,24 +58,20 @@ class Vertex {
 }
 
 class Edge {
-    // constructor(v1, v2, id = null) {
-    //     this.v1 = v1;
-    //     this.v2 = v2;
-    //     this.id = id;
-    //     this.thickness = 5;
-    //     this.color = "gray";
-    // }
-    constructor(v1nr, v2nr, id = null) {
+    constructor(v1nr, v2nr, id = null, weight = null) {
         this.v1nr = v1nr;
         this.v2nr = v2nr;
         this.id = id;
+        this.weight = weight;
         this.thickness = 5;
         this.color = "gray";
     }
 
-    draw(selectedEdge, multiEdge = false, loop = false, occurences = 1) {
-        let v1 = graph.getVertexByNumber(this.v1nr);
-        let v2 = graph.getVertexByNumber(this.v2nr);
+    draw(pGraph, selectedEdge, multiEdge = false, loop = false, occurences = 1) {
+        let v1 = pGraph.getVertexByNumber(this.v1nr);
+        let v2 = pGraph.getVertexByNumber(this.v2nr);
+        let dx = v2.x - v1.x;
+        let dy = v2.y - v1.y;
         var ctx = fgCanvas.getContext("2d");
         if (selectedEdge == this) {
             ctx.strokeStyle = "red";
@@ -90,6 +86,14 @@ class Edge {
             ctx.lineTo(v2.x, v2.y);
             ctx.stroke();
             ctx.closePath();
+            if (this.weight != null) {
+                let vecLen = this.weight.toString().length * 7;
+                ctx.fillStyle = "gray";
+                let controlVec = new Point(dy, -dx);
+                controlVec = changeVectorLength(controlVec, vecLen);
+                controlVec = controlVec.y < 0 ? controlVec : changeVectorLength(new Point(-dy, dx), vecLen);
+                ctx.fillText(this.weight, (v1.x + v2.x) / 2 + controlVec.x, (v1.y + v2.y) / 2 + controlVec.y);
+            }
         }
         if (loop) {
             // Draw loop
@@ -116,8 +120,6 @@ class Edge {
             }
         } else if (multiEdge) {
             // Draw multiple edges with bezier curves
-            let dx = v2.x - v1.x;
-            let dy = v2.y - v1.y;
             let vectorLen = 60;
             let steps = vectorLen * 2 / (occurences - 1);
             console.log("occurences " + occurences);
@@ -234,7 +236,7 @@ class Graph {
                     occurrences++;
                 }
             });
-            loop.draw(selectedEdge, false, true, occurrences);
+            loop.draw(this, selectedEdge, false, true, occurrences);
         }
         let multiEdges = this.getMultiEdges();
         for (let i = 0; i < multiEdges.length; i++) {
@@ -249,7 +251,7 @@ class Graph {
                     occurrences++;
                 }
             });
-            multiEdge.draw(selectedEdge, true, false, occurrences);
+            multiEdge.draw(this, selectedEdge, true, false, occurrences);
         }
         let otherEdgesToDraw = [];
         $.each(this.edges, function (_i, edge) {
@@ -257,9 +259,10 @@ class Graph {
                 otherEdgesToDraw.push(edge);
             }
         });
-        $.each(otherEdgesToDraw, function (_i, edge) {
-            edge.draw(selectedEdge);
-        });
+        for (let i = 0; i < otherEdgesToDraw.length; i++) {
+            let edge = otherEdgesToDraw[i];
+            edge.draw(this, selectedEdge);
+        }
         for (let i = 0; i < this.vertices.length; i++) {
             this.vertices[i].draw(selectedVertex);
         }
@@ -413,6 +416,76 @@ class Graph {
             }
         }
         return isTriangulated;
+    }
+
+    getDualGraph() {
+        let dualGraph = new Graph();
+        let allFacets = getAllFacets();
+        let vertexFacets = [];
+        let edgeEqualities = [];
+        for (let i = 0; i < allFacets.length; i++) {
+            let facet = allFacets[i];
+            let facetCenter = getFacetCenter(facet);
+            let vertex = new Vertex(facetCenter.x, facetCenter.y);
+            dualGraph.addVertex(vertex);
+            vertexFacets.push(new VertexFacet(vertex.number, facet));
+        }
+        $.each(graph.edges, function (_index, edge) {
+            let v1nr = -1;
+            let v2nr = -1;
+            for (let i = 0; i < allFacets.length; i++) {
+                if (eqIndexOf(allFacets[i], edge) != -1) {
+                    for (let j = i + 1; j < allFacets.length; j++) {
+                        if (eqIndexOf(allFacets[j], edge) != -1) {
+                            $.each(vertexFacets, function (_index, vFac) {
+                                if (allFacets[i] == vFac.facet) {
+                                    v1nr = vFac.vertexNumber;
+                                }
+                                if (allFacets[j] == vFac.facet) {
+                                    v2nr = vFac.vertexNumber;
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+            if (v1nr == -1 || v2nr == -1) {
+                console.log("Error: didn't find adjacent facets of edge " + edge.print());
+                console.log('v1 ' + v1nr + ' v2 ' + v2nr);
+            } else {
+                // Keep weights in dual graph
+                dualGraph.addEdge(new Edge(v1nr, v2nr, null, edge.weight));
+                edgeEqualities.push(new EdgeEquality(new Edge(v1nr, v2nr, null, edge.weight), edge));
+            }
+        });
+        return [dualGraph, edgeEqualities];
+    }
+
+    getCopy() {
+        let copy = new Graph();
+        $.each(this.vertices, function (_index, vertex) {
+            copy.addVertex(new Vertex(vertex.x, vertex.y, vertex.number));
+        });
+        $.each(this.edges, function (_index, edge) {
+            copy.addEdge(new Edge(edge.v1nr, edge.v2nr, edge.id, edge.weight));
+        });
+        return copy;
+    }
+
+    getSubgraph(vertices) {
+        let subgraph = new Graph();
+        $.each(vertices, function (_index, vertex) {
+            subgraph.addVertex(vertex);
+        });
+        for (let i = 0; i < this.edges.length; i++) {
+            let edge = this.edges[i];
+            let v1 = this.getVertexByNumber(edge.v1nr);
+            let v2 = this.getVertexByNumber(edge.v2nr);
+            if (eqIndexOf(vertices, v1) != -1 && eqIndexOf(vertices, v2) != -1) {
+                subgraph.addEdge(edge);
+            }
+        }
+        return subgraph;
     }
 
     getVertexByNumber(number) {

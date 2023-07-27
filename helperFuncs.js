@@ -57,7 +57,7 @@ class BreadthSearchVertex {
     }
 }
 
-function breadthFirstSearchTree(vertex) {
+function breadthFirstSearchTree(vertex, runGraph) {
     console.log("breadthFirstSearchTree");
     let visited = [vertex];
     let layers = [];
@@ -66,7 +66,7 @@ function breadthFirstSearchTree(vertex) {
         let nextLayer = [];
         layers.push(prevLayer);
         $.each(prevLayer, function (_index, prevLayerBSVertex) {
-            let neighbours = graph.getAllNeighbours(prevLayerBSVertex.vertex);
+            let neighbours = runGraph.getAllNeighbours(prevLayerBSVertex.vertex);
             console.log('neighbours: ' + neighbours.length);
             $.each(neighbours, function (_index, neighbourVertex) {
                 if (eqIndexOf(visited, neighbourVertex) == -1) {
@@ -103,33 +103,33 @@ function getAllFacets() {
     $.each(graph.edges, function (_index, edge) {
         let statusEdge = statusEdges[statusEdgeIndex(statusEdges, edge)];
         if (!statusEdge.rightVisited) {
-            console.log('right facet');
+            // console.log('right facet');
             let rightFacet = facetWalk(edge, true, statusEdges);
             facets.push(rightFacet);
             $.each(rightFacet, function (_index, edge) {
                 let edgeIndex = statusEdgeIndex(statusEdges, edge);
                 if (statusEdges[edgeIndex].edge.v1nr == edge.v1nr) {
                     statusEdges[edgeIndex].rightVisited = true;
-                    console.log("r");
+                    // console.log("r");
                 } else {
                     statusEdges[edgeIndex].leftVisited = true;
-                    console.log("l");
+                    // console.log("l");
                 }
             });
         }
         statusEdge = statusEdges[statusEdgeIndex(statusEdges, edge)];
         if (!statusEdge.leftVisited) {
-            console.log('left facet');
+            // console.log('left facet');
             let leftFacet = facetWalk(edge, false, statusEdges);
             facets.push(leftFacet);
             $.each(leftFacet, function (_index, edge) {
                 let edgeIndex = statusEdgeIndex(statusEdges, edge);
                 if (statusEdges[edgeIndex].edge.v1nr == edge.v1nr) {
                     statusEdges[edgeIndex].leftVisited = true;
-                    console.log("l");
+                    // console.log("l");
                 } else {
                     statusEdges[edgeIndex].rightVisited = true;
-                    console.log("r");
+                    // console.log("r");
                 }
             });
         }
@@ -140,7 +140,7 @@ function getAllFacets() {
         $.each(facet, function (_index, edge) {
             facetStr += edge.print() + " ";
         });
-        console.log(facetStr);
+        // console.log(facetStr);
     });
     return facets;
 }
@@ -209,6 +209,19 @@ function getUniqueVerticeNrsOnFacet(facet) {
     return verticesOnFacet;
 }
 
+function getFacetCenter(facet) {
+    let facetCenter = new Point(0, 0);
+    let verticesOnFacet = getUniqueVerticeNrsOnFacet(facet);
+    $.each(verticesOnFacet, function (_index, vertexNr) {
+        let vertex = graph.getVertexByNumber(vertexNr);
+        facetCenter.x += vertex.x;
+        facetCenter.y += vertex.y;
+    });
+    facetCenter.x /= verticesOnFacet.length;
+    facetCenter.y /= verticesOnFacet.length;
+    return facetCenter;
+}
+
 function eqIndexOf(array, element, withId = false) {
     for (var i = 0; i < array.length; i++) {
         if (array[i].eq(element, withId)) {
@@ -274,4 +287,43 @@ function getAngle(vertex, neighbour) {
 function changeVectorLength(vector, length) {
     let vectorLength = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
     return new Point(vector.x * length / vectorLength, vector.y * length / vectorLength);
+}
+
+// Next brute force iteration
+// Starts with [false, false, ...]
+// Ends with [true, true, ...]
+// Returns null if [true, true, ...] was passed
+function nextBruteForceIter(array) {
+    let done = !array.includes(false);
+    if (done) {
+        return null;
+    }
+    
+    let index = array.indexOf(false);
+    array[index] = true;
+    for (let i = 0; i < index; i++) {
+        array[i] = false;
+    }
+    return array;
+}
+
+class VertexFacet {
+    constructor(vertexNumber, facet) {
+        this.vertexNumber = vertexNumber;
+        this.facet = facet;
+    }
+}
+
+class VertexEquality {
+    constructor(vertexNumber1, vertexNumber2) {
+        this.vertexNumber1 = vertexNumber1;
+        this.vertexNumber2 = vertexNumber2;
+    }
+}
+
+class EdgeEquality {
+    constructor(edge1, edge2) {
+        this.edge1 = edge1;
+        this.edge2 = edge2;
+    }
 }

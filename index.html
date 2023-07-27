@@ -45,6 +45,8 @@
   <ul class="list-group list-group-horizontal my-3 collapse" id="algorithms">
     <li class="list-group-item list-group-item-action" onclick="algorithmClick(0)">Triangulate</li>
     <li class="list-group-item list-group-item-action" onclick="algorithmClick(1)">Planar Separator (Case 1)</li>
+    <li class="list-group-item list-group-item-action" onclick="algorithmClick(2)">Weight Max. Matching (WIP)</li>
+    <li class="list-group-item list-group-item-action" onclick="algorithmClick(3)">Mixed Max Cut (WIP)</li>
   </ul>
 
   <ul class="list-group list-group-horizontal my-3 collapse" id="predefinedGraphs">
@@ -57,6 +59,7 @@
     <li class="list-group-item list-group-item-action" onclick="predefinedClick(6)">Big mü Graph (Case 2)</li>
     <li class="list-group-item list-group-item-action" onclick="predefinedClick(7)">Case 1 Graph</li>
     <li class="list-group-item list-group-item-action" onclick="predefinedClick(8)">Create Wheel</li>
+    <li class="list-group-item list-group-item-action" onclick="predefinedClick(9)">Mixed Max Graph</li>
   </ul>
 
   <canvas id="fgCanvas"></canvas>
@@ -64,13 +67,12 @@
   <div id="algoControlPanel" class="invisible">
     <p>
     <button id="stepButton" type="button" class="btn btn-primary disabled" onclick="stepClick()">Step</button>
-    <button id="runCompleteButton" type="button" class="btn btn-success disabled" onclick="runCompleteClick()">Run to
-      completion</button>
+    <button id="runCompleteButton" type="button" class="btn btn-success disabled" onclick="runCompleteClick()">Run to completion</button>
     </p>
     <div class="card" style="width: 25rem;">
       <div class="card-body">
-        <h5 id="stepTitle" class="card-title">Step 1/3</h5>
-        <p id="stepDescription" class="card-text">This step does nothing.</p>
+        <h5 id="stepTitle" class="card-title"></h5>
+        <p id="stepDescription" class="card-text"></p>
       </div>
     </div>
   </div>
@@ -91,6 +93,7 @@
 <script src="canvasUpdates.js"></script>
 <script src="eventHandler.js"></script>
 <script src="algorithms.js"></script>
+<script src="weightAlgorithms.js"></script>
 <script src="predefined.js"></script>
 <script src="helperFuncs.js"></script>
 
