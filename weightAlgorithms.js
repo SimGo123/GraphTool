@@ -33,7 +33,41 @@ class WeightMaxMatchingAlgo extends Algorithm {
         // let [v1, separator, v2] = result;
         // console.log('v1=' + printArr(v1) + ' separator=' + printArr(separator) + ' v2=' + printArr(v2));
 
-        this.divide(graph);
+        let [maxWeightEdges, separators] = await this.divide(graph);
+        console.log('S=' + printArr(separators));
+
+        let gApostrophe = graph.getCopy();
+        separators.forEach(function (separatorVertex) {
+            gApostrophe.deleteVertex(separatorVertex);
+        });
+
+        while (separators.length > 0) {
+            // Wähle v ∈ S.
+            let v = separators.pop();
+            console.log('We chose v=' + v.print());
+            // Finde alternierenden Weg P in G′ + v mit Endpunkt v mit w (P − M′) − w (P ∩ M′) maximal.
+            let gApostropheWithV = graph.getCopy();
+            for (let i = 1; i < separators.length; i++) {
+                gApostropheWithV.deleteVertex(separators[i]);
+            }
+            let way = this.findMaxWay(maxWeightEdges, gApostropheWithV, v);
+            console.log('way=' + printArr(way));
+            // Falls P erhöhend, ersetze M′ durch M′ /_\ P.
+            if (this.wayIsIncreasing(way, maxWeightEdges)) {
+                maxWeightEdges = this.getSymmDiff(way, maxWeightEdges);
+            }
+            // Lösche v aus S. (oben ^)
+            // Ersetze G′ durch G′ + v .
+            gApostrophe.addVertex(v);
+        }
+
+        console.log('maxWeightEdges=' + printArr(maxWeightEdges));
+        graph.edges.forEach(function (edge) {
+            if (eqIndexOf(maxWeightEdges, edge) != -1) {
+                edge.color = "red";
+            }
+        });
+        redrawAll();
 
         super.onFinished();
     }
@@ -60,7 +94,7 @@ class WeightMaxMatchingAlgo extends Algorithm {
             let maxWeightEdges = this.bruteForce(toDivideGraph);
             console.log('divEnd ' + printArr(toDivideGraph.vertices));
 
-            return maxWeightEdges;
+            return [maxWeightEdges, []];
         }
 
         let planarSeparatorAlgo = new PlanarSeparatorAlgo();
@@ -73,7 +107,6 @@ class WeightMaxMatchingAlgo extends Algorithm {
             super.onFinished();
             return;
         }
-        console.log('result=' + result);
         let [v1, separator, v2] = result;
         console.log('v1=' + printArr(v1) + ' separator=' + printArr(separator) + ' v2=' + printArr(v2));
 
@@ -82,7 +115,9 @@ class WeightMaxMatchingAlgo extends Algorithm {
 
         let res1 = await this.divide(v1Graph);
         let res2 = await this.divide(v2Graph);
-        return res1.concat(res2);
+        let maxWeightEdges = res1[0].concat(res2[0]);
+        let separators = res1[1].concat(res2[1]).concat(separator);
+        return [maxWeightEdges, separators];
     }
 
     bruteForce(runGraph) {
@@ -132,6 +167,84 @@ class WeightMaxMatchingAlgo extends Algorithm {
         });
         redrawAll();
         return maxWeightEdges;
+    }
+
+    // Finde alternierenden Weg P in G′ + v mit Endpunkt v mit w(P − M′) − w(P ∩ M′) maximal.
+    findMaxWay(weightMaxEdges, gApostropheWithV, v) {
+        let res1 = this.findWayRec(weightMaxEdges, gApostropheWithV, v, [], 0, false);
+        let res2 = this.findWayRec(weightMaxEdges, gApostropheWithV, v, [], 0, true);
+        console.log('r1 ' + res1 + ' r2 ' + res2);
+        if (res1[1] > res2[1]) {
+            return res1[0];
+        } else {
+            return res2[0];
+        }
+    }
+
+    findWayRec(weightMaxEdges, graph, v, currWay, currWeight, lastEdgeMatched) {
+        let incidentEdges = graph.getIncidentEdges(v);
+        let considerableEdges = [];
+        incidentEdges.forEach(function (edge) {
+            let edgeMatched = eqIndexOf(weightMaxEdges, edge) != -1;
+            if (edgeMatched != lastEdgeMatched) {
+                considerableEdges.push(edge);
+            }
+        });
+        if (considerableEdges.length == 0) {
+            return [currWay, currWeight];
+        } else {
+            let maxWay = null;
+            let maxWeight = 0;
+            for (let i = 0; i < considerableEdges.length; i++) {
+                let edge = considerableEdges[i];
+                let newWay = currWay.concat([edge]);
+                let newWeight = currWeight + edge.weight;
+                let newV = edge.v1nr == v ? edge.v2nr : edge.v1nr;
+                let res = this.findWayRec(weightMaxEdges, graph, newV, newWay, newWeight, !lastEdgeMatched);
+                if (this.getRelevantWeight(res[0], weightMaxEdges) > maxWeight) {
+                    maxWay = res[0];
+                    maxWeight = this.getRelevantWeight(res[0], weightMaxEdges);
+                }
+            }
+            if (currWeight > maxWeight) {
+                maxWay = currWay;
+                maxWeight = currWeight;
+            }
+            return [maxWay, maxWeight];
+        }
+    }
+
+    wayIsIncreasing(path, weightMaxEdges) {
+        return this.getRelevantWeight(path, weightMaxEdges) > 0;
+    }
+
+    // Calculate w(M′ /_\ P) − w(M′) = w(P − M′) − w(P ∩ M′)
+    getRelevantWeight(path, weightMaxEdges) {
+        let symmDiff = this.getSymmDiff(path, weightMaxEdges);
+        let symmDiffWeight = 0;
+        symmDiff.forEach(function (edge) {
+            symmDiffWeight += edge.weight;
+        });
+        let weightMaxEdgesWeight = 0;
+        weightMaxEdges.forEach(function (edge) {
+            weightMaxEdgesWeight += edge.weight;
+        });
+        return symmDiffWeight - weightMaxEdgesWeight;
+    }
+
+    getSymmDiff(edges1, edges2) {
+        let symmDiff = [];
+        edges1.forEach(function (edge) {
+            if (eqIndexOf(edges2, edge) == -1) {
+                symmDiff.push(edge);
+            }
+        });
+        edges2.forEach(function (edge) {
+            if (eqIndexOf(edges1, edge) == -1) {
+                symmDiff.push(edge);
+            }
+        });
+        return symmDiff;
     }
 }
 
