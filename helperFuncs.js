@@ -289,10 +289,11 @@ function changeVectorLength(vector, length) {
     return new Point(vector.x * length / vectorLength, vector.y * length / vectorLength);
 }
 
-// Start with [false, false, ...]
-// End with [true, true, ...]
-// Return null if done
-function bfNextIter(array) {
+// Next brute force iteration
+// Starts with [false, false, ...]
+// Ends with [true, true, ...]
+// Returns null if [true, true, ...] was passed
+function nextBruteForceIter(array) {
     let done = !array.includes(false);
     if (done) {
         return null;
