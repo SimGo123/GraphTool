@@ -20,7 +20,7 @@ class Vertex {
         this.color = "gray";
     }
 
-    draw(selectedVertex) {
+    draw(selectedVertex, source, target) {
         var ctx = fgCanvas.getContext("2d");
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
@@ -31,10 +31,16 @@ class Vertex {
         ctx.stroke();
         ctx.closePath();
         ctx.fillStyle = this.color;
-        let metrics = ctx.measureText(this.number);
+        let text = this.number;
+        if (this.number != -1 && source == this.number) {
+            text = "S" + text;
+        } else if (this.number != -1 && target == this.number) {
+            text = "T" + text;
+        }
+        let metrics = ctx.measureText(text);
         let txtWidth = metrics.width;
         let txtHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
-        ctx.fillText(this.number, this.x - txtWidth / 2, this.y + txtHeight / 2);
+        ctx.fillText(text, this.x - txtWidth / 2, this.y + txtHeight / 2);
         ctx.closePath();
 
         if (selectedVertex == this) {
@@ -53,18 +59,45 @@ class Vertex {
     }
 
     print() {
-        return "Vertex " + this.number;
+        // let appendix = "";
+        // if (this.number != -1 && this.source == this.number) {
+        //     appendix = "(Source) ";
+        // } else if (this.number != -1 && this.target == this.number) {
+        //     appendix = "(Target) ";
+        // }
+        return "Vertex " + this.number; //appendix + this.number;
     }
 }
 
+const EdgeOrientation = {
+    UNDIRECTED: 'U',
+    NORMAL: 'N',
+    REVERSED: 'R'
+};
+
 class Edge {
-    constructor(v1nr, v2nr, id = null, weight = null) {
+    constructor(v1nr, v2nr, id = null, weight = null, orientation = EdgeOrientation.UNDIRECTED) {
         this.v1nr = v1nr;
         this.v2nr = v2nr;
         this.id = id;
         this.weight = weight;
+        this.orientation = orientation;
         this.thickness = 5;
         this.color = "gray";
+    }
+
+    changeOrientation() {
+        switch (this.orientation) {
+            case EdgeOrientation.UNDIRECTED:
+                this.orientation = EdgeOrientation.NORMAL;
+                break;
+            case EdgeOrientation.NORMAL:
+                this.orientation = EdgeOrientation.REVERSED;
+                break;
+            case EdgeOrientation.REVERSED:
+                this.orientation = EdgeOrientation.UNDIRECTED;
+                break;
+        }
     }
 
     draw(pGraph, selectedEdge, multiEdge = false, loop = false, occurences = 1) {
@@ -153,6 +186,30 @@ class Edge {
                 ctx.closePath();
             }
         }
+
+        // Arrow for normal edge direction
+        let deg90Vec = new Point(dy, -dx);
+        let deg45Vec1 = new Point(dx - (dx - deg90Vec.x) / 2, dy - (dy - deg90Vec.y) / 2);
+        deg45Vec1 = changeVectorLength(deg45Vec1, 10);
+        let deg90Vec2 = new Point(-deg90Vec.x, -deg90Vec.y);
+        let deg45Vec2 = new Point(dx - (dx - deg90Vec2.x) / 2, dy - (dy - deg90Vec2.y) / 2);
+        deg45Vec2 = changeVectorLength(deg45Vec2, 10);
+        // Changes if reverse edge direction
+        if (this.orientation == EdgeOrientation.REVERSED) {
+            deg45Vec1 = new Point(-deg45Vec1.x, -deg45Vec1.y);
+            deg45Vec2 = new Point(-deg45Vec2.x, -deg45Vec2.y);
+        }
+        // Draw direction arrow
+        if (this.orientation != EdgeOrientation.UNDIRECTED) {
+            let startPoint = new Point(v1.x + dx / 2, v1.y + dy / 2);
+            ctx.beginPath();
+            ctx.moveTo(startPoint.x, startPoint.y);
+            ctx.lineTo(startPoint.x - deg45Vec1.x, startPoint.y - deg45Vec1.y);
+            ctx.moveTo(startPoint.x, startPoint.y);
+            ctx.lineTo(startPoint.x - deg45Vec2.x, startPoint.y - deg45Vec2.y);
+            ctx.stroke();
+            ctx.closePath();
+        }
     }
 
     eq(other, withId = false) {
@@ -166,7 +223,7 @@ class Edge {
 
     print() {
         let idString = (this.id == null ? "" : " id: " + this.id);
-        return "Edge " + this.v1nr + " " + this.v2nr + idString;
+        return "Edge " + this.v1nr + " " + this.v2nr + idString + " Orientation: " + this.orientation;
     }
 }
 
@@ -174,6 +231,9 @@ class Graph {
     constructor() {
         this.vertices = [];
         this.edges = [];
+
+        this.source = -1;
+        this.target = -1;
     }
 
     addVertex(vertex) {
@@ -192,11 +252,27 @@ class Graph {
         // Delete all edges connected to vertex
         for (let i = this.edges.length - 1; i >= 0; i--) {
             let edge = this.edges[i];
-            if (edge.v1 == vertex || edge.v2 == vertex) {
+            if (edge.v1nr == vertex.number || edge.v2nr == vertex.number) {
                 this.edges.splice(i, 1);
             }
         }
         this.vertices.splice(this.vertices.indexOf(vertex), 1);
+    }
+
+    makeSource(vertexNr) {
+        if (this.target == vertexNr && vertexNr != -1) {
+            window.alert("Can't have same source & target");
+            return;
+        }
+        this.source = vertexNr;
+    }
+
+    makeTarget(vertexNr) {
+        if (this.source == vertexNr && vertexNr != -1) {
+            window.alert("Can't have same source & target");
+            return;
+        }
+        this.target = vertexNr;
     }
 
     getVertexAt(x, y) {
@@ -264,7 +340,7 @@ class Graph {
             edge.draw(this, selectedEdge);
         }
         for (let i = 0; i < this.vertices.length; i++) {
-            this.vertices[i].draw(selectedVertex);
+            this.vertices[i].draw(selectedVertex, this.source, this.target);
         }
     }
 

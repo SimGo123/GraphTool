@@ -16,6 +16,8 @@ function predefinedClick(param) {
         let jsonGraph = {};
         jsonGraph["canvasWidth"] = $("#fgCanvas")[0].width;
         jsonGraph["canvasHeight"] = $("#fgCanvas")[0].height;
+        jsonGraph["source"] = graph.source;
+        jsonGraph["target"] = graph.target;
         jsonGraph.vertices = [];
         for (let i = 0; i < graph.vertices.length; i++) {
             let vertex = graph.vertices[i];
@@ -24,7 +26,7 @@ function predefinedClick(param) {
         jsonGraph.edges = [];
         for (let i = 0; i < graph.edges.length; i++) {
             let edge = graph.edges[i];
-            jsonGraph.edges.push({ "v1nr": edge.v1nr, "v2nr": edge.v2nr, "weight": edge.weight });
+            jsonGraph.edges.push({ "v1nr": edge.v1nr, "v2nr": edge.v2nr, "weight": edge.weight, "orientation": edge.orientation });
         }
         window.alert(JSON.stringify(jsonGraph));
     } else if (param == PREDEFINEDS.FROM_JSON) {
@@ -107,6 +109,10 @@ function loadGraphFromJson(graphString) {
             jsonVertex.x = (jsonVertex.x / originalCanvasWidth) * newCanvasWidth;
             jsonVertex.y = (jsonVertex.y / originalCanvasHeight) * newCanvasHeight;
         }
+        if (jsonGraph.hasOwnProperty('source') && jsonGraph.hasOwnProperty('target')) {
+            graph.makeSource(jsonGraph['source']);
+            graph.makeTarget(jsonGraph['target']);
+        }
         let vertex = new Vertex(jsonVertex.x, jsonVertex.y, nr);
         graph.addVertex(vertex);
     }
@@ -141,7 +147,8 @@ function loadGraphFromJson(graphString) {
             }
         }
         graph.addEdge(new Edge(graph.vertices[v1idx].number, graph.vertices[v2idx].number,
-            null, jsonEdge.hasOwnProperty('weight') ? jsonEdge.weight : null));
+            null, jsonEdge.hasOwnProperty('weight') ? jsonEdge.weight : null,
+            jsonEdge.hasOwnProperty('orientation') ? jsonEdge.orientation : EdgeOrientation.UNDIRECTED));
     }
     redrawAll();
 }
