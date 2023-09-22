@@ -207,6 +207,7 @@ class Edge {
             ctx.lineTo(startPoint.x - deg45Vec1.x, startPoint.y - deg45Vec1.y);
             ctx.moveTo(startPoint.x, startPoint.y);
             ctx.lineTo(startPoint.x - deg45Vec2.x, startPoint.y - deg45Vec2.y);
+            ctx.lineWidth = 3;
             ctx.stroke();
             ctx.closePath();
         }

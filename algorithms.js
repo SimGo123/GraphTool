@@ -2,7 +2,8 @@ const ALGORITHMS = {
     TRIANGULATION: 0,
     PLANAR_SEPARATOR: 1,
     WEIGHT_MAX_MATCHING: 2,
-    MIXED_MAX_CUT: 3
+    MIXED_MAX_CUT: 3,
+    MAX_FLOW: 4
 };
 
 var algorithm = null;
@@ -31,6 +32,13 @@ async function algorithmClick(param) {
         algorithm = null;
     } else if (param == ALGORITHMS.MIXED_MAX_CUT) {
         algorithm = new MixedMaxCutAlgo();
+        $("#algoControlPanel").removeClass("invisible");
+        $("#stepButton").removeClass("disabled");
+        $("#runCompleteButton").removeClass("disabled");
+        await algorithm.run();
+        algorithm = null;
+    } else if (param == ALGORITHMS.MAX_FLOW) {
+        algorithm = new MaxFlowAlgo();
         $("#algoControlPanel").removeClass("invisible");
         $("#stepButton").removeClass("disabled");
         $("#runCompleteButton").removeClass("disabled");
