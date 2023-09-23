@@ -50,8 +50,6 @@ function drawCanvases() {
 
 // Draw the outer walls of the canvas
 function drawCanvasWalls() {
-    console.log("drawCanvasWalls");
-
     canvasWalls = [];
     canvasWalls.push(new Wall(0, 0, fgCanvas.width, Orientation.HORIZONTAL));
     canvasWalls.push(new Wall(0, fgCanvas.height - Wall.thickness, fgCanvas.width, Orientation.HORIZONTAL));
@@ -71,14 +69,12 @@ function drawCanvasWalls() {
 }
 
 function clearFgCanvas() {
-    console.log("clearFgCanvas");
     var ctx = fgCanvas.getContext("2d");
     ctx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
 }
 
 function redrawAll() {
-    console.log("redrawAll");
     clearFgCanvas();
     drawCanvasWalls();
-    graph.draw(selectedVertex, selectedEdge);
+    graph.draw(selectedVertex, selectedEdge, new ColorSet("gray", "gray", "red"));
 }

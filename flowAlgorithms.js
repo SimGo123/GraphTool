@@ -1,5 +1,5 @@
 class MaxFlowAlgo extends Algorithm {
-    // TODO Adapt to MaxFlowAlgo
+
     preconditionsCheck() {
         let fulfilled = true;
         if (!graph.isPlanarEmbedded()) {
@@ -63,7 +63,7 @@ class MaxFlowAlgo extends Algorithm {
         let copyGraph = graph.getCopy();
         let [dualGraph, edgeEqualities, vertexFacets] = graph.getDualGraph();
         graph = dualGraph;
-        redrawAll();
+        this.drawTwoGraphs(copyGraph, graph);
 
         await super.pause("Split outer facet", "Split it into two parts, as if an edge were inserted in outer facet between S and T");
         let edgesToNewFacet = [];
@@ -98,13 +98,13 @@ class MaxFlowAlgo extends Algorithm {
                 }
             }
         }
-        redrawAll();
+        this.drawTwoGraphs(copyGraph, graph);
 
         await super.pause("Calculate shortest distance between the new facet node and every other node",
             "Calculate distance from vertex " + newFacetVertex.number + " to every other vertex using Dijekstra.");
         let distances = getDijekstraResults(newFacetVertex);
         graph = copyGraph;
-        redrawAll();
+        this.drawTwoGraphs(dualGraph, graph);
 
         // Combine each facet with its dual vertex.
         // Facets can be identical, but have to be mapped to different vertices
@@ -181,12 +181,10 @@ class MaxFlowAlgo extends Algorithm {
 
     }
 
-    facetToVertex(facet, vertexFacets, dualGraph, prevVac = 0) {
-        for (let i = prevVac; i < vertexFacets.length; i++) {
-            let vertFac = vertexFacets[i];
-            if (getUniqueVerticeNrsOnFacet(facet).join(',') == getUniqueVerticeNrsOnFacet(vertFac.facet).join(',')) {
-                return dualGraph.getVertexByNumber(vertFac.vertexNumber);
-            }
-        }
+    drawTwoGraphs(backGraph, foreGraph) {
+        clearFgCanvas();
+        drawCanvasWalls();
+        backGraph.draw(null, null, new ColorSet("#D3D3D3", "#D3D3D3", "red"));
+        foreGraph.draw(selectedVertex, selectedEdge, new ColorSet("gray", "gray", "red"));
     }
 }

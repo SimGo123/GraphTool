@@ -3,6 +3,14 @@ var vertexCount = 0;
 
 var vertexRadius = 15;
 
+class ColorSet {
+    constructor(vertexColor = "gray", edgeColor = "gray", highlightColor = "red") {
+        this.vertexColor = vertexColor;
+        this.edgeColor = edgeColor;
+        this.highlightColor = highlightColor;
+    }
+}
+
 class Vertex {
     constructor(x, y, number = -1) {
         this.x = x;
@@ -16,21 +24,19 @@ class Vertex {
             this.number = vertexCount++;
         }
         this.radius = vertexRadius;
-        this.highlightColor = "red";
-        this.color = "gray";
     }
 
-    draw(selectedVertex, source, target) {
+    draw(selectedVertex, source, target, colorSet) {
         var ctx = fgCanvas.getContext("2d");
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
         ctx.fillStyle = "white";
         ctx.fill();
-        ctx.strokeStyle = this.color;
+        ctx.strokeStyle = colorSet.vertexColor;
         ctx.lineWidth = 3;
         ctx.stroke();
         ctx.closePath();
-        ctx.fillStyle = this.color;
+        ctx.fillStyle = colorSet.vertexColor;
         let text = this.number;
         if (this.number != -1 && source == this.number) {
             text = "S" + text;
@@ -45,7 +51,7 @@ class Vertex {
 
         if (selectedVertex == this) {
             // Draw highlighting circle around vertex
-            ctx.strokeStyle = this.highlightColor;
+            ctx.strokeStyle = colorSet.highlightColor;
             ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.radius + 5, 0, 2 * Math.PI);
@@ -83,7 +89,6 @@ class Edge {
         this.weight = weight;
         this.orientation = orientation;
         this.thickness = 5;
-        this.color = "gray";
     }
 
     changeOrientation() {
@@ -100,17 +105,17 @@ class Edge {
         }
     }
 
-    draw(pGraph, selectedEdge, multiEdge = false, loop = false, occurences = 1) {
+    draw(pGraph, selectedEdge, colorSet, multiEdge = false, loop = false, occurences = 1) {
         let v1 = pGraph.getVertexByNumber(this.v1nr);
         let v2 = pGraph.getVertexByNumber(this.v2nr);
         let dx = v2.x - v1.x;
         let dy = v2.y - v1.y;
         var ctx = fgCanvas.getContext("2d");
         if (selectedEdge == this) {
-            ctx.strokeStyle = "red";
+            ctx.strokeStyle = colorSet.highlightColor;
             ctx.lineWidth = 7;
         } else {
-            ctx.strokeStyle = this.color;
+            ctx.strokeStyle = colorSet.edgeColor;
             ctx.lineWidth = 3;
         }
         if (occurences == 1 || occurences % 2 != 0) {
@@ -121,7 +126,7 @@ class Edge {
             ctx.closePath();
             if (this.weight != null) {
                 let vecLen = this.weight.toString().length * 7;
-                ctx.fillStyle = "gray";
+                ctx.fillStyle = colorSet.edgeColor;
                 let controlVec = new Point(dy, -dx);
                 controlVec = changeVectorLength(controlVec, vecLen);
                 controlVec = controlVec.y < 0 ? controlVec : changeVectorLength(new Point(-dy, dx), vecLen);
@@ -148,7 +153,7 @@ class Edge {
 
             // Write loop count into loop, if > 1
             if (occurences > 1) {
-                ctx.fillStyle = this.color;
+                ctx.fillStyle = colorSet.edgeColor;
                 ctx.fillText(occurences, vertex.x + length / 2, vertex.y + 5);
             }
         } else if (multiEdge) {
@@ -222,7 +227,7 @@ class Edge {
 
     print() {
         let idString = (this.id == null ? "" : " id: " + this.id);
-        return "Edge " + this.v1nr + " " + this.v2nr + idString + " Orientation: " + this.orientation;
+        return "Edge " + this.v1nr + " " + this.v2nr + " (" + this.orientation + ")" + idString;
     }
 }
 
@@ -301,7 +306,7 @@ class Graph {
         return null;
     }
 
-    draw(selectedVertex, selectedEdge) {
+    draw(selectedVertex, selectedEdge, colorSet) {
         let loops = this.getLoops();
         for (let i = 0; i < loops.length; i++) {
             let loop = loops[i];
@@ -311,7 +316,7 @@ class Graph {
                     occurrences++;
                 }
             });
-            loop.draw(this, selectedEdge, false, true, occurrences);
+            loop.draw(this, selectedEdge, colorSet, false, true, occurrences);
         }
         let multiEdges = this.getMultiEdges();
         for (let i = 0; i < multiEdges.length; i++) {
@@ -320,13 +325,12 @@ class Graph {
                 continue;
             }
             let occurrences = 0;
-            console.log(this.edges.length + " edges");
             $.each(this.edges, function (_j, otherEdge) {
                 if (multiEdge.eq(otherEdge)) {
                     occurrences++;
                 }
             });
-            multiEdge.draw(this, selectedEdge, true, false, occurrences);
+            multiEdge.draw(this, selectedEdge, colorSet, true, false, occurrences);
         }
         let otherEdgesToDraw = [];
         $.each(this.edges, function (_i, edge) {
@@ -336,10 +340,10 @@ class Graph {
         });
         for (let i = 0; i < otherEdgesToDraw.length; i++) {
             let edge = otherEdgesToDraw[i];
-            edge.draw(this, selectedEdge);
+            edge.draw(this, selectedEdge, colorSet);
         }
         for (let i = 0; i < this.vertices.length; i++) {
-            this.vertices[i].draw(selectedVertex, this.source, this.target);
+            this.vertices[i].draw(selectedVertex, this.source, this.target, colorSet);
         }
     }
 
