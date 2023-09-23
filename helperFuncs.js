@@ -74,22 +74,16 @@ function getDijekstraResults(startVertex) {
     graph.vertices.forEach(v => {
         distances.push(parseInt(Number.MAX_SAFE_INTEGER));
     });
-    console.log('i ' + eqIndexOf(graph.vertices, startVertex));
     distances[eqIndexOf(graph.vertices, startVertex)] = 0;
-    console.log('d ' + distances);
     while (queue.length > 0) {
         let newQueue = [];
         queue.forEach(v => {
             let incidentEdges = graph.getIncidentEdges(v, true);
-            console.log('ice');
             printArr(incidentEdges)
             incidentEdges.forEach(e => {
-                console.log(typeof distances[eqIndexOf(graph.vertices, v)]);
-                console.log(typeof e.weight);
                 let dist = parseInt(distances[eqIndexOf(graph.vertices, v)]) + parseInt(e.weight);
                 let nNumber = (e.v1nr != v.number) ? e.v1nr : e.v2nr;
                 let neighbourIdx = eqIndexOf(graph.vertices, graph.getVertexByNumber(nNumber));
-                console.log(dist + ' vs ' + distances[neighbourIdx]);
                 if (dist < distances[neighbourIdx]) {
                     distances[neighbourIdx] = dist;
                     newQueue.push(graph.getVertexByNumber(nNumber));
@@ -97,7 +91,6 @@ function getDijekstraResults(startVertex) {
             })
         });
         queue = newQueue;
-        console.log('qu');
         printArr(queue);
     }
     return distances;

@@ -155,11 +155,8 @@ class Edge {
             // Draw multiple edges with bezier curves
             let vectorLen = 60;
             let steps = vectorLen * 2 / (occurences - 1);
-            console.log("occurences " + occurences);
-            console.log("step " + steps);
 
             for (let i = vectorLen; i > 0; i -= steps) {
-                console.log(i);
                 // Control points are perpendicular to edge
                 let controlVec = new Point(dy, -dx);
                 controlVec = changeVectorLength(controlVec, i);
@@ -510,10 +507,16 @@ class Graph {
         let allFacets = getAllFacets();
         let vertexFacets = [];
         let edgeEqualities = [];
+        let outerFacetPoss = tryGetOuterFacet();
+        let outerFacDone = false;
         for (let i = 0; i < allFacets.length; i++) {
             let facet = allFacets[i];
             let facetCenter = getFacetCenter(facet);
             let vertex = new Vertex(facetCenter.x, facetCenter.y);
+            if (outerFacetPoss.length == 1 && outerFacetPoss[0].join(',') == facet.join(',') && !outerFacDone) {
+                vertex = new Vertex(400, 100);
+                outerFacDone = true;
+            }
             dualGraph.addVertex(vertex);
             vertexFacets.push(new VertexFacet(vertex.number, facet));
         }

@@ -13,6 +13,10 @@ class MaxFlowAlgo extends Algorithm {
                 return false;
             }
         });
+        if (graph.source == -1 || graph.target == -1) {
+            alert("can't calculate max flow, source or target not set!");
+            fulfilled = false;
+        }
         return fulfilled;
     }
 
@@ -36,9 +40,6 @@ class MaxFlowAlgo extends Algorithm {
         });
 
         let outerFacetPoss = tryGetOuterFacet();
-        console.log('fps [');
-        outerFacetPoss.forEach(f => console.log(getUniqueVerticeNrsOnFacet(f)));
-        console.log(']');
         let onOuterFacet = outerFacetPoss.length == 1
             && getUniqueVerticeNrsOnFacet(outerFacetPoss[0]).includes(graph.source)
             && getUniqueVerticeNrsOnFacet(outerFacetPoss[0]).includes(graph.target);
@@ -85,7 +86,6 @@ class MaxFlowAlgo extends Algorithm {
         });
         let newFacetVertex = new Vertex(100, 100);
         graph.addVertex(newFacetVertex);
-        edgeEqualities.forEach(ee => console.log(ee.edge1.print() + ',' + ee.edge2.print()));
         for (let i = 0; i < edgesToNewFacet.length; i++) {
             for (let j = 0; j < edgeEqualities.length; j++) {
                 if (edgesToNewFacet[i].eq(edgeEqualities[j].edge2)) {
@@ -101,15 +101,34 @@ class MaxFlowAlgo extends Algorithm {
         redrawAll();
 
         await super.pause("Calculate shortest distance between the new facet node and every other node",
-            "Calculate distance from vertex " + newFacetVertex + " to every other vertex using Dijekstra.");
+            "Calculate distance from vertex " + newFacetVertex.number + " to every other vertex using Dijekstra.");
         let distances = getDijekstraResults(newFacetVertex);
         graph = copyGraph;
         redrawAll();
-        // let maxFlow = distances[eqIndexOf(graph.vertices, oldVertexIndex)]; FALSE!
 
+        // Combine each facet with its dual vertex.
+        // Facets can be identical, but have to be mapped to different vertices
         let facets = getAllFacets();
-        facets.forEach(facet => {
-            let facetVertex = this.facetToVertex(facet, vertexFacets, dualGraph);
+        let verticesForFacets = [];
+        let visited = [];
+        for (let i = 0; i < facets.length; i++) {
+            let facet = facets[i];
+            let vn = -1;
+            for (let j = 0; j < vertexFacets.length; j++) {
+                if (!visited.includes(j)) {
+                    let vertFac = vertexFacets[j];
+                    if (getUniqueVerticeNrsOnFacet(facet).join(',') == getUniqueVerticeNrsOnFacet(vertFac.facet).join(',')) {
+                        visited.push(j);
+                        vn = vertFac.vertexNumber;
+                        break;
+                    }
+                }
+            }
+            verticesForFacets.push(vn);
+        }
+
+        facets.forEach((facet, i) => {
+            let facetVertex = dualGraph.getVertexByNumber(verticesForFacets[i]);
             let dist = distances[eqIndexOf(dualGraph.vertices, facetVertex)];
             let facetCenter = getFacetCenter(facet);
             var ctx = fgCanvas.getContext("2d");
@@ -125,8 +144,8 @@ class MaxFlowAlgo extends Algorithm {
                     for (var j = i + 1; j < facets.length; j++) {
                         let facet2 = facets[j];
                         if (eqIndexOf(facet2, e) != -1) {
-                            let facetVertex1 = this.facetToVertex(facet, vertexFacets, dualGraph);
-                            let facetVertex2 = this.facetToVertex(facet2, vertexFacets, dualGraph);
+                            let facetVertex1 = dualGraph.getVertexByNumber(verticesForFacets[i]);
+                            let facetVertex2 = dualGraph.getVertexByNumber(verticesForFacets[j]);
                             if (eqIndexOf(edgesToNewFacet, e) != -1) {
                                 if (facetVertex1.number == oldFacetVertexNr && eqIndexOf(edgesToNewFacet, e) != -1) {
                                     facetVertex1 = newFacetVertex;
@@ -135,11 +154,16 @@ class MaxFlowAlgo extends Algorithm {
                                     facetVertex2 = newFacetVertex;
                                 }
                             }
-                            // TODO Consider which facet is right and which is left
                             let dist1 = distances[eqIndexOf(dualGraph.vertices, facetVertex1)];
                             let dist2 = distances[eqIndexOf(dualGraph.vertices, facetVertex2)];
-                            console.log('d1 ' + dist1 + ' d2 ' + dist2);
-                            e.weight = dist1 - dist2;
+                            let oldWeight = e.weight;
+                            e.weight = (dist1 - dist2) + "/" + oldWeight;
+                            if (dist1 > dist2) {
+                                e.orientation = "N";
+                            } else if (dist1 < dist2) {
+                                e.orientation = "R";
+                                e.weight = (-dist1 - -dist2) + "/" + oldWeight;
+                            }
                             break;
                         }
                     }
@@ -148,7 +172,8 @@ class MaxFlowAlgo extends Algorithm {
         });
         redrawAll();
 
-        await super.pause("Result", "Max flow is ???");
+        let maxFlow = distances[dualGraph.getVertexIdByNumber(oldFacetVertexNr)];
+        await super.pause("Result", "Max flow is " + maxFlow);
     }
 
     // TODO implement
@@ -156,8 +181,8 @@ class MaxFlowAlgo extends Algorithm {
 
     }
 
-    facetToVertex(facet, vertexFacets, dualGraph) {
-        for (let i = 0; i < vertexFacets.length; i++) {
+    facetToVertex(facet, vertexFacets, dualGraph, prevVac = 0) {
+        for (let i = prevVac; i < vertexFacets.length; i++) {
             let vertFac = vertexFacets[i];
             if (getUniqueVerticeNrsOnFacet(facet).join(',') == getUniqueVerticeNrsOnFacet(vertFac.facet).join(',')) {
                 return dualGraph.getVertexByNumber(vertFac.vertexNumber);
