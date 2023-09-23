@@ -1,33 +1,3 @@
-function getNextDegOneVertex() {
-    console.log("deg1");
-    for (var i = 0; i < graph.vertices.length; i++) {
-        var vertex = graph.vertices[i];
-        if (graph.getVertexDegree(vertex) == 1) {
-            console.log("found deg1 vertex");
-            return vertex;
-        }
-    }
-    console.log("no deg1 vertices");
-    return null;
-}
-
-function nextVertexAfter(vertices, afterVertex, rightDir) {
-    let vertexIndex = eqIndexOf(vertices, afterVertex);
-    if (rightDir) {
-        if (vertexIndex == vertices.length - 1) {
-            return vertices[0];
-        } else {
-            return vertices[vertexIndex + 1];
-        }
-    } else {
-        if (vertexIndex == 0) {
-            return vertices[vertices.length - 1];
-        } else {
-            return vertices[vertexIndex - 1];
-        }
-    }
-}
-
 function depthFirstSearch(vertex) {
     console.log("depthFirstSearch");
     let visited = [];
@@ -79,6 +49,60 @@ function breadthFirstSearchTree(vertex, runGraph) {
     }
     return layers;
 }
+
+// Next brute force iteration
+// Starts with [false, false, ...]
+// Ends with [true, true, ...]
+// Returns null if [true, true, ...] was passed
+function nextBruteForceIter(array) {
+    let done = !array.includes(false);
+    if (done) {
+        return null;
+    }
+
+    let index = array.indexOf(false);
+    array[index] = true;
+    for (let i = 0; i < index; i++) {
+        array[i] = false;
+    }
+    return array;
+}
+
+function getDijekstraResults(startVertex) {
+    let queue = [startVertex];
+    let distances = [];
+    graph.vertices.forEach(v => {
+        distances.push(parseInt(Number.MAX_SAFE_INTEGER));
+    });
+    console.log('i ' + eqIndexOf(graph.vertices, startVertex));
+    distances[eqIndexOf(graph.vertices, startVertex)] = 0;
+    console.log('d ' + distances);
+    while (queue.length > 0) {
+        let newQueue = [];
+        queue.forEach(v => {
+            let incidentEdges = graph.getIncidentEdges(v, true);
+            console.log('ice');
+            printArr(incidentEdges)
+            incidentEdges.forEach(e => {
+                console.log(typeof distances[eqIndexOf(graph.vertices, v)]);
+                console.log(typeof e.weight);
+                let dist = parseInt(distances[eqIndexOf(graph.vertices, v)]) + parseInt(e.weight);
+                let nNumber = (e.v1nr != v.number) ? e.v1nr : e.v2nr;
+                let neighbourIdx = eqIndexOf(graph.vertices, graph.getVertexByNumber(nNumber));
+                console.log(dist + ' vs ' + distances[neighbourIdx]);
+                if (dist < distances[neighbourIdx]) {
+                    distances[neighbourIdx] = dist;
+                    newQueue.push(graph.getVertexByNumber(nNumber));
+                }
+            })
+        });
+        queue = newQueue;
+        console.log('qu');
+        printArr(queue);
+    }
+    return distances;
+}
+
 
 class StatusEdge {
     constructor(edge, rightVisited, leftVisited) {
@@ -222,9 +246,91 @@ function getFacetCenter(facet) {
     return facetCenter;
 }
 
-function eqIndexOf(array, element, withId = false) {
+// Try to get the outer facet by checking which facet contains 
+// the extreme (max/min x/y) vertices
+// May return one, multiple (or no) facets that could be the outer facet
+// Requires: Planar embedded graph
+function tryGetOuterFacet() {
+    let extremeVertices = {
+        'minX': graph.vertices[0], 'maxX': graph.vertices[0],
+        'minY': graph.vertices[0], 'maxY': graph.vertices[0]
+    };
+    let minX = graph.vertices[0].x;
+    let maxX = graph.vertices[0].x;
+    let minY = graph.vertices[0].y;
+    let maxY = graph.vertices[0].y;
+
+    graph.vertices.forEach((vertex) => {
+        if (vertex.x < minX) {
+            minX = vertex.x;
+            extremeVertices['minX'] = vertex;
+        }
+        if (vertex.x > maxX) {
+            maxX = vertex.x;
+            extremeVertices['maxX'] = vertex;
+        }
+        if (vertex.y < minY) {
+            minY = vertex.y;
+            extremeVertices['minY'] = vertex;
+        }
+        if (vertex.y > maxY) {
+            maxY = vertex.y;
+            extremeVertices['maxY'] = vertex;
+        }
+    });
+    let facets = getAllFacets();
+    let possibilities = [];
+    facets.forEach((facet) => {
+        let verticeNrsOnFacet = getUniqueVerticeNrsOnFacet(facet);
+        if (verticeNrsOnFacet.includes(extremeVertices['minX'].number)
+            && verticeNrsOnFacet.includes(extremeVertices['maxX'].number)
+            && verticeNrsOnFacet.includes(extremeVertices['minY'].number)
+            && verticeNrsOnFacet.includes(extremeVertices['maxY'].number)) {
+            possibilities.push(facet);
+        }
+    });
+    // Check if both facets contain the same vertices (like inside and outside of circle graph)
+    if (possibilities.length == 2
+        && possibilities[0].sort().join(',') === possibilities[1].sort().join(',')) {
+        return [possibilities[0]];
+    }
+    return possibilities;
+}
+
+// Get next vertex after afterVertex in right/left direction
+function nextVertexAfter(vertices, afterVertex, rightDir) {
+    let vertexIndex = eqIndexOf(vertices, afterVertex);
+    if (rightDir) {
+        if (vertexIndex == vertices.length - 1) {
+            return vertices[0];
+        } else {
+            return vertices[vertexIndex + 1];
+        }
+    } else {
+        if (vertexIndex == 0) {
+            return vertices[vertices.length - 1];
+        } else {
+            return vertices[vertexIndex - 1];
+        }
+    }
+}
+
+function getNextDegOneVertex() {
+    console.log("deg1");
+    for (var i = 0; i < graph.vertices.length; i++) {
+        var vertex = graph.vertices[i];
+        if (graph.getVertexDegree(vertex) == 1) {
+            console.log("found deg1 vertex");
+            return vertex;
+        }
+    }
+    console.log("no deg1 vertices");
+    return null;
+}
+
+function eqIndexOf(array, element, withId = false, withWeightAndOrient = false) {
     for (var i = 0; i < array.length; i++) {
-        if (array[i].eq(element, withId)) {
+        if (array[i].eq(element, withId, withWeightAndOrient)) {
             return i;
         }
     }
@@ -289,22 +395,8 @@ function changeVectorLength(vector, length) {
     return new Point(vector.x * length / vectorLength, vector.y * length / vectorLength);
 }
 
-// Next brute force iteration
-// Starts with [false, false, ...]
-// Ends with [true, true, ...]
-// Returns null if [true, true, ...] was passed
-function nextBruteForceIter(array) {
-    let done = !array.includes(false);
-    if (done) {
-        return null;
-    }
-    
-    let index = array.indexOf(false);
-    array[index] = true;
-    for (let i = 0; i < index; i++) {
-        array[i] = false;
-    }
-    return array;
+function printArr(arr) {
+    arr.forEach(elem => console.log(elem.print()));
 }
 
 class VertexFacet {

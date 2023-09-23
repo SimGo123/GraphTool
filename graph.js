@@ -54,7 +54,7 @@ class Vertex {
         }
     }
 
-    eq(other) {
+    eq(other, withId = null) {
         return this.number == other.number;
     }
 
@@ -213,10 +213,11 @@ class Edge {
         }
     }
 
-    eq(other, withId = false) {
+    eq(other, withId = false, withWeightAndOrient = false) {
         let idEq = withId ? this.id == other.id : true;
-        return (this.v1nr == other.v1nr && this.v2nr == other.v2nr && idEq)
-            || (this.v1nr == other.v2nr && this.v2nr == other.v1nr && idEq);
+        let weightOrientEq = withWeightAndOrient ? (this.weight == other.weight && this.orientation == other.orientation) : true;
+        return (this.v1nr == other.v1nr && this.v2nr == other.v2nr && idEq && weightOrientEq)
+            || (this.v1nr == other.v2nr && this.v2nr == other.v1nr && idEq && weightOrientEq);
         // Also equal if edges are reversed
         // return (this.v1.eq(other.v1) && this.v2.eq(other.v2) && idEq)
         //     || (this.v1.eq(other.v2) && this.v2.eq(other.v1) && idEq);
@@ -378,12 +379,21 @@ class Graph {
     }
 
     // Gets all edges incident to vertex
-    getIncidentEdges(vertex) {
+    // If usingOrientation is true, only edges originating from the vertex are returned
+    getIncidentEdges(vertex, usingOrientation = false) {
         let incidentEdges = [];
         for (let i = 0; i < this.edges.length; i++) {
             let edge = this.edges[i];
-            if (edge.v1nr == vertex.number || edge.v2nr == vertex.number) {
-                incidentEdges.push(edge);
+            if (usingOrientation && edge.orientation != EdgeOrientation.UNDIRECTED) {
+                if (edge.v1nr == vertex.number && edge.orientation == EdgeOrientation.NORMAL) {
+                    incidentEdges.push(edge);
+                } else if (edge.v2nr == vertex.number && edge.orientation == EdgeOrientation.REVERSED) {
+                    incidentEdges.push(edge);
+                }
+            } else {
+                if (edge.v1nr == vertex.number || edge.v2nr == vertex.number) {
+                    incidentEdges.push(edge);
+                }
             }
         }
         return incidentEdges;
@@ -394,9 +404,9 @@ class Graph {
     }
 
     // Returns an array of all vertices connected to vertex, in clockwise embedding order
-    getAllNeighbours(vertex) {
+    getAllNeighbours(vertex, usingOrientation = false) {
         let neighbours = [];
-        for (let i = 0; i < this.getIncidentEdges(vertex).length; i++) {
+        for (let i = 0; i < this.getIncidentEdges(vertex, usingOrientation).length; i++) {
             let edge = this.getIncidentEdges(vertex)[i];
             if (edge.v1nr == vertex.number) {
                 neighbours.push(this.getVertexByNumber(edge.v2nr));
@@ -531,11 +541,12 @@ class Graph {
                 console.log('v1 ' + v1nr + ' v2 ' + v2nr);
             } else {
                 // Keep weights in dual graph
-                dualGraph.addEdge(new Edge(v1nr, v2nr, null, edge.weight));
-                edgeEqualities.push(new EdgeEquality(new Edge(v1nr, v2nr, null, edge.weight), edge));
+                let newEdge = new Edge(v1nr, v2nr, null, edge.weight);
+                dualGraph.addEdge(newEdge);
+                edgeEqualities.push(new EdgeEquality(newEdge, edge));
             }
         });
-        return [dualGraph, edgeEqualities];
+        return [dualGraph, edgeEqualities, vertexFacets];
     }
 
     getCopy() {
@@ -544,8 +555,10 @@ class Graph {
             copy.addVertex(new Vertex(vertex.x, vertex.y, vertex.number));
         });
         $.each(this.edges, function (_index, edge) {
-            copy.addEdge(new Edge(edge.v1nr, edge.v2nr, edge.id, edge.weight));
+            copy.addEdge(new Edge(edge.v1nr, edge.v2nr, edge.id, edge.weight, edge.orientation));
         });
+        copy.source = this.source;
+        copy.target = this.target;
         return copy;
     }
 

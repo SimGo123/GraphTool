@@ -11,19 +11,6 @@ var currentMode = Modes.SELECTION;
 var graphModesGroup = $("#graphModes");
 var modeItems = graphModesGroup.children("li");
 
-const VertexTools = {
-    DELETE: 0,
-    MAKE_SRC: 1,
-    MAKE_TARGET: 2
-}
-
-const EdgeTools = {
-    DELETE: 0,
-    EXPAND: 1,
-    CONTRACT: 2,
-    CHANGE_ORIENTATION: 3
-}
-
 function modeClick(param) {
     currentMode = param;
 
@@ -176,6 +163,12 @@ fgCanvas.addEventListener("click", function (event) {
     redrawAll();
 });
 
+const VertexTools = {
+    DELETE: 0,
+    MAKE_SRC: 1,
+    MAKE_TARGET: 2
+}
+
 function vertexToolClick(param) {
     if (selectedVertex == null) {
         return;
@@ -200,6 +193,14 @@ function vertexToolClick(param) {
     }
 }
 
+const EdgeTools = {
+    DELETE: 0,
+    EXPAND: 1,
+    CONTRACT: 2,
+    CHANGE_ORIENTATION: 3,
+    SET_WEIGHT: 4
+}
+
 function edgeToolClick(param) {
     if (selectedEdge == null) {
         return;
@@ -213,6 +214,9 @@ function edgeToolClick(param) {
         graph.contractEdge(selectedEdge);
     } else if (param == EdgeTools.CHANGE_ORIENTATION) {
         selectedEdge.changeOrientation();
+    } else if (param == EdgeTools.SET_WEIGHT) {
+        let newWeight = window.prompt("Enter new edge weight", "0");
+        selectedEdge.weight = newWeight;
     }
     selectedEdge = null;
     changeEdgeToolsVisible(false);
