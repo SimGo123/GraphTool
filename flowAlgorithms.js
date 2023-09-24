@@ -224,7 +224,7 @@ class MaxFlowAlgo extends Algorithm {
         let directedEdgesInPath = [];
         let dirEdgesInRevPath = [];
         for (let i = 0; i < edgesInPath.length; i++) {
-            let edge = edgesInPath[i] = new Edge(edgesInPath[i].v1nr, edgesInPath[i].v2nr, null, edgesInPath[i].weight, EdgeOrientation.NORMAL);
+            let edge = new Edge(edgesInPath[i].v1nr, edgesInPath[i].v2nr, null, edgesInPath[i].weight, EdgeOrientation.NORMAL);
             let revEdge = new Edge(edge.v1nr, edge.v2nr, null, edge.weight, EdgeOrientation.REVERSED);
             let v1 = verticesInPath[i];
             if (edge.v1nr == v1.number) {
@@ -234,7 +234,11 @@ class MaxFlowAlgo extends Algorithm {
                 directedEdgesInPath.push(revEdge);
                 dirEdgesInRevPath.push(edge);
             }
-            graph.addEdge(revEdge);
+            if (edgesInPath[i].orientation == EdgeOrientation.NORMAL) {
+                graph.addEdge(revEdge);
+            } else if (edgesInPath[i].orientation == EdgeOrientation.REVERSED) {
+                graph.addEdge(edge);
+            }
         }
         directedEdgesInPath.forEach(e => colorSet.addEdgeColor(e, "green"));
         dirEdgesInRevPath.forEach(e => colorSet.addEdgeColor(e, "orange"));
