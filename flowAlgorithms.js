@@ -54,8 +54,7 @@ class MaxFlowAlgo extends Algorithm {
             await super.pause("S and T are not on the same facet", "This means that there is no faster approach then the O(nlogn) one.");
             await this.slowApproach();
         }
-        //{"canvasWidth":986,"canvasHeight":538,"source":5,"target":7,"vertices":[{"x":233,"y":107,"nr":0},{"x":614,"y":139,"nr":1},{"x":638,"y":397,"nr":2},{"x":289,"y":398,"nr":3},{"x":464,"y":235,"nr":4},{"x":265,"y":229,"nr":5},{"x":453,"y":108,"nr":6},{"x":632,"y":259,"nr":7}],"edges":[{"v1nr":0,"v2nr":6,"weight":"4","orientation":"N"},{"v1nr":6,"v2nr":1,"weight":"5","orientation":"N"},{"v1nr":1,"v2nr":7,"weight":"8","orientation":"N"},{"v1nr":7,"v2nr":2,"weight":"5","orientation":"N"},{"v1nr":2,"v2nr":3,"weight":"0","orientation":"N"},{"v1nr":3,"v2nr":5,"weight":"1","orientation":"N"},{"v1nr":5,"v2nr":0,"weight":"8","orientation":"N"},{"v1nr":0,"v2nr":4,"weight":"2","orientation":"N"},{"v1nr":4,"v2nr":6,"weight":"2","orientation":"N"},{"v1nr":4,"v2nr":1,"weight":"9","orientation":"N"},{"v1nr":4,"v2nr":2,"weight":"1","orientation":"N"},{"v1nr":4,"v2nr":3,"weight":"3","orientation":"N"}]}
-
+        
         super.onFinished();
     }
 
@@ -203,59 +202,94 @@ class MaxFlowAlgo extends Algorithm {
         }
         if (verticesInPath.length != edgesInPath.length + 1) {
             console.error("verticesInPath.length != edgesInPath.length + 1");
+            return;
         }
 
-        let copyGraph = graph.getCopy();
+        // Set orientation of edge.
+        // Can't be combined with next loop because this update is needed in copyGraph
+        for (let i = 0; i < edgesInPath.length; i++) {
+            let edge = edgesInPath[i];
+            let v1 = verticesInPath[i];
+            if (edge.v1nr == v1.number) {
+                edge.orientation = "N";
+            } else {
+                edge.orientation = "R";
+            }
+        }
+
+        // Copy the graph that doesn't contain the reverse edges to dualize it
+        let singleOrientGraph = graph.getCopy();
 
         let colorSet = new ColorSet();
         let directedEdgesInPath = [];
         let dirEdgesInRevPath = [];
         for (let i = 0; i < edgesInPath.length; i++) {
-            let edge = new Edge(edgesInPath[i].v1nr, edgesInPath[i].v2nr, null, edgesInPath[i].weight);
-            let revEdge = new Edge(edge.v2nr, edge.v1nr, null, edge.weight);
+            let edge = edgesInPath[i] = new Edge(edgesInPath[i].v1nr, edgesInPath[i].v2nr, null, edgesInPath[i].weight, EdgeOrientation.NORMAL);
+            let revEdge = new Edge(edge.v1nr, edge.v2nr, null, edge.weight, EdgeOrientation.REVERSED);
             let v1 = verticesInPath[i];
-            edge.orientation = "N";
-            revEdge.orientation = "N";
             if (edge.v1nr == v1.number) {
                 directedEdgesInPath.push(edge);
                 dirEdgesInRevPath.push(revEdge);
-                colorSet.addEdgeColor(edge, "green");
-                colorSet.addEdgeColor(revEdge, "orange");
             } else {
                 directedEdgesInPath.push(revEdge);
                 dirEdgesInRevPath.push(edge);
-                colorSet.addEdgeColor(revEdge, "green");
-                colorSet.addEdgeColor(edge, "orange");
             }
             graph.addEdge(revEdge);
         }
-        //directedEdgesInPath.forEach(e => colorSet.addEdgeColor(e, "green"));
+        directedEdgesInPath.forEach(e => colorSet.addEdgeColor(e, "green"));
+        dirEdgesInRevPath.forEach(e => colorSet.addEdgeColor(e, "orange"));
         redrawAll(colorSet);
 
+        let revOrientGraph = graph.getCopy();
+
         await super.pause("Construct dual graph", "");
-        let [dualGraph, edgeEqualities, vertexFacets] = copyGraph.getDualGraph();
+        let [dualGraph, edgeEqualities, vertexFacets] = singleOrientGraph.getDualGraph();
+        graph = dualGraph;
         let foreColorSet = new ColorSet();
         let backColorSet = new ColorSet("#D3D3D3", "#D3D3D3", "red");
+        let pathEdges = [];
+        let revPathEdges = [];
         edgeEqualities.forEach(ee => {
             if (eqIndexOf(edgesInPath, ee.edge2) != -1) {
-                console.log('ee1 ' + ee.edge1.print() + ' ee2 ' + ee.edge2.print());
-                // TODO This colors all edges between the same vertices (multi-edges)
                 foreColorSet.addEdgeColor(ee.edge1, "green");
                 backColorSet.addEdgeColor(ee.edge2, "#90EE90");
+                let revEdge = new Edge(ee.edge1.v1nr, ee.edge1.v2nr, null, ee.edge1.weight,
+                    reverseOrientation(ee.edge1.orientation));
+                graph.addEdge(revEdge);
+                foreColorSet.addEdgeColor(revEdge, "orange");
+                revPathEdges.push(revEdge);
+                pathEdges.push(ee.edge1);
             }
         });
-        graph = dualGraph;
-        this.drawTwoGraphs(copyGraph, graph, foreColorSet, backColorSet);
+        dirEdgesInRevPath.forEach(e => backColorSet.addEdgeColor(e, "#FFD580"));
+        this.drawTwoGraphs(revOrientGraph, graph, backColorSet, foreColorSet);
 
-        await super.pause("Increment alpha till there are negative circles",
-            "Use Bellman-Ford to find negative circles.");
+        await super.pause("Find maximal alpha so that there are no negative cycles",
+            "Decrement edges on s-t-path by alpha and increment edges on reverse s-t-path till there are negative cycles. "
+            + "Use Bellman-Ford to check for negative cycles.");
+        let alpha;
+        for (alpha = 0; alpha < 20; alpha++) {
+            if (containsNegativeCycles(graph, graph.vertices[0])) {
+                alpha--;
+                break;
+            }
+            for (let i = 0; i < pathEdges.length; i++) {
+                let edge = pathEdges[i];
+                let revEdge = revPathEdges[i];
+                edge.weight = parseInt(edge.weight) - 1;
+                revEdge.weight = parseInt(revEdge.weight) + 1;
+            }
+            redrawAll(foreColorSet);
+            await super.pause("alpha = " + alpha, "");
+        }
+        await super.pause("Result", "Max flow is " + alpha);
     }
 
     drawTwoGraphs(backGraph, foreGraph,
         backColorSet = new ColorSet("#D3D3D3", "#D3D3D3", "red"), foreColorSet = new ColorSet()) {
         clearFgCanvas();
         drawCanvasWalls();
-        backGraph.draw(null, null, foreColorSet);
-        foreGraph.draw(selectedVertex, selectedEdge, backColorSet);
+        backGraph.draw(null, null, backColorSet);
+        foreGraph.draw(selectedVertex, selectedEdge, foreColorSet);
     }
 }

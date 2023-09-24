@@ -94,21 +94,94 @@ function getDijekstraResults(startVertex) {
     return distances;
 }
 
-// def bellman_ford(graph, source):
-//     num_vertices = len(graph)
-//     shortest_paths = [float('inf')] * num_vertices
-//     shortest_paths[source] = 0
+// Check if graph contains negative cycles using Bellman-Ford
+function containsNegativeCycles(graph, startVertex) {
+    let numVertices = graph.vertices.length;
+    let shortestPaths = [];
+    let predecessors = [];
+    for (let i = 0; i < numVertices; i++) {
+        shortestPaths.push(10000);
+        predecessors.push(null);
+    }
+    shortestPaths[graph.getVertexIdByNumber(startVertex.number)] = 0;
 
-//     for _ in range(num_vertices - 1):
-//         for u, v, weight in graph:
-//             if shortest_paths[u] + weight < shortest_paths[v]:
-//                 shortest_paths[v] = shortest_paths[u] + weight
-
-//     for u, v, weight in graph:
-//         if shortest_paths[u] + weight < shortest_paths[v]:
-//             return True  # Negative cycle detected
-
-//     return False  # No negative cycle detected
+    for (let i = 0; i < numVertices - 1; i++) {
+        for (let j = 0; j < graph.edges.length; j++) {
+            let edge = graph.edges[j];
+            let u = graph.getVertexIdByNumber(edge.v1nr);
+            let v = graph.getVertexIdByNumber(edge.v2nr);
+            let weight = parseInt(edge.weight);
+            if (edge.orientation == EdgeOrientation.NORMAL || edge.orientation == EdgeOrientation.UNDIRECTED) {
+                if (shortestPaths[u] + parseInt(weight) < shortestPaths[v]) {
+                    shortestPaths[v] = shortestPaths[u] + weight;
+                    predecessors[v] = u;
+                }
+            }
+            if (edge.orientation == EdgeOrientation.REVERSED || edge.orientation == EdgeOrientation.UNDIRECTED) {
+                if (shortestPaths[v] + parseInt(weight) < shortestPaths[u]) {
+                    shortestPaths[u] = shortestPaths[v] + weight;
+                    predecessors[u] = v;
+                }
+            }
+        }
+    }
+    for (let j = 0; j < graph.edges.length; j++) {
+        let edge = graph.edges[j];
+        let u = graph.getVertexIdByNumber(edge.v1nr);
+        let v = graph.getVertexIdByNumber(edge.v2nr);
+        let weight = parseInt(edge.weight);
+        if (edge.orientation == EdgeOrientation.NORMAL || edge.orientation == EdgeOrientation.UNDIRECTED) {
+            if (shortestPaths[u] + weight < shortestPaths[v]) {
+                predecessors[v] = u;
+                // A negative cycle exist; find a vertex on the cycle 
+                visited = [];
+                for (let i = 0; i < numVertices; i++) {
+                    visited.push(false);
+                }
+                visited[v] = true;
+                while (!visited[u]) {
+                    visited[u] = true;
+                    u = predecessors[u];
+                }
+                // u is a vertex in a negative cycle, find the cycle itself
+                ncycle = [u];
+                v = predecessors[u];
+                while (v != u) {
+                    ncycle.unshift(graph.vertices[v].number);
+                    v = predecessors[v]
+                }
+                console.log('Negative cycle: ' + ncycle);
+                return true;
+            }
+        }
+        if (edge.orientation == EdgeOrientation.REVERSED || edge.orientation == EdgeOrientation.UNDIRECTED) {
+            if (shortestPaths[v] + weight < shortestPaths[u]) {
+                console.log('dwn');
+                predecessors[u] = v;
+                // A negative cycle exist; find a vertex on the cycle 
+                visited = [];
+                for (let i = 0; i < numVertices; i++) {
+                    visited.push(false);
+                }
+                visited[u] = true;
+                while (!visited[v]) {
+                    visited[v] = true;
+                    v = predecessors[v];
+                }
+                // u is a vertex in a negative cycle, find the cycle itself
+                ncycle = [graph.vertices[v].number];
+                u = predecessors[v];
+                while (u != v) {
+                    ncycle.unshift(graph.vertices[u].number);
+                    u = predecessors[u]
+                }
+                console.log('Negative cycle: ' + ncycle);
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
 
 function getNextDegOneVertex() {
@@ -178,6 +251,21 @@ function changeVectorLength(vector, length) {
     return new Point(vector.x * length / vectorLength, vector.y * length / vectorLength);
 }
 
+function reverseOrientation(orientation) {
+    switch (orientation) {
+        case EdgeOrientation.NORMAL:
+            return EdgeOrientation.REVERSED;
+        case EdgeOrientation.REVERSED:
+            return EdgeOrientation.NORMAL;
+    }
+    return EdgeOrientation.UNORIENTED;
+}
+
+function haveOpposedOrient(orientation1, orientation2) {
+    return (orientation1 == EdgeOrientation.NORMAL && orientation2 == EdgeOrientation.REVERSED)
+        || (orientation1 == EdgeOrientation.REVERSED && orientation2 == EdgeOrientation.NORMAL);
+}
+
 class Point {
     constructor(x, y) {
         this.x = x;
@@ -193,8 +281,8 @@ function distance(p1, p2) {
 function pointLineDist(lineStart, lineEnd, point) {
     let m = (lineEnd.y - lineStart.y) / (lineEnd.x - lineStart.x);
     let t = lineStart.y - m * lineStart.x;
-    let t2 = point.y + (1/m) * point.x;
-    let closeX = (t2 - t) / (m + 1/m);
+    let t2 = point.y + (1 / m) * point.x;
+    let closeX = (t2 - t) / (m + 1 / m);
     let closestPoint = new Point(closeX, m * closeX + t);
 
     if (closeX < Math.min(lineStart.x, lineEnd.x) || closeX > Math.max(lineStart.x, lineEnd.x)
@@ -207,36 +295,33 @@ function pointLineDist(lineStart, lineEnd, point) {
 
 // Given three collinear points p, q, r, the function checks if
 // point q lies on line segment 'pr'
-function onSegment(p, q, r)
-{
+function onSegment(p, q, r) {
     if (q.x <= Math.max(p.x, r.x) && q.x >= Math.min(p.x, r.x) &&
         q.y <= Math.max(p.y, r.y) && q.y >= Math.min(p.y, r.y))
-    return true;
-    
+        return true;
+
     return false;
 }
-  
+
 // To find orientation of ordered triplet (p, q, r).
 // The function returns following values
 // 0 --> p, q and r are collinear
 // 1 --> Clockwise
 // 2 --> Counterclockwise
-function orientation(p, q, r)
-{
+function orientation(p, q, r) {
     // See https://www.geeksforgeeks.org/orientation-3-ordered-points/
     // for details of below formula.
     let val = (q.y - p.y) * (r.x - q.x) -
-            (q.x - p.x) * (r.y - q.y);
-    
+        (q.x - p.x) * (r.y - q.y);
+
     if (val == 0) return 0; // collinear
-    
-    return (val > 0)? 1: 2; // clock or counterclock wise
+
+    return (val > 0) ? 1 : 2; // clock or counterclock wise
 }
-  
+
 // The main function that returns true if line segment 'p1q1'
 // and 'p2q2' intersect.
-function doIntersect(p1, q1, p2, q2)
-{
+function doIntersect(p1, q1, p2, q2) {
     if ((p1.x == p2.x && p1.y == p2.y) || (p1.x == q2.x && p1.y == q2.y)) return false;
     if ((q1.x == p2.x && q1.y == p2.y) || (q1.x == q2.x && q1.y == q2.y)) return false;
 
@@ -246,24 +331,24 @@ function doIntersect(p1, q1, p2, q2)
     let o2 = orientation(p1, q1, q2);
     let o3 = orientation(p2, q2, p1);
     let o4 = orientation(p2, q2, q1);
-    
+
     // General case
     if (o1 != o2 && o3 != o4)
         return true;
-    
+
     // Special Cases
     // p1, q1 and p2 are collinear and p2 lies on segment p1q1
     if (o1 == 0 && onSegment(p1, p2, q1)) return true;
-    
+
     // p1, q1 and q2 are collinear and q2 lies on segment p1q1
     if (o2 == 0 && onSegment(p1, q2, q1)) return true;
-    
+
     // p2, q2 and p1 are collinear and p1 lies on segment p2q2
     if (o3 == 0 && onSegment(p2, p1, q2)) return true;
-    
+
     // p2, q2 and q1 are collinear and q1 lies on segment p2q2
     if (o4 == 0 && onSegment(p2, q1, q2)) return true;
-    
+
     return false; // Doesn't fall in any of the above cases
 }
 
