@@ -169,7 +169,7 @@ class TriangulationAlgo extends Algorithm {
 
     // Triangulate the graph without paying attention to loops/multi-edges
     uncleanTriangulation() {
-        let allFacets = getAllFacets();
+        let allFacets = getAllFacets(graph);
 
         let newFacets = [];
         $.each(allFacets, function (_index, facet) {

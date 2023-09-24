@@ -9,20 +9,20 @@ class StatusEdge {
 // Returns an array of facet walks
 // Requires: graph is planar embedded, only one connected component
 // TODO Handle one degree vertices
-function getAllFacets() {
+function getAllFacets(runGraph) {
     console.log("getAllFacets");
     // Copy edges into statusEdges, which keep additional left/right visited booleans
     let statusEdges = [];
-    $.each(graph.edges, function (_index, edge) {
+    $.each(runGraph.edges, function (_index, edge) {
         // Status edges are [edge, rightVisited, leftVisited]
         statusEdges.push(new StatusEdge(edge, false, false));
     });
     let facets = [];
-    $.each(graph.edges, function (_index, edge) {
+    $.each(runGraph.edges, function (_index, edge) {
         let statusEdge = statusEdges[statusEdgeIndex(statusEdges, edge)];
         if (!statusEdge.rightVisited) {
             // console.log('right facet');
-            let rightFacet = facetWalk(edge, true, statusEdges);
+            let rightFacet = facetWalk(edge, true, statusEdges, runGraph);
             facets.push(rightFacet);
             $.each(rightFacet, function (_index, edge) {
                 let edgeIndex = statusEdgeIndex(statusEdges, edge);
@@ -38,7 +38,7 @@ function getAllFacets() {
         statusEdge = statusEdges[statusEdgeIndex(statusEdges, edge)];
         if (!statusEdge.leftVisited) {
             // console.log('left facet');
-            let leftFacet = facetWalk(edge, false, statusEdges);
+            let leftFacet = facetWalk(edge, false, statusEdges, runGraph);
             facets.push(leftFacet);
             $.each(leftFacet, function (_index, edge) {
                 let edgeIndex = statusEdgeIndex(statusEdges, edge);
@@ -64,13 +64,13 @@ function getAllFacets() {
 }
 
 // Follow a facet from a vertex back to itself, return edges on facet
-function facetWalk(edge, rightDir, statusEdges) {
+function facetWalk(edge, rightDir, statusEdges, runGraph) {
     let facet = [];
-    let prevVertex = graph.getVertexByNumber(edge.v1nr);
-    let currentVertex = graph.getVertexByNumber(edge.v2nr);
+    let prevVertex = runGraph.getVertexByNumber(edge.v1nr);
+    let currentVertex = runGraph.getVertexByNumber(edge.v2nr);
     let statusEdgeVisited = false;
     while (!statusEdgeVisited) {
-        let neighbours = graph.getAllNeighbours(currentVertex);
+        let neighbours = runGraph.getAllNeighbours(currentVertex);
         let nextVertex = nextVertexAfter(neighbours, prevVertex, rightDir);
 
         let newEdge = new Edge(currentVertex.number, nextVertex.number);
@@ -127,11 +127,11 @@ function getUniqueVerticeNrsOnFacet(facet) {
     return verticesOnFacet;
 }
 
-function getFacetCenter(facet) {
+function getFacetCenter(facet, runGraph) {
     let facetCenter = new Point(0, 0);
     let verticesOnFacet = getUniqueVerticeNrsOnFacet(facet);
     $.each(verticesOnFacet, function (_index, vertexNr) {
-        let vertex = graph.getVertexByNumber(vertexNr);
+        let vertex = runGraph.getVertexByNumber(vertexNr);
         facetCenter.x += vertex.x;
         facetCenter.y += vertex.y;
     });
@@ -144,17 +144,17 @@ function getFacetCenter(facet) {
 // the extreme (max/min x/y) vertices
 // May return one, multiple (or no) facets that could be the outer facet
 // Requires: Planar embedded graph
-function tryGetOuterFacet() {
+function tryGetOuterFacet(runGraph) {
     let extremeVertices = {
-        'minX': graph.vertices[0], 'maxX': graph.vertices[0],
-        'minY': graph.vertices[0], 'maxY': graph.vertices[0]
+        'minX': runGraph.vertices[0], 'maxX': runGraph.vertices[0],
+        'minY': runGraph.vertices[0], 'maxY': runGraph.vertices[0]
     };
-    let minX = graph.vertices[0].x;
-    let maxX = graph.vertices[0].x;
-    let minY = graph.vertices[0].y;
-    let maxY = graph.vertices[0].y;
+    let minX = runGraph.vertices[0].x;
+    let maxX = runGraph.vertices[0].x;
+    let minY = runGraph.vertices[0].y;
+    let maxY = runGraph.vertices[0].y;
 
-    graph.vertices.forEach((vertex) => {
+    runGraph.vertices.forEach((vertex) => {
         if (vertex.x < minX) {
             minX = vertex.x;
             extremeVertices['minX'] = vertex;
@@ -172,7 +172,7 @@ function tryGetOuterFacet() {
             extremeVertices['maxY'] = vertex;
         }
     });
-    let facets = getAllFacets();
+    let facets = getAllFacets(runGraph);
     let possibilities = [];
     facets.forEach((facet) => {
         let verticeNrsOnFacet = getUniqueVerticeNrsOnFacet(facet);

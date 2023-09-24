@@ -30,6 +30,54 @@ class Wall {
     }
 }
 
+class VertexColor {
+    constructor(vertexNr, color) {
+        this.vertexNr = vertexNr;
+        this.color = color;
+    }
+}
+
+class EdgeColor {
+    constructor(edge, color) {
+        this.edge = edge;
+        this.color = color;
+    }
+}
+
+class ColorSet {
+    vertexColors = [];
+    edgeColors = [];
+    constructor(vertexColor = "gray", edgeColor = "gray", highlightColor = "red") {
+        this.vertexColor = vertexColor;
+        this.edgeColor = edgeColor;
+        this.highlightColor = highlightColor;
+    }
+
+    addVertexColor(vertexNr, color) {
+        this.vertexColors.push(new VertexColor(vertexNr, color));
+    }
+    addEdgeColor(edge, color) {
+        this.edgeColors.push(new EdgeColor(edge, color));
+    }
+
+    getVertexColor(vertexNr) {
+        for (let i = 0; i < this.vertexColors.length; i++) {
+            if (this.vertexColors[i].vertexNr == vertexNr) {
+                return this.vertexColors[i].color;
+            }
+        }
+        return this.vertexColor;
+    }
+    getEdgeColor(edge) {
+        for (let i = 0; i < this.edgeColors.length; i++) {
+            if (this.edgeColors[i].edge.eq(edge)) {
+                return this.edgeColors[i].color;
+            }
+        }
+        return this.edgeColor;
+    }
+}
+
 
 // Called initially
 function onload() {
@@ -73,8 +121,8 @@ function clearFgCanvas() {
     ctx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
 }
 
-function redrawAll() {
+function redrawAll(colorSet = new ColorSet()) {
     clearFgCanvas();
     drawCanvasWalls();
-    graph.draw(selectedVertex, selectedEdge, new ColorSet("gray", "gray", "red"));
+    graph.draw(selectedVertex, selectedEdge, colorSet);
 }

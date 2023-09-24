@@ -3,14 +3,6 @@ var vertexCount = 0;
 
 var vertexRadius = 15;
 
-class ColorSet {
-    constructor(vertexColor = "gray", edgeColor = "gray", highlightColor = "red") {
-        this.vertexColor = vertexColor;
-        this.edgeColor = edgeColor;
-        this.highlightColor = highlightColor;
-    }
-}
-
 class Vertex {
     constructor(x, y, number = -1) {
         this.x = x;
@@ -32,11 +24,11 @@ class Vertex {
         ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
         ctx.fillStyle = "white";
         ctx.fill();
-        ctx.strokeStyle = colorSet.vertexColor;
+        ctx.strokeStyle = colorSet.getVertexColor(this.number);
         ctx.lineWidth = 3;
         ctx.stroke();
         ctx.closePath();
-        ctx.fillStyle = colorSet.vertexColor;
+        ctx.fillStyle = colorSet.getVertexColor(this.number);
         let text = this.number;
         if (this.number != -1 && source == this.number) {
             text = "S" + text;
@@ -115,7 +107,7 @@ class Edge {
             ctx.strokeStyle = colorSet.highlightColor;
             ctx.lineWidth = 7;
         } else {
-            ctx.strokeStyle = colorSet.edgeColor;
+            ctx.strokeStyle = colorSet.getEdgeColor(this);
             ctx.lineWidth = 3;
         }
         if (occurences == 1 || occurences % 2 != 0) {
@@ -126,7 +118,7 @@ class Edge {
             ctx.closePath();
             if (this.weight != null) {
                 let vecLen = this.weight.toString().length * 7;
-                ctx.fillStyle = colorSet.edgeColor;
+                ctx.fillStyle = colorSet.getEdgeColor(this);
                 let controlVec = new Point(dy, -dx);
                 controlVec = changeVectorLength(controlVec, vecLen);
                 controlVec = controlVec.y < 0 ? controlVec : changeVectorLength(new Point(-dy, dx), vecLen);
@@ -153,7 +145,7 @@ class Edge {
 
             // Write loop count into loop, if > 1
             if (occurences > 1) {
-                ctx.fillStyle = colorSet.edgeColor;
+                ctx.fillStyle = colorSet.getEdgeColor(this);
                 ctx.fillText(occurences, vertex.x + length / 2, vertex.y + 5);
             }
         } else if (multiEdge) {
@@ -303,6 +295,19 @@ class Graph {
             }
         }
         console.log("getEdgeAt: no edge found");
+        return null;
+    }
+
+    // Returns one edge that connects startNr and endNr.
+    // Doesn't consider multi-edges or edge orientation
+    getEdgeByStartEnd(startNr, endNr) {
+        for (let i = 0; i < this.edges.length; i++) {
+            let edge = this.edges[i];
+            if ((edge.v1nr == startNr && edge.v2nr == endNr)
+                || (edge.v1nr == endNr && edge.v2nr == startNr)) {
+                return edge;
+            }
+        }
         return null;
     }
 
@@ -495,7 +500,7 @@ class Graph {
             return false;
         }
         let isTriangulated = true;
-        let allFacets = getAllFacets();
+        let allFacets = getAllFacets(this);
         for (let i = 0; i < allFacets.length; i++) {
             let facet = allFacets[i];
             if (facet.length != 3) {
@@ -508,14 +513,14 @@ class Graph {
 
     getDualGraph() {
         let dualGraph = new Graph();
-        let allFacets = getAllFacets();
+        let allFacets = getAllFacets(this);
         let vertexFacets = [];
         let edgeEqualities = [];
-        let outerFacetPoss = tryGetOuterFacet();
+        let outerFacetPoss = tryGetOuterFacet(this);
         let outerFacDone = false;
         for (let i = 0; i < allFacets.length; i++) {
             let facet = allFacets[i];
-            let facetCenter = getFacetCenter(facet);
+            let facetCenter = getFacetCenter(facet, this);
             let vertex = new Vertex(facetCenter.x, facetCenter.y);
             if (outerFacetPoss.length == 1 && outerFacetPoss[0].join(',') == facet.join(',') && !outerFacDone) {
                 vertex = new Vertex(400, 100);
@@ -524,7 +529,7 @@ class Graph {
             dualGraph.addVertex(vertex);
             vertexFacets.push(new VertexFacet(vertex.number, facet));
         }
-        $.each(graph.edges, function (_index, edge) {
+        $.each(this.edges, function (_index, edge) {
             let v1nr = -1;
             let v2nr = -1;
             for (let i = 0; i < allFacets.length; i++) {

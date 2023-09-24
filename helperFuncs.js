@@ -79,7 +79,6 @@ function getDijekstraResults(startVertex) {
         let newQueue = [];
         queue.forEach(v => {
             let incidentEdges = graph.getIncidentEdges(v, true);
-            printArr(incidentEdges)
             incidentEdges.forEach(e => {
                 let dist = parseInt(distances[eqIndexOf(graph.vertices, v)]) + parseInt(e.weight);
                 let nNumber = (e.v1nr != v.number) ? e.v1nr : e.v2nr;
@@ -91,12 +90,25 @@ function getDijekstraResults(startVertex) {
             })
         });
         queue = newQueue;
-        printArr(queue);
     }
     return distances;
 }
 
+// def bellman_ford(graph, source):
+//     num_vertices = len(graph)
+//     shortest_paths = [float('inf')] * num_vertices
+//     shortest_paths[source] = 0
 
+//     for _ in range(num_vertices - 1):
+//         for u, v, weight in graph:
+//             if shortest_paths[u] + weight < shortest_paths[v]:
+//                 shortest_paths[v] = shortest_paths[u] + weight
+
+//     for u, v, weight in graph:
+//         if shortest_paths[u] + weight < shortest_paths[v]:
+//             return True  # Negative cycle detected
+
+//     return False  # No negative cycle detected
 
 
 function getNextDegOneVertex() {
