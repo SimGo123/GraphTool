@@ -310,13 +310,6 @@ class DisjunctSTPathsAlgo extends Algorithm {
             alert("graph is not planar embedded!");
             fulfilled = false;
         }
-        $.each(graph.edges, function (_index, edge) {
-            if (edge.weight == null) {
-                alert("can't calculate disjunct s-t-paths, " + edge.print() + " has no weight!");
-                fulfilled = false;
-                return false;
-            }
-        });
         if (graph.source == -1 || graph.target == -1) {
             alert("can't calculate disjunct s-t-paths, source or target not set!");
             fulfilled = false;
@@ -332,18 +325,18 @@ class DisjunctSTPathsAlgo extends Algorithm {
             return;
         }
 
-        // await super.pause("Check if T is on outer facet", "Check if the target is on the outer facet. That would reduce complexity from O(nlogn) to O(n)");
+        await super.pause("Check if T is on outer facet", "Check if the target is on the outer facet. That would - for us - reduce complexity from O(nlogn) to O(n)");
 
         let outerFacetPoss = tryGetOuterFacet(graph);
         let onOuterFacet = outerFacetPoss.length == 1
             && getUniqueVerticeNrsOnFacet(outerFacetPoss[0]).includes(graph.target);
         if (onOuterFacet) {
-            //super.numSteps = 7;
-            // await super.pause("T is on the outer facet", "The fast O(n) approach can be used.");
+            super.numSteps = 9;
+            await super.pause("T is on the outer facet", "The fast O(n) approach can be used.");
             await this.fastApproach(outerFacetPoss[0]);
         } else {
-            super.numSteps = 4;
-            await super.pause("T is not on the outer facet", "The slow O(nlogn) approach has to be used.");
+            super.numSteps = 5;
+            await super.pause("T is not on the outer facet", "The slow O(nlogn) approach has to be used because making any facet an outer facet isn't implemented.");
             await this.slowApproach();
         }
 
@@ -423,22 +416,32 @@ class DisjunctSTPathsAlgo extends Algorithm {
                     let ee2 = ee.edge2;
                     if (ee1.v1nr == dd2e.v1nr && ee1.v2nr == dd2e.v2nr && ee1.weight == dd2e.weight) {
                         let newEdge = new Edge(ee2.v1nr, ee2.v2nr, dd2e.id, dd2e.weight, dd2e.orientation);
-                        // if (graph.edges.filter(x => x.eq(newEdge, true, true)).length < 1) {
                         graph.addEdge(newEdge);
                         indexes.push(idx);
-                        // }
                     } else if (ee1.v1nr == dd2e.v2nr && ee1.v2nr == dd2e.v1nr && ee1.weight == dd2e.weight) {
                         console.log('c2');
                         let newEdge = new Edge(ee2.v2nr, ee2.v1nr, dd2e.id, dd2e.weight, dd2e.orientation);
-                        // if (graph.edges.filter(e => e.eq(newEdge, true, true)).length < 1) {
                         graph.addEdge(newEdge);
                         indexes.push(idx);
-                        // }
                     }
                 }
             });
         }
         redrawAll();
+        //{"canvasWidth":966,"canvasHeight":538,"source":2,"target":3,"vertices":[{"x":445,"y":92,"nr":0},{"x":439,"y":383,"nr":1},{"x":209,"y":225,"nr":2},{"x":690,"y":232,"nr":3}],"edges":[{"v1nr":0,"v2nr":1,"weight":null,"orientation":"U"},{"v1nr":1,"v2nr":2,"weight":null,"orientation":"U"},{"v1nr":2,"v2nr":0,"weight":null,"orientation":"U"},{"v1nr":0,"v2nr":3,"weight":null,"orientation":"U"},{"v1nr":3,"v2nr":1,"weight":null,"orientation":"U"}]}
+    
+        await super.pause("Depth-first search", "Start at the source, always take the rightmost unvisited edge. If the target is reached, a path was found.");
+        let paths = this.rightDepthFirstSearch(graph.getVertexByNumber(graph.source));
+
+        let colors = ["green", "orange", "blue", "purple", "yellow", "pink"];
+        let colorSet = new ColorSet();
+        paths.forEach((path, i) => {
+            path.forEach(edge => {
+                colorSet.addEdgeColor(edge, colors[i % colors.length]);
+            });
+        });
+        redrawAll(colorSet);
+        await super.pause("Result", "There are " + paths.length + " disjunct s-t-paths");
     }
 
     async slowApproach() {
@@ -488,5 +491,100 @@ class DisjunctSTPathsAlgo extends Algorithm {
             });
         });
         redrawAll();
+    }
+
+    rightDepthFirstSearch(startVertex) {
+        console.log("rightDepthFirstSearch");
+        graph.indexAllEdges();
+        let visited = [];
+        let incidentEdges = graph.getIncidentEdges(startVertex, true);
+        let result = [];
+        incidentEdges.forEach(sie => {
+            let stack = [];
+            stack.push(sie);
+            while (stack.length > 0) {
+                let entryEdge = stack.pop();
+                visited.push(entryEdge);
+                console.log('Visiting ' + entryEdge.print());
+                let vertex = null;
+                if (entryEdge.orientation == EdgeOrientation.NORMAL) {
+                    vertex = graph.getVertexByNumber(entryEdge.v2nr);
+                } else if (entryEdge.orientation == EdgeOrientation.REVERSED) {
+                    vertex = graph.getVertexByNumber(entryEdge.v1nr);
+                }
+                if (vertex == null) {
+                    console.error("vertex == null");
+                    return;
+                }
+                if (vertex.number == graph.target) {
+                    console.log('Found target');
+                    let partResult = [];
+                    let lastConfirmed = graph.target;
+                    for (let i = visited.length - 1; i >= 0; i--) {
+                        let visitedEdge = visited[i];
+                        if (visitedEdge.v1nr == lastConfirmed) {
+                            partResult.push(visitedEdge);
+                            lastConfirmed = visitedEdge.v2nr;
+                        } else if (visitedEdge.v2nr == lastConfirmed) {
+                            partResult.push(visitedEdge);
+                            lastConfirmed = visitedEdge.v1nr;
+                        }
+                        if (lastConfirmed == graph.source) {
+                            break;
+                        }
+                    }
+                    result.push(partResult);
+                    break;
+                }
+                if (entryEdge == null) {
+                    console.error("entryEdge == null");
+                    return;
+                }
+                let edgesRightOfEntryEdge = this.getEdgesRightOfEntryEdge(vertex, entryEdge);
+                edgesRightOfEntryEdge.reverse();
+                if (entryEdge.v1nr == 3 && entryEdge.v2nr == 5) {
+                    console.log('eroee',edgesRightOfEntryEdge);
+                }
+                edgesRightOfEntryEdge.forEach(e => {
+                    if (eqIndexOf(visited, e, true, true) == -1) {
+                        stack.push(e);
+                    }
+                });
+            }
+            console.log('---');
+        });
+        return result;
+    }
+
+    getEdgesRightOfEntryEdge(vertex, entryEdge) {
+        let entryEdgeAngle = getAngle(vertex, graph.getOtherVertex(entryEdge, vertex));
+        let incidentEdges = graph.getIncidentEdges(vertex, true);
+        incidentEdges.sort((e1, e2) => {
+            let otherVertex1 = graph.getOtherVertex(e1, vertex);
+            let otherVertex2 = graph.getOtherVertex(e2, vertex);
+            let angle1 = getAngle(vertex, otherVertex1);
+            let angle2 = getAngle(vertex, otherVertex2);
+            return angle2 - angle1;
+        });
+        let edgesRightOfEntryEdge = [];
+        let nextSmallerEdgeIndex = -1;
+        for (let i = 0; i < incidentEdges.length; i++) {
+            let currAngle = getAngle(vertex, graph.getOtherVertex(incidentEdges[i], vertex));
+            if (currAngle < entryEdgeAngle) {
+                nextSmallerEdgeIndex = i;
+                break;
+            }
+        }
+        if (nextSmallerEdgeIndex == -1) {
+            //console.error("nextBiggerEdgeIndex == -1");
+            nextSmallerEdgeIndex = 0;
+        }
+        for (let i = nextSmallerEdgeIndex; i < incidentEdges.length; i++) {
+            edgesRightOfEntryEdge.push(incidentEdges[i]);
+        }
+        for (let i = 0; i < nextSmallerEdgeIndex; i++) {
+            edgesRightOfEntryEdge.push(incidentEdges[i]);
+        }
+        return edgesRightOfEntryEdge;
     }
 }

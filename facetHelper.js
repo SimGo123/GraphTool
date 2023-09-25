@@ -191,6 +191,62 @@ function tryGetOuterFacet(runGraph) {
     return possibilities;
 }
 
+function facetsEqual(facet1, facet2) {
+    if (facet1.length != facet2.length) {
+        return false;
+    }
+    for (var i = 0; i < facet1.length; i++) {
+        if (!facet1[i].eq(facet2[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Checks if two facets are equal based on the following criteria:
+ *
+ * 1. Both facets must have the same number of edges.
+ * 2. Edges in the facets may start at different positions but must maintain the relative order.
+ * 3. If an edge in `facet1` is found at position `i`, the corresponding edge in `facet2` must be found
+ *    at position `(i - j) % len(facet1)` for some `j`.
+ * 4. Both facets can contain the same edge multiple times.
+ * 5. Handles the case where `facet2` may contain `facet1`'s edges in reverse order.
+ *
+ * @param {Array} facet1 - The first facet to compare.
+ * @param {Array} facet2 - The second facet to compare.
+ * @returns {boolean} True if the facets are equal based on the defined criteria, otherwise false.
+ */
+function facets_equal(facet1, facet2) {
+    // Check if the number of edges in both facets is the same
+    if (facet1.length !== facet2.length) {
+      return false;
+    }
+  
+    // Iterate through each possible starting edge in facet1
+    for (let startIdx = 0; startIdx < facet1.length; startIdx++) {
+      let matchFound = true;
+  
+      // Iterate through the edges of facet2 and compare them with facet1
+      for (let i = 0; i < facet2.length; i++) {
+        const idxInFacet1 = (startIdx + i) % facet1.length;
+  
+        if (!facet1[idxInFacet1].eq(facet2[i]) && !facet1[idxInFacet1].eq(facet2[facet2.length - 1 - i])) {
+          matchFound = false;
+          break; // If a mismatch is found, break the inner loop
+        }
+      }
+  
+      // If all edges in facet2 match facet1 (forward or reverse), return true
+      if (matchFound) {
+        return true;
+      }
+    }
+  
+    // If no match is found for any starting edge, return false
+    return false;
+  }
+
 // Get next vertex after afterVertex in right/left direction
 function nextVertexAfter(vertices, afterVertex, rightDir) {
     let vertexIndex = eqIndexOf(vertices, afterVertex);

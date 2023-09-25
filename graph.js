@@ -217,7 +217,7 @@ class Edge {
         let deg90Vec2 = new Point(-deg90Vec.x, -deg90Vec.y);
         let deg45Vec2 = new Point(dx - (dx - deg90Vec2.x) / 2, dy - (dy - deg90Vec2.y) / 2);
         deg45Vec2 = changeVectorLength(deg45Vec2, 10);
-        
+
         // Changes if reverse edge direction
         if ((this.orientation == EdgeOrientation.REVERSED && !revPoints)
             || (this.orientation == EdgeOrientation.NORMAL && revPoints)) {
@@ -444,6 +444,12 @@ class Graph {
         return incidentEdges;
     }
 
+    indexAllEdges() {
+        for (let i = 0; i < this.edges.length; i++) {
+            this.edges[i].id = i;
+        }
+    }
+
     getVertexDegree(vertex) {
         return this.getIncidentEdges(vertex).length;
     }
@@ -568,25 +574,24 @@ class Graph {
             dualGraph.addVertex(vertex);
             vertexFacets.push(new VertexFacet(vertex.number, facet));
         }
-        $.each(this.edges, function (_index, edge) {
+        this.edges.forEach(edge => {
             let v1nr = -1;
             let v2nr = -1;
-            for (let i = 0; i < allFacets.length; i++) {
-                if (eqIndexOf(allFacets[i], edge) != -1) {
-                    for (let j = i + 1; j < allFacets.length; j++) {
-                        if (eqIndexOf(allFacets[j], edge) != -1) {
-                            $.each(vertexFacets, function (_index, vFac) {
-                                if (allFacets[i] == vFac.facet) {
-                                    v1nr = vFac.vertexNumber;
-                                }
-                                if (allFacets[j] == vFac.facet) {
-                                    v2nr = vFac.vertexNumber;
-                                }
-                            });
-                        }
-                    }
+            let statusEdges = [];
+            $.each(this.edges, function (_index, edge) {
+                statusEdges.push(new StatusEdge(edge, false, false));
+            });
+            let rightFacet = facetWalk(edge, true, statusEdges, this);
+            let leftFacet = facetWalk(edge, false, statusEdges, this);
+            $.each(vertexFacets, function (_index, vFac) {
+                if (facets_equal(rightFacet, vFac.facet)) {
+                    v1nr = vFac.vertexNumber;
                 }
-            }
+                if (facets_equal(leftFacet, vFac.facet)) {
+                    v2nr = vFac.vertexNumber;
+                }
+            });
+
             if (v1nr == -1 || v2nr == -1) {
                 console.log("Error: didn't find adjacent facets of edge " + edge.print());
                 console.log('v1 ' + v1nr + ' v2 ' + v2nr);
@@ -647,6 +652,11 @@ class Graph {
             }
         }
         return -1;
+    }
+
+    getOtherVertex(edge, vertex) {
+        return vertex.number == edge.v1nr ? this.getVertexByNumber(edge.v2nr)
+            : this.getVertexByNumber(edge.v1nr);
     }
 }
 
