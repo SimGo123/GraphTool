@@ -43,19 +43,21 @@ class MaxFlowAlgo extends Algorithm {
         let onOuterFacet = outerFacetPoss.length == 1
             && getUniqueVerticeNrsOnFacet(outerFacetPoss[0]).includes(graph.source)
             && getUniqueVerticeNrsOnFacet(outerFacetPoss[0]).includes(graph.target);
+        let result = -1;
         if (onSameFacet && onOuterFacet) {
             super.numSteps = 7;
             await super.pause("S and T are on the same facet", "Furthermore, they are both on the outer facet. So the fast approach can be used.");
-            await this.fastApproach(outerFacetPoss[0]);
+            result = await this.fastApproach(outerFacetPoss[0]);
         } else if (onSameFacet) {
             await super.pause("S and T are on the same facet, but...", "... they are not on the outer facet. Normally, the fast method is used, but instead, we use the slow method.");
-            await this.slowApproach();
+            result = await this.slowApproach();
         } else {
             await super.pause("S and T are not on the same facet", "This means that there is no faster approach then the O(nlogn) one.");
-            await this.slowApproach();
+            result = await this.slowApproach();
         }
-        
+
         super.onFinished();
+        return result;
     }
 
     async fastApproach(outerFacet) {
@@ -177,6 +179,7 @@ class MaxFlowAlgo extends Algorithm {
 
         let maxFlow = distances[dualGraph.getVertexIdByNumber(oldFacetVertexNr)];
         await super.pause("Result", "Max flow is " + maxFlow);
+        return maxFlow;
     }
 
     // TODO implement
@@ -287,6 +290,7 @@ class MaxFlowAlgo extends Algorithm {
             await super.pause("alpha = " + alpha, "");
         }
         await super.pause("Result", "Max flow is " + alpha);
+        return alpha;
     }
 
     drawTwoGraphs(backGraph, foreGraph,
@@ -295,5 +299,259 @@ class MaxFlowAlgo extends Algorithm {
         drawCanvasWalls();
         backGraph.draw(null, null, backColorSet);
         foreGraph.draw(selectedVertex, selectedEdge, foreColorSet);
+    }
+}
+
+class DisjunctSTPathsAlgo extends Algorithm {
+
+    preconditionsCheck() {
+        let fulfilled = true;
+        if (!graph.isPlanarEmbedded()) {
+            alert("graph is not planar embedded!");
+            fulfilled = false;
+        }
+        if (graph.source == -1 || graph.target == -1) {
+            alert("can't calculate disjunct s-t-paths, source or target not set!");
+            fulfilled = false;
+        }
+        return fulfilled;
+    }
+
+    async run() {
+        super.numSteps = "X";
+
+        if (!this.preconditionsCheck()) {
+            super.onFinished();
+            return;
+        }
+
+        await super.pause("Check if T is on outer facet", "Check if the target is on the outer facet. That would - for us - reduce complexity from O(nlogn) to O(n)");
+
+        let outerFacetPoss = tryGetOuterFacet(graph);
+        let onOuterFacet = outerFacetPoss.length == 1
+            && getUniqueVerticeNrsOnFacet(outerFacetPoss[0]).includes(graph.target);
+        if (onOuterFacet) {
+            super.numSteps = 9;
+            await super.pause("T is on the outer facet", "The fast O(n) approach can be used.");
+            await this.fastApproach(outerFacetPoss[0]);
+        } else {
+            super.numSteps = 5;
+            await super.pause("T is not on the outer facet", "The slow O(nlogn) approach has to be used because making any facet an outer facet isn't implemented.");
+            await this.slowApproach();
+        }
+
+        super.onFinished();
+    }
+
+    async fastApproach(outerFacet) {
+        await super.pause("Orient every edge in the graph", "Replace undirected edges with directed edges");
+        let unorientedGraph = graph.getCopy();
+        graph.replaceUnorientedEdges();
+        redrawAll();
+
+        await super.pause("Eliminate clockwise circles (I)", "First, dualize the graph");
+        let [dualGraph, edgeEqualities, vertexFacets] = unorientedGraph.getDualGraph();
+        graph = dualGraph;
+        graph.replaceUnorientedEdges();
+        redrawAll();
+
+        await super.pause("Eliminate clockwise circles (II)", "Second, create a BFS-tree starting at the outer facet vertex");
+        let outerFacetVertexNr = -1;
+        vertexFacets.forEach(vf => {
+            if (getUniqueVerticeNrsOnFacet(vf.facet).join(',') == getUniqueVerticeNrsOnFacet(outerFacet).join(',')) {
+                outerFacetVertexNr = vf.vertexNumber;
+            }
+        });
+        let layers = breadthFirstSearchTree(graph.getVertexByNumber(outerFacetVertexNr), graph);
+        this.drawLayerStructure(layers);
+
+        await super.pause("Eliminate clockwise circles (III)", "Look at each layer, and reverse all edges going to the next lower layer");
+        // Look at each layer except the last one
+        for (let i = 0; i < layers.length - 1; i++) {
+            // At each vertex in that layer
+            layers[i].forEach(currLayerVertex => {
+                let currLayerVertexNr = currLayerVertex.vertex.number;
+                // At each vertex in the next layer
+                layers[i + 1].forEach(nextLayerVertex => {
+                    let nextLayerVertexNr = nextLayerVertex.vertex.number;
+                    graph.edges.forEach(edge => {
+                        if (edge.v1nr == currLayerVertexNr && edge.v2nr == nextLayerVertexNr
+                            && edge.orientation == EdgeOrientation.NORMAL) {
+                            edge.orientation = EdgeOrientation.REVERSED;
+                        } else if (edge.v1nr == nextLayerVertexNr && edge.v2nr == currLayerVertexNr
+                            && edge.orientation == EdgeOrientation.REVERSED) {
+                            edge.orientation = EdgeOrientation.NORMAL;
+                        }
+                    });
+                });
+            });
+        }
+        redrawAll();
+
+        await super.pause("Convert back by using dualization again", "The resulting graph does not contain any clockwise circles anymore");
+        let dualizedD2 = graph.getCopy();
+        graph = unorientedGraph;
+        graph.edges = [];
+        let indexes = [];
+        // Dualized D2 (DD2) is oriented, but the edge equalities are not.
+        // Un-dualize DD2 by matching up DD2's edges with the edges in the edge equalities.
+        // ee1 contains dualized vertex numbers, ee2 contains original vertex numbers
+        for (let i = 0; i < dualizedD2.edges.length; i++) {
+            let dd2e = dualizedD2.edges[i];
+            edgeEqualities.forEach((ee, idx) => {
+                if (indexes.filter(x => x == idx).length < 2) {
+                    let ee1 = ee.edge1;
+                    let ee2 = ee.edge2;
+                    if (ee1.v1nr == dd2e.v1nr && ee1.v2nr == dd2e.v2nr && ee1.weight == dd2e.weight) {
+                        let newEdge = new Edge(ee2.v1nr, ee2.v2nr, dd2e.id, dd2e.weight, dd2e.orientation);
+                        graph.addEdge(newEdge);
+                        indexes.push(idx);
+                    } else if (ee1.v1nr == dd2e.v2nr && ee1.v2nr == dd2e.v1nr && ee1.weight == dd2e.weight) {
+                        let newEdge = new Edge(ee2.v2nr, ee2.v1nr, dd2e.id, dd2e.weight, dd2e.orientation);
+                        graph.addEdge(newEdge);
+                        indexes.push(idx);
+                    }
+                }
+            });
+        }
+        redrawAll();
+
+        await super.pause("Find paths by using right-depth-first search", "Start at the source, always take the rightmost unvisited edge. If the target is reached, a path was found.");
+        let paths = this.rightDepthFirstSearch(graph.getVertexByNumber(graph.source));
+
+        let colors = ["green", "orange", "blue", "purple", "yellow", "pink"];
+        let colorSet = new ColorSet();
+        paths.forEach((path, i) => {
+            path.forEach(edge => {
+                colorSet.addEdgeColor(edge, colors[i % colors.length]);
+            });
+        });
+        redrawAll(colorSet);
+        await super.pause("Result", "There are " + paths.length + " disjunct s-t-paths");
+    }
+
+    async slowApproach() {
+        await super.pause("Set all edge capacities to 1", "");
+        graph.edges.forEach(e => e.weight = 1);
+        let copyOneGraph = graph.getCopy();
+        redrawAll();
+
+        await super.pause("Calculate max flow", "The result is the number of disjunct s-t-paths");
+        let maxFlowAlgo = new MaxFlowAlgo();
+        maxFlowAlgo.shouldContinue = true;
+        maxFlowAlgo.runComplete = true;
+        maxFlowAlgo.isSubAlgo = true;
+        let maxFlow = await maxFlowAlgo.run();
+        graph = copyOneGraph;
+        redrawAll();
+        await super.pause("Result", "Max flow is " + maxFlow + ", so there are " + maxFlow + " disjunct s-t-paths");
+    }
+
+    drawLayerStructure(layers) {
+        let minPoint = new Point(fgCanvas.width / 3, fgCanvas.height / 4);
+        let width = fgCanvas.width / 2;
+        let height = fgCanvas.height * (3 / 4);
+        let layerHeight = height / layers.length;
+        $.each(layers, function (layerIndex, layer) {
+            $.each(layer, function (bsVertexIndex, bsVertex) {
+                let vertexIndex = eqIndexOf(graph.vertices, bsVertex.vertex);
+                graph.vertices[vertexIndex].x = minPoint.x + width / (layer.length + 1) * (bsVertexIndex + 1);
+                graph.vertices[vertexIndex].y = minPoint.y + layerHeight * layerIndex;
+            });
+        });
+        redrawAll();
+    }
+
+    rightDepthFirstSearch(startVertex) {
+        console.log("rightDepthFirstSearch");
+        graph.indexAllEdges();
+        let visited = [];
+        let incidentEdges = graph.getIncidentEdges(startVertex, true);
+        let result = [];
+        incidentEdges.forEach(sie => {
+            let stack = [];
+            stack.push(sie);
+            while (stack.length > 0) {
+                let entryEdge = stack.pop();
+                visited.push(entryEdge);
+                let vertex = null;
+                if (entryEdge.orientation == EdgeOrientation.NORMAL) {
+                    vertex = graph.getVertexByNumber(entryEdge.v2nr);
+                } else if (entryEdge.orientation == EdgeOrientation.REVERSED) {
+                    vertex = graph.getVertexByNumber(entryEdge.v1nr);
+                }
+                if (vertex == null) {
+                    console.error("vertex == null");
+                    return;
+                }
+                if (vertex.number == graph.target) {
+                    console.log('Found target');
+                    // Reconstruct path
+                    let partResult = [];
+                    let lastConfirmed = graph.target;
+                    for (let i = visited.length - 1; i >= 0; i--) {
+                        let visitedEdge = visited[i];
+                        if (visitedEdge.v1nr == lastConfirmed) {
+                            partResult.push(visitedEdge);
+                            lastConfirmed = visitedEdge.v2nr;
+                        } else if (visitedEdge.v2nr == lastConfirmed) {
+                            partResult.push(visitedEdge);
+                            lastConfirmed = visitedEdge.v1nr;
+                        }
+                        if (lastConfirmed == graph.source) {
+                            break;
+                        }
+                    }
+                    result.push(partResult);
+                    break;
+                }
+                if (entryEdge == null) {
+                    console.error("entryEdge == null");
+                    return;
+                }
+                let edgesRightOfEntryEdge = this.getEdgesRightOfEntryEdge(vertex, entryEdge);
+                // Reverse order because stack is LIFO
+                edgesRightOfEntryEdge.reverse();
+                if (entryEdge.v1nr == 3 && entryEdge.v2nr == 5) {
+                }
+                edgesRightOfEntryEdge.forEach(e => {
+                    if (eqIndexOf(visited, e, true, true) == -1) {
+                        stack.push(e);
+                    }
+                });
+            }
+        });
+        return result;
+    }
+
+    getEdgesRightOfEntryEdge(vertex, entryEdge) {
+        let entryEdgeAngle = getAngle(vertex, graph.getOtherVertex(entryEdge, vertex));
+        let incidentEdges = graph.getIncidentEdges(vertex, true);
+        incidentEdges.sort((e1, e2) => {
+            let otherVertex1 = graph.getOtherVertex(e1, vertex);
+            let otherVertex2 = graph.getOtherVertex(e2, vertex);
+            let angle1 = getAngle(vertex, otherVertex1);
+            let angle2 = getAngle(vertex, otherVertex2);
+            return angle2 - angle1;
+        });
+        let edgesRightOfEntryEdge = [];
+        let nextSmallerEdgeIndex = -1;
+        for (let i = 0; i < incidentEdges.length; i++) {
+            let currAngle = getAngle(vertex, graph.getOtherVertex(incidentEdges[i], vertex));
+            if (currAngle < entryEdgeAngle) {
+                nextSmallerEdgeIndex = i;
+                break;
+            }
+        }
+        if (nextSmallerEdgeIndex == -1) {
+            nextSmallerEdgeIndex = 0;
+        }
+        for (let i = nextSmallerEdgeIndex; i < incidentEdges.length; i++) {
+            edgesRightOfEntryEdge.push(incidentEdges[i]);
+        }
+        for (let i = 0; i < nextSmallerEdgeIndex; i++) {
+            edgesRightOfEntryEdge.push(incidentEdges[i]);
+        }
+        return edgesRightOfEntryEdge;
     }
 }

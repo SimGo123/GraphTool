@@ -26,10 +26,9 @@
     <li class="list-group-item list-group-item-action active" onclick="modeClick(0)">Selection</li>
     <li class="list-group-item list-group-item-action" onclick="modeClick(1)">Vertices</li>
     <li class="list-group-item list-group-item-action" onclick="modeClick(2)">Edges</li>
-    <li class="list-group-item list-group-item-action" onclick="modeClick(3); changeAlgorithmsVisible(true)">Algorithms
-    </li>
-    <li class="list-group-item list-group-item-action" onclick="modeClick(4); changePredefinedVisible(true)">Predefined
-    </li>
+    <li class="list-group-item list-group-item-action" onclick="modeClick(3); changeAlgorithmsVisible(true)">Algorithms</li>
+    <li class="list-group-item list-group-item-action" onclick="modeClick(4); changePredefinedVisible(true)">Predefined</li>
+    <li class="list-group-item list-group-item-action" onclick="modeClick(5); changeJsonToolsVisible(true)">JSON</li>
   </ul>
 
   <ul class="list-group list-group-horizontal my-3 collapse" id="vertexTools">
@@ -51,12 +50,11 @@
     <li class="list-group-item list-group-item-action" onclick="algorithmClick(1)">Planar Separator (Case 1)</li>
     <li class="list-group-item list-group-item-action" onclick="algorithmClick(2)">Weight Max. Matching (WIP)</li>
     <li class="list-group-item list-group-item-action" onclick="algorithmClick(3)">Mixed Max Cut (WIP)</li>
-    <li class="list-group-item list-group-item-action" onclick="algorithmClick(4)">Max Flow (WIP)</li>
+    <li class="list-group-item list-group-item-action" onclick="algorithmClick(4)">Max Flow</li>
+    <li class="list-group-item list-group-item-action" onclick="algorithmClick(5)">Disjunct S-T-Paths</li>
   </ul>
 
   <ul class="list-group list-group-horizontal my-3 collapse" id="predefinedGraphs">
-    <li class="list-group-item list-group-item-action" onclick="predefinedClick(0)">Get current graph representation</li>
-    <li class="list-group-item list-group-item-action" onclick="predefinedClick(1)">Load graph from JSON</li>
     <li class="list-group-item list-group-item-action" onclick="predefinedClick(2)">Debug Graph</li>
     <li class="list-group-item list-group-item-action" onclick="predefinedClick(3)">Sigma Graph</li>
     <li class="list-group-item list-group-item-action" onclick="predefinedClick(4)">Star Graph</li>
@@ -66,6 +64,12 @@
     <li class="list-group-item list-group-item-action" onclick="predefinedClick(8)">Create Wheel</li>
     <li class="list-group-item list-group-item-action" onclick="predefinedClick(9)">Mixed Max Graph</li>
     <li class="list-group-item list-group-item-action" onclick="predefinedClick(10)">Max Flow Graph</li>
+    <li class="list-group-item list-group-item-action" onclick="predefinedClick(11)">Nice ST Graph</li>
+  </ul>
+
+  <ul class="list-group list-group-horizontal my-3 collapse" id="jsonTools">
+    <li class="list-group-item list-group-item-action" onclick="jsonClick(0)">Get current graph representation</li>
+    <li class="list-group-item list-group-item-action" onclick="jsonClick(1)">Load graph from JSON</li>
   </ul>
 
   <canvas id="fgCanvas"></canvas>
@@ -101,6 +105,7 @@
 <script src="weightAlgorithms.js"></script>
 <script src="flowAlgorithms.js"></script>
 <script src="predefined.js"></script>
+<script src="jsonTools.js"></script>
 <script src="facetHelper.js"></script>
 <script src="helperFuncs.js"></script>
 

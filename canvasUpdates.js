@@ -71,7 +71,7 @@ class ColorSet {
     getEdgeColor(edge) {
         for (let i = 0; i < this.edgeColors.length; i++) {
             let colorableEdge = this.edgeColors[i].edge;
-            if (colorableEdge.eq(edge) && colorableEdge.orientation == edge.orientation) {
+            if (colorableEdge.eq(edge, true, true)) {
                 return this.edgeColors[i].color;
             }
         }

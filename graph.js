@@ -160,11 +160,11 @@ class Edge {
             }
         } else if (multiEdge) {
             // Draw multiple edges with bezier curves
-            let vectorLen = 60;
+            let vectorLen = 20;
             let steps = vectorLen * 2 / (occurences - 1);
             let curr = vectorLen - multiEdgeIndex * steps;
 
-            let update = 15;
+            let update = vectorLen / 4;
             if (curr > 0) {
                 // Control points are perpendicular to edge
                 let controlVec = new Point(dy, -dx);
@@ -217,7 +217,7 @@ class Edge {
         let deg90Vec2 = new Point(-deg90Vec.x, -deg90Vec.y);
         let deg45Vec2 = new Point(dx - (dx - deg90Vec2.x) / 2, dy - (dy - deg90Vec2.y) / 2);
         deg45Vec2 = changeVectorLength(deg45Vec2, 10);
-        
+
         // Changes if reverse edge direction
         if ((this.orientation == EdgeOrientation.REVERSED && !revPoints)
             || (this.orientation == EdgeOrientation.NORMAL && revPoints)) {
@@ -444,8 +444,29 @@ class Graph {
         return incidentEdges;
     }
 
+    indexAllEdges() {
+        for (let i = 0; i < this.edges.length; i++) {
+            this.edges[i].id = i;
+        }
+    }
+
     getVertexDegree(vertex) {
         return this.getIncidentEdges(vertex).length;
+    }
+
+    replaceUnorientedEdges() {
+        let newEdges = [];
+        this.edges.forEach(e => {
+            if (e.orientation == EdgeOrientation.UNDIRECTED) {
+                let edge = new Edge(e.v1nr, e.v2nr, null, e.weight, EdgeOrientation.NORMAL);
+                let revEdge = new Edge(e.v1nr, e.v2nr, null, e.weight, EdgeOrientation.REVERSED);
+                newEdges.push(edge);
+                newEdges.push(revEdge);
+            } else {
+                newEdges.push(e);
+            }
+        });
+        this.edges = newEdges;
     }
 
     // Returns an array of all vertices connected to vertex, in clockwise embedding order
@@ -568,30 +589,29 @@ class Graph {
             dualGraph.addVertex(vertex);
             vertexFacets.push(new VertexFacet(vertex.number, facet));
         }
-        $.each(this.edges, function (_index, edge) {
+        this.edges.forEach(edge => {
             let v1nr = -1;
             let v2nr = -1;
-            for (let i = 0; i < allFacets.length; i++) {
-                if (eqIndexOf(allFacets[i], edge) != -1) {
-                    for (let j = i + 1; j < allFacets.length; j++) {
-                        if (eqIndexOf(allFacets[j], edge) != -1) {
-                            $.each(vertexFacets, function (_index, vFac) {
-                                if (allFacets[i] == vFac.facet) {
-                                    v1nr = vFac.vertexNumber;
-                                }
-                                if (allFacets[j] == vFac.facet) {
-                                    v2nr = vFac.vertexNumber;
-                                }
-                            });
-                        }
-                    }
+            let statusEdges = [];
+            $.each(this.edges, function (_index, edge) {
+                statusEdges.push(new StatusEdge(edge, false, false));
+            });
+            let rightFacet = facetWalk(edge, true, statusEdges, this);
+            let leftFacet = facetWalk(edge, false, statusEdges, this);
+            $.each(vertexFacets, function (_index, vFac) {
+                if (facets_equal(rightFacet, vFac.facet)) {
+                    v1nr = vFac.vertexNumber;
                 }
-            }
+                if (facets_equal(leftFacet, vFac.facet)) {
+                    v2nr = vFac.vertexNumber;
+                }
+            });
+
             if (v1nr == -1 || v2nr == -1) {
                 console.log("Error: didn't find adjacent facets of edge " + edge.print());
                 console.log('v1 ' + v1nr + ' v2 ' + v2nr);
             } else {
-                // Keep weights in dual graph
+                // Keep weights, id & orientation in dual graph
                 let newEdge = new Edge(v1nr, v2nr, null, edge.weight, edge.orientation);
                 dualGraph.addEdge(newEdge);
                 edgeEqualities.push(new EdgeEquality(newEdge, edge));
@@ -647,6 +667,11 @@ class Graph {
             }
         }
         return -1;
+    }
+
+    getOtherVertex(edge, vertex) {
+        return vertex.number == edge.v1nr ? this.getVertexByNumber(edge.v2nr)
+            : this.getVertexByNumber(edge.v1nr);
     }
 }
 

@@ -144,7 +144,7 @@ function containsNegativeCycles(graph, startVertex) {
                     u = predecessors[u];
                 }
                 // u is a vertex in a negative cycle, find the cycle itself
-                ncycle = [u];
+                ncycle = [graph.vertices[u].number];
                 v = predecessors[u];
                 while (v != u) {
                     ncycle.unshift(graph.vertices[v].number);
