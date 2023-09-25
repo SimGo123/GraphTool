@@ -346,33 +346,16 @@ class DisjunctSTPathsAlgo extends Algorithm {
     async fastApproach(outerFacet) {
         await super.pause("Orient every edge in the graph", "Replace undirected edges with directed edges");
         let unorientedGraph = graph.getCopy();
-        graph.edges = [];
-        unorientedGraph.edges.forEach(e => {
-            if (e.orientation == EdgeOrientation.UNDIRECTED) {
-                let edge = new Edge(e.v1nr, e.v2nr, null, e.weight, EdgeOrientation.NORMAL);
-                let revEdge = new Edge(e.v1nr, e.v2nr, null, e.weight, EdgeOrientation.REVERSED);
-                graph.addEdge(edge);
-                graph.addEdge(revEdge);
-            }
-        });
+        graph.replaceUnorientedEdges();
         redrawAll();
 
-        await super.pause("Construct dual graph", "");
-        let orientedGraph = graph.getCopy();
+        await super.pause("Eliminate clockwise circles (I)", "First, dualize the graph");
         let [dualGraph, edgeEqualities, vertexFacets] = unorientedGraph.getDualGraph();
-        graph = dualGraph.getCopy();
-        graph.edges = [];
-        dualGraph.edges.forEach(e => {
-            if (e.orientation == EdgeOrientation.UNDIRECTED) {
-                let edge = new Edge(e.v1nr, e.v2nr, null, e.weight, EdgeOrientation.NORMAL);
-                let revEdge = new Edge(e.v1nr, e.v2nr, null, e.weight, EdgeOrientation.REVERSED);
-                graph.addEdge(edge);
-                graph.addEdge(revEdge);
-            }
-        });
+        graph = dualGraph;
+        graph.replaceUnorientedEdges();
         redrawAll();
 
-        await super.pause("Create BFS-tree starting at outer facet vertex", "");
+        await super.pause("Eliminate clockwise circles (II)", "Second, create a BFS-tree starting at the outer facet vertex");
         let outerFacetVertexNr = -1;
         vertexFacets.forEach(vf => {
             if (getUniqueVerticeNrsOnFacet(vf.facet).join(',') == getUniqueVerticeNrsOnFacet(outerFacet).join(',')) {
@@ -382,14 +365,16 @@ class DisjunctSTPathsAlgo extends Algorithm {
         let layers = breadthFirstSearchTree(graph.getVertexByNumber(outerFacetVertexNr), graph);
         this.drawLayerStructure(layers);
 
-        await super.pause("Look at each layer, and reverse all edges going to the next lower layer", "");
+        await super.pause("Eliminate clockwise circles (III)", "Look at each layer, and reverse all edges going to the next lower layer");
+        // Look at each layer except the last one
         for (let i = 0; i < layers.length - 1; i++) {
-            for (let j = 0; j < layers[i].length; j++) {
-                let currLayerVertexNr = layers[i][j].vertex.number;
-                for (let k = 0; k < layers[i + 1].length; k++) {
-                    let nextLayerVertexNr = layers[i + 1][k].vertex.number;
-                    for (let l = 0; l < graph.edges.length; l++) {
-                        let edge = graph.edges[l];
+            // At each vertex in that layer
+            layers[i].forEach(currLayerVertex => {
+                let currLayerVertexNr = currLayerVertex.vertex.number;
+                // At each vertex in the next layer
+                layers[i + 1].forEach(nextLayerVertex => {
+                    let nextLayerVertexNr = nextLayerVertex.vertex.number;
+                    graph.edges.forEach(edge => {
                         if (edge.v1nr == currLayerVertexNr && edge.v2nr == nextLayerVertexNr
                             && edge.orientation == EdgeOrientation.NORMAL) {
                             edge.orientation = EdgeOrientation.REVERSED;
@@ -397,17 +382,20 @@ class DisjunctSTPathsAlgo extends Algorithm {
                             && edge.orientation == EdgeOrientation.REVERSED) {
                             edge.orientation = EdgeOrientation.NORMAL;
                         }
-                    }
-                }
-            }
+                    });
+                });
+            });
         }
         redrawAll();
 
-        await super.pause("Convert back by using dualization again", "");
+        await super.pause("Convert back by using dualization again", "The resulting graph does not contain any clockwise circles anymore");
         let dualizedD2 = graph.getCopy();
-        graph = unorientedGraph.getCopy();
+        graph = unorientedGraph;
         graph.edges = [];
         let indexes = [];
+        // Dualized D2 (DD2) is oriented, but the edge equalities are not.
+        // Un-dualize DD2 by matching up DD2's edges with the edges in the edge equalities.
+        // ee1 contains dualized vertex numbers, ee2 contains original vertex numbers
         for (let i = 0; i < dualizedD2.edges.length; i++) {
             let dd2e = dualizedD2.edges[i];
             edgeEqualities.forEach((ee, idx) => {
@@ -427,9 +415,8 @@ class DisjunctSTPathsAlgo extends Algorithm {
             });
         }
         redrawAll();
-        //{"canvasWidth":966,"canvasHeight":538,"source":2,"target":3,"vertices":[{"x":445,"y":92,"nr":0},{"x":439,"y":383,"nr":1},{"x":209,"y":225,"nr":2},{"x":690,"y":232,"nr":3}],"edges":[{"v1nr":0,"v2nr":1,"weight":null,"orientation":"U"},{"v1nr":1,"v2nr":2,"weight":null,"orientation":"U"},{"v1nr":2,"v2nr":0,"weight":null,"orientation":"U"},{"v1nr":0,"v2nr":3,"weight":null,"orientation":"U"},{"v1nr":3,"v2nr":1,"weight":null,"orientation":"U"}]}
-    
-        await super.pause("Depth-first search", "Start at the source, always take the rightmost unvisited edge. If the target is reached, a path was found.");
+
+        await super.pause("Find paths by using right-depth-first search", "Start at the source, always take the rightmost unvisited edge. If the target is reached, a path was found.");
         let paths = this.rightDepthFirstSearch(graph.getVertexByNumber(graph.source));
 
         let colors = ["green", "orange", "blue", "purple", "yellow", "pink"];
@@ -463,7 +450,7 @@ class DisjunctSTPathsAlgo extends Algorithm {
     drawLayerStructure(layers) {
         let minPoint = new Point(fgCanvas.width / 3, fgCanvas.height / 4);
         let width = fgCanvas.width / 2;
-        let height = fgCanvas.height * (3/4);
+        let height = fgCanvas.height * (3 / 4);
         let layerHeight = height / layers.length;
         $.each(layers, function (layerIndex, layer) {
             $.each(layer, function (bsVertexIndex, bsVertex) {
@@ -499,6 +486,7 @@ class DisjunctSTPathsAlgo extends Algorithm {
                 }
                 if (vertex.number == graph.target) {
                     console.log('Found target');
+                    // Reconstruct path
                     let partResult = [];
                     let lastConfirmed = graph.target;
                     for (let i = visited.length - 1; i >= 0; i--) {
@@ -522,6 +510,7 @@ class DisjunctSTPathsAlgo extends Algorithm {
                     return;
                 }
                 let edgesRightOfEntryEdge = this.getEdgesRightOfEntryEdge(vertex, entryEdge);
+                // Reverse order because stack is LIFO
                 edgesRightOfEntryEdge.reverse();
                 if (entryEdge.v1nr == 3 && entryEdge.v2nr == 5) {
                 }

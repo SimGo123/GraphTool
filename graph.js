@@ -454,6 +454,21 @@ class Graph {
         return this.getIncidentEdges(vertex).length;
     }
 
+    replaceUnorientedEdges() {
+        let newEdges = [];
+        this.edges.forEach(e => {
+            if (e.orientation == EdgeOrientation.UNDIRECTED) {
+                let edge = new Edge(e.v1nr, e.v2nr, null, e.weight, EdgeOrientation.NORMAL);
+                let revEdge = new Edge(e.v1nr, e.v2nr, null, e.weight, EdgeOrientation.REVERSED);
+                newEdges.push(edge);
+                newEdges.push(revEdge);
+            } else {
+                newEdges.push(e);
+            }
+        });
+        this.edges = newEdges;
+    }
+
     // Returns an array of all vertices connected to vertex, in clockwise embedding order
     getAllNeighbours(vertex, usingOrientation = false) {
         let neighbours = [];
