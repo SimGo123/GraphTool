@@ -43,19 +43,21 @@ class MaxFlowAlgo extends Algorithm {
         let onOuterFacet = outerFacetPoss.length == 1
             && getUniqueVerticeNrsOnFacet(outerFacetPoss[0]).includes(graph.source)
             && getUniqueVerticeNrsOnFacet(outerFacetPoss[0]).includes(graph.target);
+        let result = -1;
         if (onSameFacet && onOuterFacet) {
             super.numSteps = 7;
             await super.pause("S and T are on the same facet", "Furthermore, they are both on the outer facet. So the fast approach can be used.");
-            await this.fastApproach(outerFacetPoss[0]);
+            result = await this.fastApproach(outerFacetPoss[0]);
         } else if (onSameFacet) {
             await super.pause("S and T are on the same facet, but...", "... they are not on the outer facet. Normally, the fast method is used, but instead, we use the slow method.");
-            await this.slowApproach();
+            result = await this.slowApproach();
         } else {
             await super.pause("S and T are not on the same facet", "This means that there is no faster approach then the O(nlogn) one.");
-            await this.slowApproach();
+            result = await this.slowApproach();
         }
-        
+
         super.onFinished();
+        return result;
     }
 
     async fastApproach(outerFacet) {
@@ -177,6 +179,7 @@ class MaxFlowAlgo extends Algorithm {
 
         let maxFlow = distances[dualGraph.getVertexIdByNumber(oldFacetVertexNr)];
         await super.pause("Result", "Max flow is " + maxFlow);
+        return maxFlow;
     }
 
     // TODO implement
@@ -287,6 +290,7 @@ class MaxFlowAlgo extends Algorithm {
             await super.pause("alpha = " + alpha, "");
         }
         await super.pause("Result", "Max flow is " + alpha);
+        return alpha;
     }
 
     drawTwoGraphs(backGraph, foreGraph,
@@ -295,5 +299,194 @@ class MaxFlowAlgo extends Algorithm {
         drawCanvasWalls();
         backGraph.draw(null, null, backColorSet);
         foreGraph.draw(selectedVertex, selectedEdge, foreColorSet);
+    }
+}
+
+class DisjunctSTPathsAlgo extends Algorithm {
+
+    preconditionsCheck() {
+        let fulfilled = true;
+        if (!graph.isPlanarEmbedded()) {
+            alert("graph is not planar embedded!");
+            fulfilled = false;
+        }
+        $.each(graph.edges, function (_index, edge) {
+            if (edge.weight == null) {
+                alert("can't calculate disjunct s-t-paths, " + edge.print() + " has no weight!");
+                fulfilled = false;
+                return false;
+            }
+        });
+        if (graph.source == -1 || graph.target == -1) {
+            alert("can't calculate disjunct s-t-paths, source or target not set!");
+            fulfilled = false;
+        }
+        return fulfilled;
+    }
+
+    async run() {
+        super.numSteps = "X";
+
+        if (!this.preconditionsCheck()) {
+            super.onFinished();
+            return;
+        }
+
+        // await super.pause("Check if T is on outer facet", "Check if the target is on the outer facet. That would reduce complexity from O(nlogn) to O(n)");
+
+        let outerFacetPoss = tryGetOuterFacet(graph);
+        let onOuterFacet = outerFacetPoss.length == 1
+            && getUniqueVerticeNrsOnFacet(outerFacetPoss[0]).includes(graph.target);
+        if (onOuterFacet) {
+            //super.numSteps = 7;
+            // await super.pause("T is on the outer facet", "The fast O(n) approach can be used.");
+            await this.fastApproach(outerFacetPoss[0]);
+        } else {
+            super.numSteps = 4;
+            await super.pause("T is not on the outer facet", "The slow O(nlogn) approach has to be used.");
+            await this.slowApproach();
+        }
+
+        super.onFinished();
+    }
+
+    async fastApproach(outerFacet) {
+        await super.pause("Orient every edge in the graph", "Replace undirected edges with directed edges");
+        let unorientedGraph = graph.getCopy();
+        graph.edges = [];
+        unorientedGraph.edges.forEach(e => {
+            if (e.orientation == EdgeOrientation.UNDIRECTED) {
+                let edge = new Edge(e.v1nr, e.v2nr, null, e.weight, EdgeOrientation.NORMAL);
+                let revEdge = new Edge(e.v1nr, e.v2nr, null, e.weight, EdgeOrientation.REVERSED);
+                graph.addEdge(edge);
+                graph.addEdge(revEdge);
+            }
+        });
+        redrawAll();
+
+        await super.pause("Construct dual graph", "");
+        let orientedGraph = graph.getCopy();
+        let [dualGraph, edgeEqualities, vertexFacets] = unorientedGraph.getDualGraph();
+        graph = dualGraph.getCopy();
+        graph.edges = [];
+        dualGraph.edges.forEach(e => {
+            if (e.orientation == EdgeOrientation.UNDIRECTED) {
+                let edge = new Edge(e.v1nr, e.v2nr, null, e.weight, EdgeOrientation.NORMAL);
+                let revEdge = new Edge(e.v1nr, e.v2nr, null, e.weight, EdgeOrientation.REVERSED);
+                graph.addEdge(edge);
+                graph.addEdge(revEdge);
+            }
+        });
+        redrawAll();
+
+        await super.pause("Create BFS-tree starting at outer facet vertex", "");
+        let outerFacetVertexNr = -1;
+        vertexFacets.forEach(vf => {
+            if (getUniqueVerticeNrsOnFacet(vf.facet).join(',') == getUniqueVerticeNrsOnFacet(outerFacet).join(',')) {
+                outerFacetVertexNr = vf.vertexNumber;
+            }
+        });
+        let layers = breadthFirstSearchTree(graph.getVertexByNumber(outerFacetVertexNr), graph);
+        this.drawLayerStructure(layers);
+
+        await super.pause("Look at each layer, and reverse all edges going to the next lower layer", "");
+        for (let i = 0; i < layers.length - 1; i++) {
+            for (let j = 0; j < layers[i].length; j++) {
+                let currLayerVertexNr = layers[i][j].vertex.number;
+                for (let k = 0; k < layers[i + 1].length; k++) {
+                    let nextLayerVertexNr = layers[i + 1][k].vertex.number;
+                    for (let l = 0; l < graph.edges.length; l++) {
+                        let edge = graph.edges[l];
+                        if (edge.v1nr == currLayerVertexNr && edge.v2nr == nextLayerVertexNr
+                            && edge.orientation == EdgeOrientation.NORMAL) {
+                            edge.orientation = EdgeOrientation.REVERSED;
+                        } else if (edge.v1nr == nextLayerVertexNr && edge.v2nr == currLayerVertexNr
+                            && edge.orientation == EdgeOrientation.REVERSED) {
+                            edge.orientation = EdgeOrientation.NORMAL;
+                        }
+                    }
+                }
+            }
+        }
+        redrawAll();
+
+        await super.pause("Convert back by using dualization again", "");
+        let dualizedD2 = graph.getCopy();
+        graph = unorientedGraph.getCopy();
+        graph.edges = [];
+        let indexes = [];
+        for (let i = 0; i < dualizedD2.edges.length; i++) {
+            let dd2e = dualizedD2.edges[i];
+            edgeEqualities.forEach((ee, idx) => {
+                if (indexes.filter(x => x == idx).length < 2) {
+                    let ee1 = ee.edge1;
+                    let ee2 = ee.edge2;
+                    if (ee1.v1nr == dd2e.v1nr && ee1.v2nr == dd2e.v2nr && ee1.weight == dd2e.weight) {
+                        let newEdge = new Edge(ee2.v1nr, ee2.v2nr, dd2e.id, dd2e.weight, dd2e.orientation);
+                        // if (graph.edges.filter(x => x.eq(newEdge, true, true)).length < 1) {
+                        graph.addEdge(newEdge);
+                        indexes.push(idx);
+                        // }
+                    } else if (ee1.v1nr == dd2e.v2nr && ee1.v2nr == dd2e.v1nr && ee1.weight == dd2e.weight) {
+                        console.log('c2');
+                        let newEdge = new Edge(ee2.v2nr, ee2.v1nr, dd2e.id, dd2e.weight, dd2e.orientation);
+                        // if (graph.edges.filter(e => e.eq(newEdge, true, true)).length < 1) {
+                        graph.addEdge(newEdge);
+                        indexes.push(idx);
+                        // }
+                    }
+                }
+            });
+        }
+        redrawAll();
+    }
+
+    async slowApproach() {
+        await super.pause("Set all edge capacities to 1", "");
+        graph.edges.forEach(e => e.weight = 1);
+        let copyOneGraph = graph.getCopy();
+        redrawAll();
+
+        await super.pause("Calculate max flow", "The result is the number of disjunct s-t-paths");
+        let maxFlowAlgo = new MaxFlowAlgo();
+        maxFlowAlgo.shouldContinue = true;
+        maxFlowAlgo.runComplete = true;
+        maxFlowAlgo.isSubAlgo = true;
+        let maxFlow = await maxFlowAlgo.run();
+        graph = copyOneGraph;
+        redrawAll();
+        await super.pause("Result", "Max flow is " + maxFlow + ", so there are " + maxFlow + " disjunct s-t-paths");
+    }
+
+    drawLayerStructure(layers) {
+        let minPoint = new Point(graph.vertices[0].x, graph.vertices[0].y);
+        let maxPoint = new Point(graph.vertices[0].x, graph.vertices[0].y);
+        $.each(graph.vertices, function (_index, vertex) {
+            if (vertex.x < minPoint.x) {
+                minPoint.x = vertex.x;
+            }
+            if (vertex.y < minPoint.y) {
+                minPoint.y = vertex.y;
+            }
+            if (vertex.x > maxPoint.x) {
+                maxPoint.x = vertex.x;
+            }
+            if (vertex.y > maxPoint.y) {
+                maxPoint.y = vertex.y;
+            }
+        });
+        let width = maxPoint.x - minPoint.x;
+        let height = maxPoint.y - minPoint.y;
+        let layerHeight = height / layers.length;
+        console.log('width=' + width + ' height=' + height + ' layerHeight=' + layerHeight);
+        $.each(layers, function (layerIndex, layer) {
+            $.each(layer, function (bsVertexIndex, bsVertex) {
+                let vertexIndex = eqIndexOf(graph.vertices, bsVertex.vertex);
+                graph.vertices[vertexIndex].x = minPoint.x + width / (layer.length + 1) * (bsVertexIndex + 1);
+                graph.vertices[vertexIndex].y = minPoint.y + layerHeight * layerIndex;
+                console.log('y ' + layerHeight * layerIndex);
+            });
+        });
+        redrawAll();
     }
 }

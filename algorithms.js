@@ -3,7 +3,8 @@ const ALGORITHMS = {
     PLANAR_SEPARATOR: 1,
     WEIGHT_MAX_MATCHING: 2,
     MIXED_MAX_CUT: 3,
-    MAX_FLOW: 4
+    MAX_FLOW: 4,
+    DISJUNCT_ST_PATHS: 5,
 };
 
 var algorithm = null;
@@ -39,6 +40,13 @@ async function algorithmClick(param) {
         algorithm = null;
     } else if (param == ALGORITHMS.MAX_FLOW) {
         algorithm = new MaxFlowAlgo();
+        $("#algoControlPanel").removeClass("invisible");
+        $("#stepButton").removeClass("disabled");
+        $("#runCompleteButton").removeClass("disabled");
+        await algorithm.run();
+        algorithm = null;
+} else if (param == ALGORITHMS.DISJUNCT_ST_PATHS) {
+        algorithm = new DisjunctSTPathsAlgo();
         $("#algoControlPanel").removeClass("invisible");
         $("#stepButton").removeClass("disabled");
         $("#runCompleteButton").removeClass("disabled");

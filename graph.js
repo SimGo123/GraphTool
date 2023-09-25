@@ -160,11 +160,11 @@ class Edge {
             }
         } else if (multiEdge) {
             // Draw multiple edges with bezier curves
-            let vectorLen = 60;
+            let vectorLen = 20;
             let steps = vectorLen * 2 / (occurences - 1);
             let curr = vectorLen - multiEdgeIndex * steps;
 
-            let update = 15;
+            let update = vectorLen / 4;
             if (curr > 0) {
                 // Control points are perpendicular to edge
                 let controlVec = new Point(dy, -dx);
@@ -591,7 +591,7 @@ class Graph {
                 console.log("Error: didn't find adjacent facets of edge " + edge.print());
                 console.log('v1 ' + v1nr + ' v2 ' + v2nr);
             } else {
-                // Keep weights in dual graph
+                // Keep weights, id & orientation in dual graph
                 let newEdge = new Edge(v1nr, v2nr, null, edge.weight, edge.orientation);
                 dualGraph.addEdge(newEdge);
                 edgeEqualities.push(new EdgeEquality(newEdge, edge));
