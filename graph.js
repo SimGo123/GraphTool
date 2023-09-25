@@ -329,8 +329,13 @@ class Graph {
         return null;
     }
 
-    // Returns one edge that connects startNr and endNr.
-    // Doesn't consider multi-edges or edge orientation
+    /**
+    * Returns one edge that connects startNr and endNr.
+    * Doesn't consider multi-edges or edge orientation
+    * @param {number} startNr - The number of the starting vertex.
+    * @param {number} endNr - The number of the ending vertex.
+    * @returns {Edge} The edge that starts at the starting vertex and ends at the ending vertex, or null if no such edge exists.
+    */
     getEdgeByStartEnd(startNr, endNr) {
         for (let i = 0; i < this.edges.length; i++) {
             let edge = this.edges[i];
@@ -521,6 +526,21 @@ class Graph {
         return loops;
     }
 
+    // Get bridges of graph, these are edges that,
+    // when removed, increase the number of connected components
+    // Requires the graph to be connected and not to contain loops or multi-edges
+    getBridges() {
+        let bridges = [];
+        this.edges.forEach(edge => {
+            let copyGraph = this.getCopy();
+            copyGraph.deleteEdge(edge);
+            if (copyGraph.getConnectedComponents().length > 1) {
+                bridges.push(edge);
+            }
+        });
+        return bridges;
+    }
+
     isPlanarEmbedded() {
         for (let i = 0; i < this.edges.length; i++) {
             let edge = this.edges[i];
@@ -544,12 +564,11 @@ class Graph {
         let visited = [];
         for (let i = 0; i < this.vertices.length; i++) {
             if (eqIndexOf(visited, this.vertices[i]) == -1) {
-                let newVisited = depthFirstSearch(this.vertices[i]);
+                let newVisited = depthFirstSearch(this.vertices[i], this);
                 components.push(newVisited);
                 visited = visited.concat(newVisited);
             }
         }
-        console.log("Found " + components.length + " connected components");
         return components;
     }
 

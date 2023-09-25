@@ -1,4 +1,4 @@
-function depthFirstSearch(vertex) {
+function depthFirstSearch(vertex, runGraph) {
     console.log("depthFirstSearch");
     let visited = [];
     let stack = [];
@@ -7,7 +7,7 @@ function depthFirstSearch(vertex) {
         let vertex = stack.pop();
         if (eqIndexOf(visited, vertex) == -1) {
             visited.push(vertex);
-            let neighbours = graph.getAllNeighbours(vertex);
+            let neighbours = runGraph.getAllNeighbours(vertex);
             $.each(neighbours, function (_index, neighbour) {
                 stack.push(neighbour);
             });
