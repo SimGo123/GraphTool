@@ -5,7 +5,8 @@ const Modes = {
     VERTICES: 1,
     EDGES: 2,
     ALGORITHMS: 3,
-    PREDEFINED: 4
+    PREDEFINED: 4,
+    JSON: 5
 };
 var currentMode = Modes.SELECTION;
 var graphModesGroup = $("#graphModes");
@@ -14,7 +15,8 @@ var modeItems = graphModesGroup.children("li");
 function modeClick(param) {
     currentMode = param;
 
-    let toolBoxFuncs = [changeVertexToolsVisible, changeEdgeToolsVisible, changeAlgorithmsVisible, changePredefinedVisible];
+    let toolBoxFuncs = [changeVertexToolsVisible, changeEdgeToolsVisible,
+        changeAlgorithmsVisible, changePredefinedVisible, changeJsonToolsVisible];
 
     if (param == Modes.ALGORITHMS) {
         $.each(toolBoxFuncs, function(_i, func) {
@@ -27,9 +29,16 @@ function modeClick(param) {
         });
         changePredefinedVisible(true);
         $("#algoControlPanel").addClass("invisible");
+    } else if (param == Modes.JSON) {
+        $.each(toolBoxFuncs, function(_i, func) {
+            func(false);
+        });
+        changeJsonToolsVisible(true);
+        $("#algoControlPanel").addClass("invisible");
     } else {
         changeAlgorithmsVisible(false);
         changePredefinedVisible(false);
+        changeJsonToolsVisible(false);
         $("#algoControlPanel").addClass("invisible");
     }
     
@@ -72,6 +81,14 @@ function changePredefinedVisible(visible) {
         $("#predefinedGraphs")[0].classList.remove("collapse");
     } else {
         $("#predefinedGraphs")[0].classList.add("collapse");
+    }
+}
+
+function changeJsonToolsVisible(visible) {
+    if (visible) {
+        $("#jsonTools")[0].classList.remove("collapse");
+    } else {
+        $("#jsonTools")[0].classList.add("collapse");
     }
 }
 
