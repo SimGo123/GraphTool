@@ -419,7 +419,6 @@ class DisjunctSTPathsAlgo extends Algorithm {
                         graph.addEdge(newEdge);
                         indexes.push(idx);
                     } else if (ee1.v1nr == dd2e.v2nr && ee1.v2nr == dd2e.v1nr && ee1.weight == dd2e.weight) {
-                        console.log('c2');
                         let newEdge = new Edge(ee2.v2nr, ee2.v1nr, dd2e.id, dd2e.weight, dd2e.orientation);
                         graph.addEdge(newEdge);
                         indexes.push(idx);
@@ -462,32 +461,15 @@ class DisjunctSTPathsAlgo extends Algorithm {
     }
 
     drawLayerStructure(layers) {
-        let minPoint = new Point(graph.vertices[0].x, graph.vertices[0].y);
-        let maxPoint = new Point(graph.vertices[0].x, graph.vertices[0].y);
-        $.each(graph.vertices, function (_index, vertex) {
-            if (vertex.x < minPoint.x) {
-                minPoint.x = vertex.x;
-            }
-            if (vertex.y < minPoint.y) {
-                minPoint.y = vertex.y;
-            }
-            if (vertex.x > maxPoint.x) {
-                maxPoint.x = vertex.x;
-            }
-            if (vertex.y > maxPoint.y) {
-                maxPoint.y = vertex.y;
-            }
-        });
-        let width = maxPoint.x - minPoint.x;
-        let height = maxPoint.y - minPoint.y;
+        let minPoint = new Point(fgCanvas.width / 3, fgCanvas.height / 4);
+        let width = fgCanvas.width / 2;
+        let height = fgCanvas.height * (3/4);
         let layerHeight = height / layers.length;
-        console.log('width=' + width + ' height=' + height + ' layerHeight=' + layerHeight);
         $.each(layers, function (layerIndex, layer) {
             $.each(layer, function (bsVertexIndex, bsVertex) {
                 let vertexIndex = eqIndexOf(graph.vertices, bsVertex.vertex);
                 graph.vertices[vertexIndex].x = minPoint.x + width / (layer.length + 1) * (bsVertexIndex + 1);
                 graph.vertices[vertexIndex].y = minPoint.y + layerHeight * layerIndex;
-                console.log('y ' + layerHeight * layerIndex);
             });
         });
         redrawAll();
@@ -505,7 +487,6 @@ class DisjunctSTPathsAlgo extends Algorithm {
             while (stack.length > 0) {
                 let entryEdge = stack.pop();
                 visited.push(entryEdge);
-                console.log('Visiting ' + entryEdge.print());
                 let vertex = null;
                 if (entryEdge.orientation == EdgeOrientation.NORMAL) {
                     vertex = graph.getVertexByNumber(entryEdge.v2nr);
@@ -543,7 +524,6 @@ class DisjunctSTPathsAlgo extends Algorithm {
                 let edgesRightOfEntryEdge = this.getEdgesRightOfEntryEdge(vertex, entryEdge);
                 edgesRightOfEntryEdge.reverse();
                 if (entryEdge.v1nr == 3 && entryEdge.v2nr == 5) {
-                    console.log('eroee',edgesRightOfEntryEdge);
                 }
                 edgesRightOfEntryEdge.forEach(e => {
                     if (eqIndexOf(visited, e, true, true) == -1) {
@@ -551,7 +531,6 @@ class DisjunctSTPathsAlgo extends Algorithm {
                     }
                 });
             }
-            console.log('---');
         });
         return result;
     }
@@ -576,7 +555,6 @@ class DisjunctSTPathsAlgo extends Algorithm {
             }
         }
         if (nextSmallerEdgeIndex == -1) {
-            //console.error("nextBiggerEdgeIndex == -1");
             nextSmallerEdgeIndex = 0;
         }
         for (let i = nextSmallerEdgeIndex; i < incidentEdges.length; i++) {

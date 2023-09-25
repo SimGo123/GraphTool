@@ -191,18 +191,6 @@ function tryGetOuterFacet(runGraph) {
     return possibilities;
 }
 
-function facetsEqual(facet1, facet2) {
-    if (facet1.length != facet2.length) {
-        return false;
-    }
-    for (var i = 0; i < facet1.length; i++) {
-        if (!facet1[i].eq(facet2[i])) {
-            return false;
-        }
-    }
-    return true;
-}
-
 /**
  * Checks if two facets are equal based on the following criteria:
  *
@@ -220,32 +208,32 @@ function facetsEqual(facet1, facet2) {
 function facets_equal(facet1, facet2) {
     // Check if the number of edges in both facets is the same
     if (facet1.length !== facet2.length) {
-      return false;
+        return false;
     }
-  
+
     // Iterate through each possible starting edge in facet1
     for (let startIdx = 0; startIdx < facet1.length; startIdx++) {
-      let matchFound = true;
-  
-      // Iterate through the edges of facet2 and compare them with facet1
-      for (let i = 0; i < facet2.length; i++) {
-        const idxInFacet1 = (startIdx + i) % facet1.length;
-  
-        if (!facet1[idxInFacet1].eq(facet2[i]) && !facet1[idxInFacet1].eq(facet2[facet2.length - 1 - i])) {
-          matchFound = false;
-          break; // If a mismatch is found, break the inner loop
+        let matchFound = true;
+
+        // Iterate through the edges of facet2 and compare them with facet1
+        for (let i = 0; i < facet2.length; i++) {
+            const idxInFacet1 = (startIdx + i) % facet1.length;
+
+            if (!facet1[idxInFacet1].eq(facet2[i]) && !facet1[idxInFacet1].eq(facet2[facet2.length - 1 - i])) {
+                matchFound = false;
+                break; // If a mismatch is found, break the inner loop
+            }
         }
-      }
-  
-      // If all edges in facet2 match facet1 (forward or reverse), return true
-      if (matchFound) {
-        return true;
-      }
+
+        // If all edges in facet2 match facet1 (forward or reverse), return true
+        if (matchFound) {
+            return true;
+        }
     }
-  
+
     // If no match is found for any starting edge, return false
     return false;
-  }
+}
 
 // Get next vertex after afterVertex in right/left direction
 function nextVertexAfter(vertices, afterVertex, rightDir) {

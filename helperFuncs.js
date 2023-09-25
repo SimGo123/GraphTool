@@ -376,35 +376,3 @@ class EdgeEquality {
         this.edge2 = edge2;
     }
 }
-
-function geroee(vertex, entryEdge) {
-    let entryEdgeAngle = getAngle(vertex, graph.getOtherVertex(entryEdge, vertex));
-    let incidentEdges = graph.getIncidentEdges(vertex, true);
-    incidentEdges.sort((e1, e2) => {
-        let otherVertex1 = graph.getOtherVertex(e1, vertex);
-        let otherVertex2 = graph.getOtherVertex(e2, vertex);
-        let angle1 = getAngle(vertex, otherVertex1);
-        let angle2 = getAngle(vertex, otherVertex2);
-        return angle2 - angle1;
-    });
-    let edgesRightOfEntryEdge = [];
-    let nextSmallerEdgeIndex = -1;
-    for (let i = 0; i < incidentEdges.length; i++) {
-        let currAngle = getAngle(vertex, graph.getOtherVertex(incidentEdges[i], vertex));
-        if (currAngle < entryEdgeAngle) {
-            nextSmallerEdgeIndex = i;
-            break;
-        }
-    }
-    if (nextSmallerEdgeIndex == -1) {
-        console.error("nextBiggerEdgeIndex == -1");
-        nextSmallerEdgeIndex = 0;
-    }
-    for (let i = nextSmallerEdgeIndex; i < incidentEdges.length; i++) {
-        edgesRightOfEntryEdge.push(incidentEdges[i]);
-    }
-    for (let i = 0; i < nextSmallerEdgeIndex; i++) {
-        edgesRightOfEntryEdge.push(incidentEdges[i]);
-    }
-    return edgesRightOfEntryEdge;
-}
