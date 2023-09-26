@@ -1,4 +1,11 @@
-function depthFirstSearch(vertex, runGraph) {
+/**
+ * 
+ * @param {Vertex} vertex 
+ * @param {Graph} runGraph 
+ * @param {boolean} usingOrientation 
+ * @returns {Vertex[]}
+ */
+function depthFirstSearch(vertex, runGraph, usingOrientation = false) {
     console.log("depthFirstSearch");
     let visited = [];
     let stack = [];
@@ -7,7 +14,7 @@ function depthFirstSearch(vertex, runGraph) {
         let vertex = stack.pop();
         if (eqIndexOf(visited, vertex) == -1) {
             visited.push(vertex);
-            let neighbours = runGraph.getAllNeighbours(vertex);
+            let neighbours = runGraph.getAllNeighbours(vertex, usingOrientation);
             $.each(neighbours, function (_index, neighbour) {
                 stack.push(neighbour);
             });
@@ -231,6 +238,56 @@ function sortClockwise(vertex, vertices) {
         return 0;
     });
 }
+
+function isBipartite(runGraph) {
+    const numVertices = runGraph.vertices.length;
+    const colors = new Array(numVertices).fill(-1); // Initialize colors as -1 (unvisited)
+
+    const sets = [[], []]; // Two sets for vertices with colors 0 and 1
+
+    for (let startVertex = 0; startVertex < numVertices; startVertex++) {
+        if (colors[startVertex] === -1) {
+            if (!bipartiteBFS(runGraph, startVertex, colors, sets)) {
+                console.log('not bipartite starting with ' + runGraph.vertices[startVertex].number);
+                return { isBipartite: false, sets: [] };
+            }
+        }
+    }
+
+    return { isBipartite: true, sets: sets };
+}
+
+function bipartiteBFS(runGraph, startVertex, colors, sets) {
+    const queue = [];
+    queue.push(startVertex);
+    colors[startVertex] = 0; // Color the starting vertex as 0
+    console.log('sv ' + runGraph.vertices[startVertex].number + ' gets color 0');
+    sets[0].push(startVertex); // Add the starting vertex to the first set
+
+    while (queue.length > 0) {
+        const currentVertex = queue.shift();
+
+        const neighbours = runGraph.getAllNeighbours(runGraph.vertices[currentVertex]);
+        for (let i = 0; i < neighbours.length; i++) {
+            const neighborVertex = neighbours[i];
+            const neighborIndex = eqIndexOf(runGraph.vertices, neighborVertex);
+            if (colors[neighborIndex] === -1) {
+                // If neighbor is unvisited, color it with the opposite color of the currentVertex
+                colors[neighborIndex] = 1 - colors[currentVertex];
+                sets[1 - colors[currentVertex]].push(neighborIndex); // Add to the opposite set
+                queue.push(neighborIndex);
+            } else if (colors[neighborIndex] === colors[currentVertex]) {
+                // If neighbor has the same color as the currentVertex, the graph is not bipartite
+                console.log('conflict: ' + runGraph.vertices[neighborIndex].number + ' and ' + runGraph.vertices[currentVertex].number);
+                return false;
+            }
+            // If neighbor is already visited with a different color, continue
+        }
+    }
+
+    return true;
+}
+
 
 // Get the angle in degrees between 0 o'clock from the vertex and the vertex's neighbor
 function getAngle(vertex, neighbour) {

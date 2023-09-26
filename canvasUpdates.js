@@ -79,6 +79,8 @@ class ColorSet {
     }
 }
 
+var globalColorSet = new ColorSet();
+
 
 // Called initially
 function onload() {
@@ -122,7 +124,7 @@ function clearFgCanvas() {
     ctx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
 }
 
-function redrawAll(colorSet = new ColorSet()) {
+function redrawAll(colorSet = globalColorSet) {
     clearFgCanvas();
     drawCanvasWalls();
     graph.draw(selectedVertex, selectedEdge, colorSet);

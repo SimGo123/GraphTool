@@ -97,6 +97,34 @@ class Edge {
         }
     }
 
+    /**
+     * 
+     * @returns {number} The number of the vertex at the start of the edge, depending on the orientation.
+     */
+    getStartVertexNr() {
+        switch (this.orientation) {
+            case EdgeOrientation.UNDIRECTED:
+            case EdgeOrientation.NORMAL:
+                return this.v1nr;
+            case EdgeOrientation.REVERSED:
+                return this.v2nr;
+        }
+    }
+
+    /**
+     * 
+     * @returns {number} The number of the vertex at the end of the edge, depending on the orientation.
+     */
+    getEndVertexNr() {
+        switch (this.orientation) {
+            case EdgeOrientation.UNDIRECTED:
+            case EdgeOrientation.NORMAL:
+                return this.v2nr;
+            case EdgeOrientation.REVERSED:
+                return this.v1nr;
+        }
+    }
+
     draw(pGraph, selectedEdge, colorSet,
         multiEdge = false, loop = false, occurences = 1, multiEdgeIndex = -1, revPoints = false) {
         let v1r = pGraph.getVertexByNumber(this.v1nr);
@@ -272,7 +300,12 @@ class Graph {
     }
 
     deleteEdge(edge) {
-        this.edges.splice(eqIndexOf(this.edges, edge), 1);
+        let index = eqIndexOf(this.edges, edge);
+        if (index != -1) {
+            this.edges.splice(index, 1);
+        } else {
+            console.error("deleteEdge: edge {" + edge.print() + "} not found");
+        }
     }
 
     deleteVertex(vertex) {
@@ -283,7 +316,12 @@ class Graph {
                 this.edges.splice(i, 1);
             }
         }
-        this.vertices.splice(this.vertices.indexOf(vertex), 1);
+        let index = this.vertices.indexOf(vertex);
+        if (index != -1) {
+            this.vertices.splice(this.vertices.indexOf(vertex), 1);
+        } else {
+            console.error("deleteVertex: vertex {" + vertex.print() + "} not found");
+        }
     }
 
     makeSource(vertexNr) {
@@ -408,6 +446,11 @@ class Graph {
         this.edges.splice(this.edges.indexOf(edge), 1);
     }
 
+    /**
+     * 
+     * @param {Edge} edge 
+     * @returns The number of the newly added vertex that replaces the edge
+     */
     contractEdge(edge) {
         let v1 = this.getVertexByNumber(edge.v1nr);
         let v2 = this.getVertexByNumber(edge.v2nr);
@@ -426,6 +469,7 @@ class Graph {
         this.deleteVertex(v2);
         this.deleteEdge(edge);
         this.addVertex(middleVertex);
+        return middleVertex.number;
     }
 
     // Gets all edges incident to vertex
@@ -474,7 +518,13 @@ class Graph {
         this.edges = newEdges;
     }
 
-    // Returns an array of all vertices connected to vertex, in clockwise embedding order
+    /**
+     * Returns an array of all vertices connected to vertex, in clockwise embedding order
+     * 
+     * @param {Vertex} vertex 
+     * @param {boolean} usingOrientation 
+     * @returns {Vertex[]}
+     */
     getAllNeighbours(vertex, usingOrientation = false) {
         let neighbours = [];
         for (let i = 0; i < this.getIncidentEdges(vertex, usingOrientation).length; i++) {
