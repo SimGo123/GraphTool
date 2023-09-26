@@ -390,7 +390,7 @@ class DisjunctSTPathsAlgo extends Algorithm {
 
         await super.pause("Convert back by using dualization again", "The resulting graph does not contain any clockwise circles anymore");
         let dualizedD2 = graph.getCopy();
-        graph = unorientedGraph;
+        graph = unorientedGraph.getCopy();
         graph.edges = [];
         let indexes = [];
         // Dualized D2 (DD2) is oriented, but the edge equalities are not.
@@ -428,6 +428,69 @@ class DisjunctSTPathsAlgo extends Algorithm {
         });
         redrawAll(colorSet);
         await super.pause("Result", "There are " + paths.length + " disjunct s-t-paths");
+
+        await super.pause("Add capacities to edges", "If there is a path using the edge, set the capacity to 1, else 0.");
+        graph.edges.forEach(edge => {
+            edge.weight = 0;
+        });
+        paths.forEach((path, i) => {
+            path.forEach(edge => {
+                edge.weight = 1;
+            });
+        });
+        redrawAll(colorSet);
+
+        await super.pause("Normalize orientations", "If there are two edges with the same orientation, reverse one of them and invert its capacity.");
+        for (let i = 0; i < graph.edges.length; i++) {
+            for (let j = i + 1; j < graph.edges.length; j++) {
+                let edge1 = graph.edges[i];
+                let edge2 = graph.edges[j];
+                if (edge1.eq(edge2) && edge1.orientation == edge2.orientation) {
+                    edge2.orientation = reverseOrientation(edge2.orientation);
+                    edge2.weight = 1 - edge2.weight;
+                }
+            }
+        }
+        redrawAll();
+
+        await super.pause("Translate flows to paths", "If two edges different weights, there is a path going along them.");
+        let graphCopy = graph.getCopy();        
+        let runGraph = graph.getCopy();
+        runGraph.edges = [];
+        let unorientedColorSet = new ColorSet();
+        for (let i = 0; i < graphCopy.edges.length; i++) {
+            for (let j = i + 1; j < graphCopy.edges.length; j++) {
+                let edge1 = graphCopy.edges[i];
+                let edge2 = graphCopy.edges[j];
+                let colorEdge = edge1.weight == 1 ? edge1 : edge2;
+                if (edge1.eq(edge2) && edge1.weight != edge2.weight) {
+                    unorientedColorSet.addEdgeColor(colorEdge, "green");
+                    runGraph.addEdge(colorEdge);
+                }
+            }
+        }
+        graph = runGraph;
+        redrawAll(unorientedColorSet);
+        // DFS to identify all paths
+        let startIncidentEdges = runGraph.getIncidentEdges(runGraph.getVertexByNumber(runGraph.source), true);
+        let finalColorSet = new ColorSet();
+        startIncidentEdges.forEach((startEdge, i) => {
+            let unorientedStartEdge = unorientedGraph.getEdgeByStartEnd(startEdge.v1nr, startEdge.v2nr);
+            finalColorSet.addEdgeColor(unorientedStartEdge, colors[i % colors.length]);
+            let endVertex = runGraph.getVertexByNumber(startEdge.getEndVertexNr());
+            let dfsTree = depthFirstSearch(endVertex, runGraph, true);
+            for (let j = 0; j < dfsTree.length - 1; j++) {
+                let unorientedEdge = unorientedGraph.getEdgeByStartEnd(dfsTree[j].number, dfsTree[j + 1].number);
+                finalColorSet.addEdgeColor(unorientedEdge, colors[i % colors.length]);
+                let edge = runGraph.getEdgeByStartEnd(dfsTree[j].number, dfsTree[j + 1].number);
+                runGraph.deleteEdge(edge);
+                if (edge.getEndVertexNr() == runGraph.target) {
+                    break;
+                }
+            }
+        });
+        graph = unorientedGraph;
+        redrawAll(finalColorSet);
     }
 
     async slowApproach() {
