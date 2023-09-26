@@ -51,7 +51,7 @@ class PlanarityTestAlgo extends Algorithm {
                 "H is bipartite, therefore there is a LR decomposition of G, therefore G is planar");
         } else {
             await super.pause("Graph is not planar",
-                "H was not bipartite, therefore there is no LR decomposition of G, therefore G isn't planar");
+                "H is not bipartite, therefore there is no LR decomposition of G, therefore G isn't planar");
         }
         graph = originalGraph;
         redrawAll();
@@ -239,7 +239,6 @@ class PlanarityTestAlgo extends Algorithm {
         });
         return deepPoint;
     }
-    //Peterson: {"canvasWidth":813,"canvasHeight":538,"source":-1,"target":-1,"vertices":[{"x":358,"y":105,"nr":0},{"x":123,"y":220,"nr":1},{"x":270,"y":414,"nr":2},{"x":526,"y":427,"nr":3},{"x":599,"y":220,"nr":9},{"x":370,"y":199,"nr":5},{"x":264,"y":255,"nr":8},{"x":323,"y":331,"nr":6},{"x":474,"y":339,"nr":4},{"x":502,"y":256,"nr":7}],"edges":[{"v1nr":0,"v2nr":1,"weight":null,"orientation":"U"},{"v1nr":1,"v2nr":2,"weight":null,"orientation":"U"},{"v1nr":2,"v2nr":3,"weight":null,"orientation":"U"},{"v1nr":3,"v2nr":9,"weight":null,"orientation":"U"},{"v1nr":9,"v2nr":0,"weight":null,"orientation":"U"},{"v1nr":0,"v2nr":5,"weight":null,"orientation":"U"},{"v1nr":8,"v2nr":1,"weight":null,"orientation":"U"},{"v1nr":2,"v2nr":6,"weight":null,"orientation":"U"},{"v1nr":3,"v2nr":4,"weight":null,"orientation":"U"},{"v1nr":9,"v2nr":7,"weight":null,"orientation":"U"},{"v1nr":4,"v2nr":5,"weight":null,"orientation":"U"},{"v1nr":5,"v2nr":6,"weight":null,"orientation":"U"},{"v1nr":6,"v2nr":7,"weight":null,"orientation":"U"},{"v1nr":7,"v2nr":8,"weight":null,"orientation":"U"},{"v1nr":8,"v2nr":4,"weight":null,"orientation":"U"}]}
 
 
     /**
@@ -263,6 +262,7 @@ class PlanarityTestAlgo extends Algorithm {
         let reachableVertices = depthFirstSearch(
             pseudoGraph.getVertexByNumber(edge.getEndVertexNr()), pseudoGraph, true);
         let backEdges = [];
+        console.log(edge.print(),'reachableVertices', reachableVertices);
         reachableVertices.forEach(vertex => {
             let incidentEdges = graph.getIncidentEdges(vertex, true);
             incidentEdges.forEach(incidentEdge => {

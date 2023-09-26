@@ -527,8 +527,9 @@ class Graph {
      */
     getAllNeighbours(vertex, usingOrientation = false) {
         let neighbours = [];
-        for (let i = 0; i < this.getIncidentEdges(vertex, usingOrientation).length; i++) {
-            let edge = this.getIncidentEdges(vertex)[i];
+        let incidentEdges = this.getIncidentEdges(vertex, usingOrientation);
+        for (let i = 0; i < incidentEdges.length; i++) {
+            let edge = incidentEdges[i];
             if (edge.v1nr == vertex.number) {
                 neighbours.push(this.getVertexByNumber(edge.v2nr));
             }
@@ -536,7 +537,6 @@ class Graph {
                 neighbours.push(this.getVertexByNumber(edge.v1nr));
             }
         }
-        //console.log("getAllNeighbours: " + JSON.stringify(sortClockwise(vertex, neighbours)));
 
         return sortClockwise(vertex, neighbours);
     }

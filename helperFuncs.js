@@ -261,7 +261,6 @@ function bipartiteBFS(runGraph, startVertex, colors, sets) {
     const queue = [];
     queue.push(startVertex);
     colors[startVertex] = 0; // Color the starting vertex as 0
-    console.log('sv ' + runGraph.vertices[startVertex].number + ' gets color 0');
     sets[0].push(startVertex); // Add the starting vertex to the first set
 
     while (queue.length > 0) {
