@@ -335,6 +335,7 @@ class Graph {
     }
 
     makeSource(vertexNr) {
+        console.log('sources',this.sources);
         if (this.targets.includes(vertexNr) && vertexNr != -1) {
             window.alert("Can't have same source & target");
             return;
@@ -355,6 +356,24 @@ class Graph {
             this.targets.push(vertexNr);
         } else {
             window.alert("Vertex is already a target");
+        }
+    }
+
+    deleteSource(vertexNr) {
+        let index = this.sources.indexOf(vertexNr);
+        if (index != -1) {
+            this.sources.splice(index, 1);
+        } else {
+            window.alert("This vertex is not a source");
+        }
+    }
+
+    deleteTarget(vertexNr) {
+        let index = this.targets.indexOf(vertexNr);
+        if (index != -1) {
+            this.targets.splice(index, 1);
+        } else {
+            window.alert("This vertex is not a target");
         }
     }
 

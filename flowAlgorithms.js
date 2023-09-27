@@ -13,7 +13,7 @@ class MaxFlowAlgo extends Algorithm {
                 return false;
             }
         });
-        if (graph.sources.length != 1 || graph.targets.length != -1) {
+        if (graph.sources.length != 1 || graph.targets.length != 1) {
             alert("can't calculate max flow, source or target not set / not unique!");
             fulfilled = false;
         }
@@ -310,7 +310,7 @@ class DisjunctSTPathsAlgo extends Algorithm {
             alert("graph is not planar embedded!");
             fulfilled = false;
         }
-        if (graph.sources.length != 1 || !graph.targets.length != 1) {
+        if (graph.sources.length != 1 || graph.targets.length != 1) {
             alert("can't calculate disjunct s-t-paths, source or target not set / not unique!");
             fulfilled = false;
         }
@@ -329,7 +329,7 @@ class DisjunctSTPathsAlgo extends Algorithm {
 
         let outerFacetPoss = tryGetOuterFacet(graph);
         let onOuterFacet = outerFacetPoss.length == 1
-            && getUniqueVerticeNrsOnFacet(outerFacetPoss[0]).includes(graph.target);
+            && getUniqueVerticeNrsOnFacet(outerFacetPoss[0]).includes(graph.targets[0]);
         if (onOuterFacet) {
             super.numSteps = 14;
             await super.pause("Target is on the outer facet", "The fast O(n) approach can be used.");
