@@ -280,6 +280,22 @@ class Edge {
         let idString = (this.id == null ? "" : " id: " + this.id);
         return "Edge " + this.v1nr + " " + this.v2nr + " (" + this.orientation + ")" + idString;
     }
+
+    /**
+     * A short string representation of the edge, depending on the orientation.
+     * 
+     * @returns {string} A string representation of the edge, depending on the orientation.
+     */
+    prt() {
+        switch (this.orientation) {
+            case EdgeOrientation.UNDIRECTED:
+                return this.v1nr + " -- " + this.v2nr;
+            case EdgeOrientation.NORMAL:
+                return this.v1nr + " -> " + this.v2nr;
+            case EdgeOrientation.REVERSED:
+                return this.v2nr + " -> " + this.v1nr;
+        }
+    }
 }
 
 class Graph {
