@@ -5,7 +5,8 @@ const ALGORITHMS = {
     MIXED_MAX_CUT: 3,
     MAX_FLOW: 4,
     DISJUNCT_ST_PATHS: 5,
-    PLANARITY_TEST: 6
+    PLANARITY_TEST: 6,
+    OKAMURA_SEYMOUR: 7,
 };
 
 var algorithm = null;
@@ -32,6 +33,9 @@ async function algorithmClick(param) {
             break;
         case ALGORITHMS.PLANARITY_TEST:
             algorithm = new PlanarityTestAlgo();
+            break;
+        case ALGORITHMS.OKAMURA_SEYMOUR:
+            algorithm = new OkamuraSeymourAlgo();
             break;
         default:
             // code for default case

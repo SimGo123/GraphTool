@@ -340,9 +340,9 @@ class Graph {
             window.alert("Can't have same source & target");
             return;
         }
-        if (!this.sources.includes(vertexNr)) {
+        if (!this.sources.includes(vertexNr) && vertexNr != -1) {
             this.sources.push(vertexNr);
-        } else {
+        } else if (vertexNr != -1) {
             window.alert("Vertex is already a source");
         }
     }
@@ -352,9 +352,9 @@ class Graph {
             window.alert("Can't have same source & target");
             return;
         }
-        if (!this.targets.includes(vertexNr)) {
+        if (!this.targets.includes(vertexNr) && vertexNr != -1) {
             this.targets.push(vertexNr);
-        } else {
+        } else if (vertexNr != -1) {
             window.alert("Vertex is already a target");
         }
     }

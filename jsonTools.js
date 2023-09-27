@@ -42,9 +42,7 @@ function loadGraphFromJson(graphString) {
     graph = new Graph();
     vertexCount = 0;
     if (jsonGraph.hasOwnProperty('source') && jsonGraph.hasOwnProperty('target')) {
-        console.log('ms');
         graph.makeSource(jsonGraph['source']);
-        console.log('mt');
         graph.makeTarget(jsonGraph['target']);
     }
     if (jsonGraph.hasOwnProperty('sources') && jsonGraph.hasOwnProperty('targets')) {
