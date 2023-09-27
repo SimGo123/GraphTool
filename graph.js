@@ -30,10 +30,20 @@ class Vertex {
         ctx.closePath();
         ctx.fillStyle = colorSet.getVertexColor(this.number);
         let text = this.number;
-        if (this.number != -1 && sources.includes(this.number)) {
-            text = "S" + text;
-        } else if (this.number != -1 && targets.includes(this.number)) {
-            text = "T" + text;
+        let sIndex = sources.indexOf(this.number);
+        let tIndex = targets.indexOf(this.number);
+        if (this.number != -1 && sIndex != -1) {
+            if (sources.length > 1) {
+                text = "S" + sIndex + "(" + text + ")";
+            } else {
+                text = "S" + text;
+            }
+        } else if (this.number != -1 && tIndex != -1) {
+            if (sources.length > 1) {
+                text = "T" + tIndex + "(" + text + ")";
+            } else {
+                text = "T" + text;
+            }
         }
         let metrics = ctx.measureText(text);
         let txtWidth = metrics.width;
