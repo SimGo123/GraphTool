@@ -97,6 +97,34 @@ class Edge {
         }
     }
 
+    /**
+     * 
+     * @returns {number} The number of the vertex at the start of the edge, depending on the orientation.
+     */
+    getStartVertexNr() {
+        switch (this.orientation) {
+            case EdgeOrientation.UNDIRECTED:
+            case EdgeOrientation.NORMAL:
+                return this.v1nr;
+            case EdgeOrientation.REVERSED:
+                return this.v2nr;
+        }
+    }
+
+    /**
+     * 
+     * @returns {number} The number of the vertex at the end of the edge, depending on the orientation.
+     */
+    getEndVertexNr() {
+        switch (this.orientation) {
+            case EdgeOrientation.UNDIRECTED:
+            case EdgeOrientation.NORMAL:
+                return this.v2nr;
+            case EdgeOrientation.REVERSED:
+                return this.v1nr;
+        }
+    }
+
     draw(pGraph, selectedEdge, colorSet,
         multiEdge = false, loop = false, occurences = 1, multiEdgeIndex = -1, revPoints = false) {
         let v1r = pGraph.getVertexByNumber(this.v1nr);
@@ -272,7 +300,12 @@ class Graph {
     }
 
     deleteEdge(edge) {
-        this.edges.splice(eqIndexOf(this.edges, edge), 1);
+        let index = eqIndexOf(this.edges, edge);
+        if (index != -1) {
+            this.edges.splice(index, 1);
+        } else {
+            console.error("deleteEdge: edge {" + edge.print() + "} not found");
+        }
     }
 
     deleteVertex(vertex) {
@@ -283,7 +316,12 @@ class Graph {
                 this.edges.splice(i, 1);
             }
         }
-        this.vertices.splice(this.vertices.indexOf(vertex), 1);
+        let index = this.vertices.indexOf(vertex);
+        if (index != -1) {
+            this.vertices.splice(this.vertices.indexOf(vertex), 1);
+        } else {
+            console.error("deleteVertex: vertex {" + vertex.print() + "} not found");
+        }
     }
 
     makeSource(vertexNr) {
@@ -329,8 +367,13 @@ class Graph {
         return null;
     }
 
-    // Returns one edge that connects startNr and endNr.
-    // Doesn't consider multi-edges or edge orientation
+    /**
+    * Returns one edge that connects startNr and endNr.
+    * Doesn't consider multi-edges or edge orientation
+    * @param {number} startNr - The number of the starting vertex.
+    * @param {number} endNr - The number of the ending vertex.
+    * @returns {Edge} The edge that starts at the starting vertex and ends at the ending vertex, or null if no such edge exists.
+    */
     getEdgeByStartEnd(startNr, endNr) {
         for (let i = 0; i < this.edges.length; i++) {
             let edge = this.edges[i];
@@ -403,6 +446,11 @@ class Graph {
         this.edges.splice(this.edges.indexOf(edge), 1);
     }
 
+    /**
+     * 
+     * @param {Edge} edge 
+     * @returns The number of the newly added vertex that replaces the edge
+     */
     contractEdge(edge) {
         let v1 = this.getVertexByNumber(edge.v1nr);
         let v2 = this.getVertexByNumber(edge.v2nr);
@@ -421,6 +469,7 @@ class Graph {
         this.deleteVertex(v2);
         this.deleteEdge(edge);
         this.addVertex(middleVertex);
+        return middleVertex.number;
     }
 
     // Gets all edges incident to vertex
@@ -469,11 +518,18 @@ class Graph {
         this.edges = newEdges;
     }
 
-    // Returns an array of all vertices connected to vertex, in clockwise embedding order
+    /**
+     * Returns an array of all vertices connected to vertex, in clockwise embedding order
+     * 
+     * @param {Vertex} vertex 
+     * @param {boolean} usingOrientation 
+     * @returns {Vertex[]}
+     */
     getAllNeighbours(vertex, usingOrientation = false) {
         let neighbours = [];
-        for (let i = 0; i < this.getIncidentEdges(vertex, usingOrientation).length; i++) {
-            let edge = this.getIncidentEdges(vertex)[i];
+        let incidentEdges = this.getIncidentEdges(vertex, usingOrientation);
+        for (let i = 0; i < incidentEdges.length; i++) {
+            let edge = incidentEdges[i];
             if (edge.v1nr == vertex.number) {
                 neighbours.push(this.getVertexByNumber(edge.v2nr));
             }
@@ -481,7 +537,6 @@ class Graph {
                 neighbours.push(this.getVertexByNumber(edge.v1nr));
             }
         }
-        //console.log("getAllNeighbours: " + JSON.stringify(sortClockwise(vertex, neighbours)));
 
         return sortClockwise(vertex, neighbours);
     }
@@ -521,6 +576,21 @@ class Graph {
         return loops;
     }
 
+    // Get bridges of graph, these are edges that,
+    // when removed, increase the number of connected components
+    // Requires the graph to be connected and not to contain loops or multi-edges
+    getBridges() {
+        let bridges = [];
+        this.edges.forEach(edge => {
+            let copyGraph = this.getCopy();
+            copyGraph.deleteEdge(edge);
+            if (copyGraph.getConnectedComponents().length > 1) {
+                bridges.push(edge);
+            }
+        });
+        return bridges;
+    }
+
     isPlanarEmbedded() {
         for (let i = 0; i < this.edges.length; i++) {
             let edge = this.edges[i];
@@ -544,12 +614,11 @@ class Graph {
         let visited = [];
         for (let i = 0; i < this.vertices.length; i++) {
             if (eqIndexOf(visited, this.vertices[i]) == -1) {
-                let newVisited = depthFirstSearch(this.vertices[i]);
+                let newVisited = depthFirstSearch(this.vertices[i], this);
                 components.push(newVisited);
                 visited = visited.concat(newVisited);
             }
         }
-        console.log("Found " + components.length + " connected components");
         return components;
     }
 
@@ -583,7 +652,7 @@ class Graph {
             let facetCenter = getFacetCenter(facet, this);
             let vertex = new Vertex(facetCenter.x, facetCenter.y);
             if (outerFacetPoss.length == 1 && outerFacetPoss[0].join(',') == facet.join(',') && !outerFacDone) {
-                vertex = new Vertex(900, 250);
+                vertex = new Vertex(fgCanvas.width - 50, 250);
                 outerFacDone = true;
             }
             dualGraph.addVertex(vertex);
