@@ -183,7 +183,9 @@ fgCanvas.addEventListener("click", function (event) {
 const VertexTools = {
     DELETE: 0,
     MAKE_SRC: 1,
-    MAKE_TARGET: 2
+    MAKE_TARGET: 2,
+    DELETE_SRC: 3,
+    DELETE_TARGET: 4
 }
 
 function vertexToolClick(param) {
@@ -206,7 +208,16 @@ function vertexToolClick(param) {
         selectedVertex = null;
         changeVertexToolsVisible(false);
         redrawAll();
-
+    } else if (param == VertexTools.DELETE_SRC) {
+        graph.deleteSource(selectedVertex.number);
+        selectedVertex = null;
+        changeVertexToolsVisible(false);
+        redrawAll();
+    } else if (param == VertexTools.DELETE_TARGET) {
+        graph.deleteTarget(selectedVertex.number);
+        selectedVertex = null;
+        changeVertexToolsVisible(false);
+        redrawAll();
     }
 }
 

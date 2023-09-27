@@ -13,8 +13,8 @@ class MaxFlowAlgo extends Algorithm {
                 return false;
             }
         });
-        if (graph.source == -1 || graph.target == -1) {
-            alert("can't calculate max flow, source or target not set!");
+        if (graph.sources.length != 1 || graph.targets.length != -1) {
+            alert("can't calculate max flow, source or target not set / not unique!");
             fulfilled = false;
         }
         return fulfilled;
@@ -34,15 +34,15 @@ class MaxFlowAlgo extends Algorithm {
         let onSameFacet = false;
         facets.forEach((facet) => {
             let verticeNumbers = getUniqueVerticeNrsOnFacet(facet);
-            if (verticeNumbers.includes(graph.source) && verticeNumbers.includes(graph.target)) {
+            if (verticeNumbers.includes(graph.sources[0]) && verticeNumbers.includes(graph.targets[0])) {
                 onSameFacet = true;
             }
         });
 
         let outerFacetPoss = tryGetOuterFacet(graph);
         let onOuterFacet = outerFacetPoss.length == 1
-            && getUniqueVerticeNrsOnFacet(outerFacetPoss[0]).includes(graph.source)
-            && getUniqueVerticeNrsOnFacet(outerFacetPoss[0]).includes(graph.target);
+            && getUniqueVerticeNrsOnFacet(outerFacetPoss[0]).includes(graph.sources[0])
+            && getUniqueVerticeNrsOnFacet(outerFacetPoss[0]).includes(graph.targets[0]);
         let result = -1;
         if (onSameFacet && onOuterFacet) {
             super.numSteps = 7;
@@ -71,12 +71,12 @@ class MaxFlowAlgo extends Algorithm {
         let edgesToNewFacet = [];
         for (let i = 0; i < outerFacet.length; i++) {
             let edge = outerFacet[i];
-            if (edgesToNewFacet.length == 0 && (edge.v1nr == copyGraph.source || edge.v1nr == copyGraph.target)) {
+            if (edgesToNewFacet.length == 0 && (edge.v1nr == copyGraph.sources[0] || edge.v1nr == copyGraph.targets[0])) {
                 edgesToNewFacet.push(edge);
             } else if (edgesToNewFacet.length > 0) {
                 edgesToNewFacet.push(edge);
             }
-            if (edgesToNewFacet.length != 0 && (edge.v2nr == copyGraph.source || edge.v2nr == copyGraph.target)) {
+            if (edgesToNewFacet.length != 0 && (edge.v2nr == copyGraph.sources[0] || edge.v2nr == copyGraph.targets[0])) {
                 break;
             }
         }
@@ -185,8 +185,8 @@ class MaxFlowAlgo extends Algorithm {
     // TODO implement
     async slowApproach() {
         await super.pause("Find path between S and T", "Find a path between S and T using Breadth-First Search.");
-        let bfsTree = breadthFirstSearchTree(graph.getVertexByNumber(graph.source), graph);
-        let verticesInPath = [graph.getVertexByNumber(graph.target)];
+        let bfsTree = breadthFirstSearchTree(graph.getVertexByNumber(graph.sources[0]), graph);
+        let verticesInPath = [graph.getVertexByNumber(graph.targets[0])];
         let edgesInPath = [];
         for (let i = bfsTree.length - 1; i > 0; i--) {
             let layer = bfsTree[i];
@@ -310,8 +310,8 @@ class DisjunctSTPathsAlgo extends Algorithm {
             alert("graph is not planar embedded!");
             fulfilled = false;
         }
-        if (graph.source == -1 || graph.target == -1) {
-            alert("can't calculate disjunct s-t-paths, source or target not set!");
+        if (graph.sources.length != 1 || !graph.targets.length != 1) {
+            alert("can't calculate disjunct s-t-paths, source or target not set / not unique!");
             fulfilled = false;
         }
         return fulfilled;
@@ -422,7 +422,7 @@ class DisjunctSTPathsAlgo extends Algorithm {
 
         await super.pause("Find paths by using right-depth-first search", 
         "Start at the source, always take the rightmost unvisited edge. If the target is reached, a path was found.");
-        let paths = this.rightDepthFirstSearch(graph.getVertexByNumber(graph.source));
+        let paths = this.rightDepthFirstSearch(graph.getVertexByNumber(graph.sources[0]));
 
         let colors = ["green", "orange", "blue", "purple", "yellow", "pink"];
         let colorSet = new ColorSet();
@@ -482,7 +482,7 @@ class DisjunctSTPathsAlgo extends Algorithm {
         graph = runGraph;
         redrawAll(unorientedColorSet);
         await super.pause("Use depth-first search to identify each path","");
-        let startIncidentEdges = runGraph.getIncidentEdges(runGraph.getVertexByNumber(runGraph.source), true);
+        let startIncidentEdges = runGraph.getIncidentEdges(runGraph.getVertexByNumber(runGraph.sources[0]), true);
         let finalColorSet = new ColorSet();
         startIncidentEdges.forEach((startEdge, i) => {
             let unorientedStartEdge = unorientedGraph.getEdgeByStartEnd(startEdge.v1nr, startEdge.v2nr);
@@ -494,7 +494,7 @@ class DisjunctSTPathsAlgo extends Algorithm {
                 finalColorSet.addEdgeColor(unorientedEdge, colors[i % colors.length]);
                 let edge = runGraph.getEdgeByStartEnd(dfsTree[j].number, dfsTree[j + 1].number);
                 runGraph.deleteEdge(edge);
-                if (edge.getEndVertexNr() == runGraph.target) {
+                if (edge.getEndVertexNr() == runGraph.targets[0]) {
                     break;
                 }
             }
@@ -561,11 +561,11 @@ class DisjunctSTPathsAlgo extends Algorithm {
                     console.error("vertex == null");
                     return;
                 }
-                if (vertex.number == graph.target) {
+                if (vertex.number == graph.targets[0]) {
                     console.log('Found target');
                     // Reconstruct path
                     let partResult = [];
-                    let lastConfirmed = graph.target;
+                    let lastConfirmed = graph.targets[0];
                     for (let i = visited.length - 1; i >= 0; i--) {
                         let visitedEdge = visited[i];
                         if (visitedEdge.v1nr == lastConfirmed) {
@@ -575,7 +575,7 @@ class DisjunctSTPathsAlgo extends Algorithm {
                             partResult.push(visitedEdge);
                             lastConfirmed = visitedEdge.v1nr;
                         }
-                        if (lastConfirmed == graph.source) {
+                        if (lastConfirmed == graph.sources[0]) {
                             break;
                         }
                     }
