@@ -325,18 +325,18 @@ class DisjunctSTPathsAlgo extends Algorithm {
             return;
         }
 
-        await super.pause("Check if T is on outer facet", "Check if the target is on the outer facet. That would - for us - reduce complexity from O(nlogn) to O(n)");
+        await super.pause("Check if the target is on outer facet", "That would - for us - reduce complexity from O(nlogn) to O(n)");
 
         let outerFacetPoss = tryGetOuterFacet(graph);
         let onOuterFacet = outerFacetPoss.length == 1
             && getUniqueVerticeNrsOnFacet(outerFacetPoss[0]).includes(graph.target);
         if (onOuterFacet) {
-            super.numSteps = 9;
-            await super.pause("T is on the outer facet", "The fast O(n) approach can be used.");
+            super.numSteps = 14;
+            await super.pause("Target is on the outer facet", "The fast O(n) approach can be used.");
             await this.fastApproach(outerFacetPoss[0]);
         } else {
             super.numSteps = 5;
-            await super.pause("T is not on the outer facet", "The slow O(nlogn) approach has to be used because making any facet an outer facet isn't implemented.");
+            await super.pause("Target is not on the outer facet", "The slow O(nlogn) approach has to be used because making any facet an outer facet isn't implemented.");
             await this.slowApproach();
         }
 
@@ -355,17 +355,20 @@ class DisjunctSTPathsAlgo extends Algorithm {
         graph.replaceUnorientedEdges();
         redrawAll();
 
-        await super.pause("Eliminate clockwise circles (II)", "Second, create a BFS-tree starting at the outer facet vertex");
         let outerFacetVertexNr = -1;
         vertexFacets.forEach(vf => {
             if (getUniqueVerticeNrsOnFacet(vf.facet).join(',') == getUniqueVerticeNrsOnFacet(outerFacet).join(',')) {
                 outerFacetVertexNr = vf.vertexNumber;
             }
         });
+        console.log('ofvn',outerFacetVertexNr);
+        await super.pause("Eliminate clockwise circles (II)",
+            "Second, create a BFS-tree starting at the outer facet vertex " + outerFacetVertexNr);
         let layers = breadthFirstSearchTree(graph.getVertexByNumber(outerFacetVertexNr), graph);
         this.drawLayerStructure(layers);
 
-        await super.pause("Eliminate clockwise circles (III)", "Look at each layer, and reverse all edges going to the next lower layer");
+        await super.pause("Eliminate clockwise circles (III)",
+            "Reverse all edges that go from a higher to a lower level in the BFS-tree");
         // Look at each layer except the last one
         for (let i = 0; i < layers.length - 1; i++) {
             // At each vertex in that layer
@@ -388,7 +391,8 @@ class DisjunctSTPathsAlgo extends Algorithm {
         }
         redrawAll();
 
-        await super.pause("Convert back by using dualization again", "The resulting graph does not contain any clockwise circles anymore");
+        await super.pause("Convert back by using dualization again",
+            "The normal graph for the current dualized graph does not contain clockwise circles anymore");
         let dualizedD2 = graph.getCopy();
         graph = unorientedGraph.getCopy();
         graph.edges = [];
@@ -416,7 +420,8 @@ class DisjunctSTPathsAlgo extends Algorithm {
         }
         redrawAll();
 
-        await super.pause("Find paths by using right-depth-first search", "Start at the source, always take the rightmost unvisited edge. If the target is reached, a path was found.");
+        await super.pause("Find paths by using right-depth-first search", 
+        "Start at the source, always take the rightmost unvisited edge. If the target is reached, a path was found.");
         let paths = this.rightDepthFirstSearch(graph.getVertexByNumber(graph.source));
 
         let colors = ["green", "orange", "blue", "purple", "yellow", "pink"];
@@ -427,9 +432,12 @@ class DisjunctSTPathsAlgo extends Algorithm {
             });
         });
         redrawAll(colorSet);
-        await super.pause("Result", "There are " + paths.length + " disjunct s-t-paths");
+        await super.pause("Preliminary result", 
+        "There are " + paths.length + " disjunct s-t-paths in both the original and this graph."
+        + " Now, we have to convert the paths in this graph to paths in the original graph.");
 
-        await super.pause("Add capacities to edges", "If there is a path using the edge, set the capacity to 1, else 0.");
+        await super.pause("Add weights to edges", 
+        "If there is a path using an edge, set its weight to 1, else 0.");
         graph.edges.forEach(edge => {
             edge.weight = 0;
         });
@@ -440,7 +448,9 @@ class DisjunctSTPathsAlgo extends Algorithm {
         });
         redrawAll(colorSet);
 
-        await super.pause("Normalize orientations", "If there are two edges with the same orientation, reverse one of them and invert its capacity.");
+        await super.pause("Normalize orientations", 
+        "If there are two edges with the same orientation, reverse one of them and invert its weight."
+        + " If two antiparallel edges have different weights, there is a path going along them.");
         for (let i = 0; i < graph.edges.length; i++) {
             for (let j = i + 1; j < graph.edges.length; j++) {
                 let edge1 = graph.edges[i];
@@ -451,10 +461,8 @@ class DisjunctSTPathsAlgo extends Algorithm {
                 }
             }
         }
-        redrawAll();
 
-        await super.pause("Translate flows to paths", "If two edges different weights, there is a path going along them.");
-        let graphCopy = graph.getCopy();        
+        let graphCopy = graph.getCopy();
         let runGraph = graph.getCopy();
         runGraph.edges = [];
         let unorientedColorSet = new ColorSet();
@@ -469,9 +477,11 @@ class DisjunctSTPathsAlgo extends Algorithm {
                 }
             }
         }
+        redrawAll(unorientedColorSet);
+        await super.pause("Remove edges with capacity 0", "");
         graph = runGraph;
         redrawAll(unorientedColorSet);
-        // DFS to identify all paths
+        await super.pause("Use depth-first search to identify each path","");
         let startIncidentEdges = runGraph.getIncidentEdges(runGraph.getVertexByNumber(runGraph.source), true);
         let finalColorSet = new ColorSet();
         startIncidentEdges.forEach((startEdge, i) => {
@@ -491,6 +501,7 @@ class DisjunctSTPathsAlgo extends Algorithm {
         });
         graph = unorientedGraph;
         redrawAll(finalColorSet);
+        await super.pause("Result", "There are " + paths.length + " disjunct s-t-paths in the original graph. Here they are.");
     }
 
     async slowApproach() {
@@ -511,14 +522,17 @@ class DisjunctSTPathsAlgo extends Algorithm {
     }
 
     drawLayerStructure(layers) {
-        let minPoint = new Point(fgCanvas.width / 3, fgCanvas.height / 4);
-        let width = fgCanvas.width / 2;
-        let height = fgCanvas.height * (3 / 4);
-        let layerHeight = height / layers.length;
+        let marginWidth = 50;
+        let marginHeight = 50;
+        let minPoint = new Point(marginWidth, marginHeight);
+        let width = fgCanvas.width - 2 * marginWidth;
+        let height = fgCanvas.height - 2 * marginHeight;
+        console.log('w',width,'h',height);
+        let layerHeight = height / (layers.length - 1);
         $.each(layers, function (layerIndex, layer) {
             $.each(layer, function (bsVertexIndex, bsVertex) {
                 let vertexIndex = eqIndexOf(graph.vertices, bsVertex.vertex);
-                graph.vertices[vertexIndex].x = minPoint.x + width / (layer.length + 1) * (bsVertexIndex + 1);
+                graph.vertices[vertexIndex].x = minPoint.x + (width / (layer.length)) * (bsVertexIndex + 0.5);
                 graph.vertices[vertexIndex].y = minPoint.y + layerHeight * layerIndex;
             });
         });

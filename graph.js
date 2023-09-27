@@ -652,7 +652,7 @@ class Graph {
             let facetCenter = getFacetCenter(facet, this);
             let vertex = new Vertex(facetCenter.x, facetCenter.y);
             if (outerFacetPoss.length == 1 && outerFacetPoss[0].join(',') == facet.join(',') && !outerFacDone) {
-                vertex = new Vertex(900, 250);
+                vertex = new Vertex(fgCanvas.width - 50, 250);
                 outerFacDone = true;
             }
             dualGraph.addVertex(vertex);
