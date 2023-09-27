@@ -408,6 +408,10 @@ function doIntersect(p1, q1, p2, q2) {
     return false; // Doesn't fall in any of the above cases
 }
 
+function mod(number, modulus) {
+    return ((number % modulus) + modulus) % modulus;
+}
+
 function printArr(arr) {
     arr.forEach(elem => console.log(elem.print()));
 }

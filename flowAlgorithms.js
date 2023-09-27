@@ -589,8 +589,6 @@ class DisjunctSTPathsAlgo extends Algorithm {
                 let edgesRightOfEntryEdge = this.getEdgesRightOfEntryEdge(vertex, entryEdge);
                 // Reverse order because stack is LIFO
                 edgesRightOfEntryEdge.reverse();
-                if (entryEdge.v1nr == 3 && entryEdge.v2nr == 5) {
-                }
                 edgesRightOfEntryEdge.forEach(e => {
                     if (eqIndexOf(visited, e, true, true) == -1) {
                         stack.push(e);

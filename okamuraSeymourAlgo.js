@@ -45,15 +45,15 @@ class OkamuraSeymourAlgo extends Algorithm {
             await super.pause("Not all sources and targets are on the outer facet", "");
             super.onFinished();
             return;
-        } 
+        }
         if (!await this.testEulerCondition()) {
             super.onFinished();
             return;
         }
         await this.getBracketStructure(verticeNrsOnOuterFacet);
+        await this.rdfsPaths(verticeNrsOnOuterFacet);
 
         super.onFinished();
-        // {"canvasWidth":921,"canvasHeight":538,"sources":[9,3,2],"targets":[7,5,10],"vertices":[{"x":374,"y":229,"nr":0},{"x":348,"y":122,"nr":1},{"x":263,"y":29,"nr":2},{"x":238,"y":157,"nr":3},{"x":215,"y":305,"nr":4},{"x":205,"y":391,"nr":5},{"x":308,"y":455,"nr":6},{"x":496,"y":465,"nr":7},{"x":599,"y":411,"nr":8},{"x":633,"y":253,"nr":9},{"x":496,"y":135,"nr":10}],"edges":[{"v1nr":0,"v2nr":1,"weight":null,"orientation":"U"},{"v1nr":1,"v2nr":2,"weight":null,"orientation":"U"},{"v1nr":2,"v2nr":3,"weight":null,"orientation":"U"},{"v1nr":3,"v2nr":4,"weight":null,"orientation":"U"},{"v1nr":4,"v2nr":0,"weight":null,"orientation":"U"},{"v1nr":1,"v2nr":10,"weight":null,"orientation":"U"},{"v1nr":10,"v2nr":9,"weight":null,"orientation":"U"},{"v1nr":9,"v2nr":8,"weight":null,"orientation":"U"},{"v1nr":9,"v2nr":7,"weight":null,"orientation":"U"},{"v1nr":7,"v2nr":8,"weight":null,"orientation":"U"},{"v1nr":7,"v2nr":6,"weight":null,"orientation":"U"},{"v1nr":6,"v2nr":5,"weight":null,"orientation":"U"},{"v1nr":5,"v2nr":4,"weight":null,"orientation":"U"},{"v1nr":0,"v2nr":9,"weight":null,"orientation":"U"},{"v1nr":0,"v2nr":3,"weight":null,"orientation":"U"},{"v1nr":1,"v2nr":9,"weight":null,"orientation":"U"},{"v1nr":2,"v2nr":10,"weight":null,"orientation":"U"},{"v1nr":5,"v2nr":9,"weight":null,"orientation":"U"},{"v1nr":4,"v2nr":9,"weight":null,"orientation":"U"}]}
     }
 
     async testEulerCondition() {
@@ -81,9 +81,8 @@ class OkamuraSeymourAlgo extends Algorithm {
         return true;
     }
 
-    //{"canvasWidth":921,"canvasHeight":538,"sources":[9,3,2],"targets":[5,10,7],"vertices":[{"x":374,"y":229,"nr":0},{"x":348,"y":122,"nr":1},{"x":263,"y":29,"nr":2},{"x":238,"y":157,"nr":3},{"x":215,"y":305,"nr":4},{"x":205,"y":391,"nr":5},{"x":308,"y":455,"nr":6},{"x":496,"y":465,"nr":7},{"x":599,"y":411,"nr":8},{"x":633,"y":253,"nr":9},{"x":496,"y":135,"nr":10}],"edges":[{"v1nr":0,"v2nr":1,"weight":null,"orientation":"U"},{"v1nr":1,"v2nr":2,"weight":null,"orientation":"U"},{"v1nr":2,"v2nr":3,"weight":null,"orientation":"U"},{"v1nr":3,"v2nr":4,"weight":null,"orientation":"U"},{"v1nr":4,"v2nr":0,"weight":null,"orientation":"U"},{"v1nr":1,"v2nr":10,"weight":null,"orientation":"U"},{"v1nr":10,"v2nr":9,"weight":null,"orientation":"U"},{"v1nr":9,"v2nr":8,"weight":null,"orientation":"U"},{"v1nr":9,"v2nr":7,"weight":null,"orientation":"U"},{"v1nr":7,"v2nr":8,"weight":null,"orientation":"U"},{"v1nr":7,"v2nr":6,"weight":null,"orientation":"U"},{"v1nr":6,"v2nr":5,"weight":null,"orientation":"U"},{"v1nr":5,"v2nr":4,"weight":null,"orientation":"U"},{"v1nr":0,"v2nr":9,"weight":null,"orientation":"U"},{"v1nr":0,"v2nr":3,"weight":null,"orientation":"U"},{"v1nr":1,"v2nr":9,"weight":null,"orientation":"U"},{"v1nr":2,"v2nr":10,"weight":null,"orientation":"U"},{"v1nr":5,"v2nr":9,"weight":null,"orientation":"U"},{"v1nr":4,"v2nr":9,"weight":null,"orientation":"U"}]}
     async getBracketStructure(outerFacetVertexNrs) {
-        await super.pause("Get bracket structure","");
+        await super.pause("Get bracket structure", "");
         let bracketString = "";
         let bracketStructure = [];
         let visited = [];
@@ -93,10 +92,10 @@ class OkamuraSeymourAlgo extends Algorithm {
             let tIndex = graph.targets.indexOf(vertexNr);
             if (sIndex != -1) {
                 if (!visited.includes(sIndex)) {
-                    bracketString += "(S"+sIndex+" ";
+                    bracketString += "(S" + sIndex + " ";
                     bracketStructure.push(BRACKETS.OPEN);
                 } else {
-                    bracketString += "S"+sIndex+") ";
+                    bracketString += "S" + sIndex + ") ";
                     bracketStructure.push(BRACKETS.CLOSE);
 
                 }
@@ -104,10 +103,10 @@ class OkamuraSeymourAlgo extends Algorithm {
                 bracketVertexNrs.push(vertexNr);
             } else if (tIndex != -1) {
                 if (!visited.includes(tIndex)) {
-                    bracketString += "(T"+tIndex+" ";
+                    bracketString += "(T" + tIndex + " ";
                     bracketStructure.push(BRACKETS.OPEN);
                 } else {
-                    bracketString += "T"+tIndex+") ";
+                    bracketString += "T" + tIndex + ") ";
                     bracketStructure.push(BRACKETS.CLOSE);
                 }
                 visited.push(tIndex);
@@ -122,19 +121,198 @@ class OkamuraSeymourAlgo extends Algorithm {
         bracketStructure.forEach((bracket, i) => {
             if (bracket == BRACKETS.OPEN) {
                 correctedSources.push(bracketVertexNrs[i]);
-                correctedBracketStr += "(S"+(correctedSources.length-1)+" ";
-                indexStack.push(correctedSources.length-1);
+                correctedBracketStr += "(S" + (correctedSources.length - 1) + " ";
+                indexStack.push(correctedSources.length - 1);
             } else if (bracket == BRACKETS.CLOSE) {
-                console.log('is',indexStack);
+                console.log('is', indexStack);
                 let index = indexStack.pop();
                 correctedTargets[index] = bracketVertexNrs[i];
-                correctedBracketStr += "T"+index+") ";
+                correctedBracketStr += "T" + index + ") ";
             }
         });
         graph.sources = correctedSources;
         graph.targets = correctedTargets;
         redrawAll();
         await super.pause("Corrected bracket structure", correctedBracketStr);
+    }
+
+    async rdfsPaths(outerFacetVertexNrs) {
+        await super.pause("Add dummy edges", "");
+        for (let i = 0; i < outerFacetVertexNrs.length; i++) {
+            let vertexNr = outerFacetVertexNrs[i];
+            let sourceIndex = graph.sources.indexOf(vertexNr);
+            let targetIndex = graph.targets.indexOf(vertexNr);
+            let terminalNr = sourceIndex != -1 ? graph.sources[sourceIndex] : -1;
+            terminalNr = targetIndex != -1 ? graph.targets[targetIndex] : terminalNr;
+            if (terminalNr == -1) {
+                continue;
+            }
+            let terminalVertex = graph.getVertexByNumber(terminalNr);
+            let awayVec = this.getVectorAwayFrom(
+                graph.getVertexByNumber(outerFacetVertexNrs[mod(i - 1, outerFacetVertexNrs.length)]),
+                terminalVertex,
+                graph.getVertexByNumber(outerFacetVertexNrs[mod(i + 1, outerFacetVertexNrs.length)]));
+            let newVertex = new Vertex(
+                terminalVertex.x + awayVec.x, terminalVertex.y + awayVec.y);
+            let newEdge = new Edge(terminalNr, newVertex.number);
+            graph.addVertex(newVertex);
+            graph.addEdge(newEdge);
+            if (sourceIndex != -1) {
+                graph.sources[sourceIndex] = newVertex.number;
+            }
+            if (targetIndex != -1) {
+                graph.targets[targetIndex] = newVertex.number;
+            }
+        }
+        redrawAll();
+        let dummyGraph = graph.getCopy();
+        let colors = ["green", "orange", "blue", "purple", "yellow", "pink"];
+        let rdfsColorSet = new ColorSet();
+        for (let i = 0; i < dummyGraph.sources.length; i++) {
+            let source = dummyGraph.sources[i];
+            await super.pause("Right depth first search from source " + i + " to target " + i, "");
+            let copyDummyGraph = dummyGraph.getCopy();
+            let sourceVertex = dummyGraph.getVertexByNumber(source);
+            let visited = this.rightDepthFirstSearch(sourceVertex, dummyGraph.targets[i], copyDummyGraph);
+            console.log('visited', visited);
+            if (visited != null) {
+                visited.forEach(edge => {
+                    let index = eqIndexOf(dummyGraph.edges, edge);
+                    if (index != -1) {
+                        dummyGraph.edges.splice(index, 1);
+                    } else {
+                        console.error("edge not found in dummyGraph");
+                    }
+                    let graphEdge = graph.getEdgeByStartEnd(edge.v1nr, edge.v2nr);
+                    if (graphEdge == null) {
+                        console.error("graphEdge == null");
+                    }
+                    rdfsColorSet.addEdgeColor(graphEdge, colors[i % colors.length]);
+                });
+            } else {
+                console.error("visited == null");
+            }
+            redrawAll(rdfsColorSet);
+        }
+    }
+
+    getVectorAwayFrom(vertexLeft, vertex, vertexRight) {
+        console.log('vertexLeft', vertexLeft, 'vertex', vertex, 'vertexRight', vertexRight);
+        let leftVec = new Point(vertexLeft.x - vertex.x, vertexLeft.y - vertex.y);
+        leftVec = changeVectorLength(leftVec, 1);
+        let rightVec = new Point(vertexRight.x - vertex.x, vertexRight.y - vertex.y);
+        rightVec = changeVectorLength(rightVec, 1);
+        // Vector addition
+        let awayVec = new Point(leftVec.x + rightVec.x, leftVec.y + rightVec.y);
+        awayVec.x *= -1;
+        awayVec.y *= -1;
+        return changeVectorLength(awayVec, 50);
+    }
+
+    rightDepthFirstSearch(startVertex, endVertexNr, runGraph) {
+        console.log("rightDepthFirstSearch");
+        console.log('svn',startVertex.number);
+        runGraph.indexAllEdges();
+        let visited = [];
+        let stack = [];
+        let incidentEdges = runGraph.getIncidentEdges(startVertex, true);
+        let incidentEdge = incidentEdges[0];
+        if (incidentEdge.v1nr == startVertex.number) {
+            incidentEdge.orientation = EdgeOrientation.NORMAL;
+        } else {
+            incidentEdge.orientation = EdgeOrientation.REVERSED;
+        }
+        stack.push(incidentEdge);
+        while (stack.length > 0) {
+            let entryEdge = stack.pop();
+            console.log('visiting ' + entryEdge.prt());
+            visited.push(entryEdge);
+            let vertex = null;
+            if (entryEdge.orientation == EdgeOrientation.NORMAL) {
+                vertex = runGraph.getVertexByNumber(entryEdge.v2nr);
+            } else if (entryEdge.orientation == EdgeOrientation.REVERSED) {
+                vertex = runGraph.getVertexByNumber(entryEdge.v1nr);
+            }
+            if (vertex == null) {
+                console.error("vertex == null");
+                return;
+            }
+            if (vertex.number == endVertexNr) {
+                console.log('Found target');
+                // Reconstruct path
+                let result = [];
+                let lastConfirmed = endVertexNr;
+                for (let i = visited.length - 1; i >= 0; i--) {
+                    let visitedEdge = visited[i];
+                    if (visitedEdge.getEndVertexNr() != lastConfirmed) {
+                        continue;
+                    }
+                    if (visitedEdge.v1nr == lastConfirmed) {
+                        result.push(visitedEdge);
+                        console.log('adding ' + visitedEdge.prt() + ' to result');
+                        lastConfirmed = visitedEdge.v2nr;
+                    } else if (visitedEdge.v2nr == lastConfirmed) {
+                        result.push(visitedEdge);
+                        console.log('adding ' + visitedEdge.prt() + ' to result');
+                        lastConfirmed = visitedEdge.v1nr;
+                    }
+                    if (lastConfirmed == startVertex.number) {
+                        console.log('breaking');
+                        break;
+                    }
+                }
+                return result;
+            }
+            if (entryEdge == null) {
+                console.error("entryEdge == null");
+                return;
+            }
+            let edgesRightOfEntryEdge = this.getEdgesRightOfEntryEdge(vertex, entryEdge, runGraph);
+            // Reverse order because stack is LIFO
+            edgesRightOfEntryEdge.reverse();
+            edgesRightOfEntryEdge.forEach(e => {
+                if (eqIndexOf(visited, e) == -1) {
+                    if (e.v1nr == vertex.number) {
+                        e.orientation = EdgeOrientation.NORMAL;
+                    } else {
+                        e.orientation = EdgeOrientation.REVERSED;
+                    }
+                    stack.push(e);
+                }
+            });
+        }
+        return null;
+    }
+
+    getEdgesRightOfEntryEdge(vertex, entryEdge, runGraph) {
+        let entryEdgeAngle = getAngle(vertex, runGraph.getOtherVertex(entryEdge, vertex));
+        let incidentEdges = runGraph.getIncidentEdges(vertex, true);
+        incidentEdges.sort((e1, e2) => {
+            let otherVertex1 = runGraph.getOtherVertex(e1, vertex);
+            let otherVertex2 = runGraph.getOtherVertex(e2, vertex);
+            let angle1 = getAngle(vertex, otherVertex1);
+            let angle2 = getAngle(vertex, otherVertex2);
+            return angle2 - angle1;
+        });
+        let edgesRightOfEntryEdge = [];
+        let nextSmallerEdgeIndex = -1;
+        for (let i = 0; i < incidentEdges.length; i++) {
+            let currAngle = getAngle(vertex, runGraph.getOtherVertex(incidentEdges[i], vertex));
+            if (currAngle < entryEdgeAngle) {
+                nextSmallerEdgeIndex = i;
+                break;
+            }
+        }
+        if (nextSmallerEdgeIndex == -1) {
+            nextSmallerEdgeIndex = 0;
+        }
+        for (let i = nextSmallerEdgeIndex; i < incidentEdges.length; i++) {
+            edgesRightOfEntryEdge.push(incidentEdges[i]);
+        }
+        for (let i = 0; i < nextSmallerEdgeIndex; i++) {
+            edgesRightOfEntryEdge.push(incidentEdges[i]);
+        }
+        return edgesRightOfEntryEdge;
     }
 }
 
