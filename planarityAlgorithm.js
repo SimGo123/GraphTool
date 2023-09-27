@@ -217,14 +217,14 @@ class PlanarityTestAlgo extends Algorithm {
                 }
             }
 
-            let colorSet = new ColorSet();
+            let forkColorSet = new ColorSet();
             dfsTreeEdges.forEach(edge => {
-                colorSet.addEdgeColor(edge, dfsColor);
+                forkColorSet.addEdgeColor(edge, dfsColor);
             });
-            colorSet.addVertexColor(fork.commonVertexNr, "red");
-            colorSet.addEdgeColor(fork.edge1, "red");
-            colorSet.addEdgeColor(fork.edge2, "red");
-            redrawAll(colorSet);
+            forkColorSet.addVertexColor(fork.commonVertexNr, "red");
+            forkColorSet.addEdgeColor(fork.edge1, "red");
+            forkColorSet.addEdgeColor(fork.edge2, "red");
+            redrawAll(forkColorSet);
             let conflictString = equalityConflict ? "<br />=> Equality Conflict(s)" : "";
             conflictString += unequalityConflict ? "<br />=> Unequality Conflict(s)" : "";
             await super.pause("Find conflicts (II)",
@@ -235,6 +235,11 @@ class PlanarityTestAlgo extends Algorithm {
                 + "<br>R21: {" + r21.map(edge => edge.prt()).join(', ') + "}"
                 + conflictString);
         }
+        let dfsColorSet = new ColorSet();
+        dfsTreeEdges.forEach(edge => {
+            dfsColorSet.addEdgeColor(edge, dfsColor);
+        });
+        redrawAll(dfsColorSet);
 
         return [equalityConflicts, unequalityConflicts];
     }
