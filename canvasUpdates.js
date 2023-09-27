@@ -45,7 +45,7 @@ class EdgeColor {
 }
 
 class ColorSet {
-    vertexColors = [];
+    vertexColors = {};
     edgeColors = [];
     constructor(vertexColor = "gray", edgeColor = "gray", highlightColor = "red") {
         this.vertexColor = vertexColor;
@@ -54,17 +54,21 @@ class ColorSet {
     }
 
     addVertexColor(vertexNr, color) {
-        this.vertexColors.push(new VertexColor(vertexNr, color));
+        this.vertexColors[vertexNr] = color;
     }
     addEdgeColor(edge, color) {
+        for (let i = 0; i < this.edgeColors.length; i++) {
+            if (this.edgeColors[i].edge.eq(edge, true, true)) {
+                this.edgeColors[i].color = color;
+                return;
+            }
+        }
         this.edgeColors.push(new EdgeColor(edge, color));
     }
 
     getVertexColor(vertexNr) {
-        for (let i = 0; i < this.vertexColors.length; i++) {
-            if (this.vertexColors[i].vertexNr == vertexNr) {
-                return this.vertexColors[i].color;
-            }
+        if (vertexNr in this.vertexColors) {
+            return this.vertexColors[vertexNr];
         }
         return this.vertexColor;
     }

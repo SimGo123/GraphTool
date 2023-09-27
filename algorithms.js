@@ -82,7 +82,7 @@ class Algorithm {
         $("#stepButton").removeClass("disabled");
         $("#runCompleteButton").removeClass("disabled");
         $("#stepTitle").text("Step " + this.currentStep + "/" + this.numSteps + ": " + stepTitle);
-        $("#stepDescription").text(stepDesc);
+        $("#stepDescription").html(stepDesc);
         while (!this.shouldContinue) {
             console.log("waiting");
             await this.sleep(1000);

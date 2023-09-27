@@ -17,7 +17,7 @@ class PlanarityTestAlgo extends Algorithm {
     }
 
     async run() {
-        super.numSteps = 7;
+        super.numSteps = "X";
 
         if (!this.preconditionsCheck()) {
             super.onFinished();
@@ -26,14 +26,10 @@ class PlanarityTestAlgo extends Algorithm {
 
         let originalGraph = graph.getCopy();
         let dfsColor = "green";
-        let dfsTreeEdges = await this.preparation(dfsColor);
 
-        await super.pause("Find conflicts and create the H Graph",
-            "The H Graph is a graph that has a vertex for every edge in the original graph. "
-            + "There is an edge between two vertices in the H Graph if there is an unequality conflict between the corresponding vertices. "
-            + "Vertices whose edges have equality conflicts are combined.");
-        let conflicts = this.getConflicts(graph, dfsTreeEdges);
-        let hGraph = await this.createHGraph(conflicts, graph);
+        let dfsTreeEdges = await this.preparation(dfsColor);
+        let conflicts = await this.getConflicts(graph, dfsTreeEdges, dfsColor);
+        let hGraph = await this.getHGraph(conflicts, graph);
 
         await super.pause("Check for bipartiteness", "If H is bipartite, G is planar");
         let result = isBipartite(hGraph);
@@ -140,14 +136,25 @@ class PlanarityTestAlgo extends Algorithm {
      * 
      * @param {Graph} runGraph
      * @param {Edge[]} dfsTreeEdges
+     * @param {string} dfsColor
      * @returns {[Conflict[], Conflict[]]} Lists of equality and unequality conflicts
      */
-    getConflicts(runGraph, dfsTreeEdges) {
+    async getConflicts(runGraph, dfsTreeEdges, dfsColor) {
         console.log('dfsTreeEdges', dfsTreeEdges);
         let equalityConflicts = [];
         let unequalityConflicts = [];
 
-        this.getForks(runGraph).forEach(fork => {
+        await super.pause("Find conflicts (I)",
+            "Find all forks. A fork is a pair of edges that share a common start vertex."
+            + "<br> For every fork, find all back edges of the two edges."
+            + "<br> Calculate R12 as the set of back edges e of edge 1 with deepPoint(e2) < deepPoint(e) and R21 vice versa."
+            + "<br> Every pair of edges in the same R set has an equality conflict."
+            + "<br> Every pair of edges in different R sets has an unequality conflict.");
+        let forks = this.getForks(runGraph);
+        super.numSteps = 8 + forks.length;
+
+        for (let i = 0; i < forks.length; i++) {
+            let fork = forks[i];
             /*
                r12 = {e back edge of e1 with deepPoint(e2) < deepPoint(e) < commonVertexNr}
                r21 = {e back edge of e2 with deepPoint(e1) < deepPoint(e) < commonVertexNr}
@@ -158,7 +165,6 @@ class PlanarityTestAlgo extends Algorithm {
             let deep2 = this.getDeepPoint(fork.edge2, dfsTreeEdges);
             let backEdges1 = this.getBackEdges(fork.edge1, dfsTreeEdges);
             let backEdges2 = this.getBackEdges(fork.edge2, dfsTreeEdges);
-            console.log('Fork ', fork.edge1, fork.edge2);
             backEdges1.forEach(backEdge1 => {
                 let deepE = backEdge1.getEndVertexNr();
                 if (deep2 < deepE && deepE < fork.commonVertexNr) {
@@ -178,10 +184,13 @@ class PlanarityTestAlgo extends Algorithm {
                f1 ∈ r12 and f2 ∈ r21 or vice versa
                (unequality conflict)
             */
+            let equalityConflict = false;
+            let unequalityConflict = false;
             for (let i = 0; i < r12.length; i++) {
                 let f1 = r12[i];
                 for (let j = i + 1; j < r12.length; j++) {
                     let f2 = r12[j];
+                    equalityConflict = true;
                     if (eqIndexOf(equalityConflicts, new Conflict(f1, f2)) === -1) {
                         console.log('equality conflict', f1, f2);
                         equalityConflicts.push(new Conflict(f1, f2));
@@ -189,13 +198,43 @@ class PlanarityTestAlgo extends Algorithm {
                 }
                 for (let j = 0; j < r21.length; j++) {
                     let f2 = r21[j];
+                    unequalityConflict = true;
                     if (eqIndexOf(unequalityConflicts, new Conflict(f1, f2)) === -1) {
                         console.log('unequality conflict', f1, f2);
                         unequalityConflicts.push(new Conflict(f1, f2));
                     }
                 }
             }
-        });
+            for (let i = 0; i < r21.length; i++) {
+                let f1 = r21[i];
+                for (let j = i + 1; j < r21.length; j++) {
+                    let f2 = r21[j];
+                    equalityConflict = true;
+                    if (eqIndexOf(equalityConflicts, new Conflict(f1, f2)) === -1) {
+                        console.log('equality conflict', f1, f2);
+                        equalityConflicts.push(new Conflict(f1, f2));
+                    }
+                }
+            }
+
+            let colorSet = new ColorSet();
+            dfsTreeEdges.forEach(edge => {
+                colorSet.addEdgeColor(edge, dfsColor);
+            });
+            colorSet.addVertexColor(fork.commonVertexNr, "red");
+            colorSet.addEdgeColor(fork.edge1, "red");
+            colorSet.addEdgeColor(fork.edge2, "red");
+            redrawAll(colorSet);
+            let conflictString = equalityConflict ? "<br />=> Equality Conflict(s)" : "";
+            conflictString += unequalityConflict ? "<br />=> Unequality Conflict(s)" : "";
+            await super.pause("Find conflicts (II)",
+                "Found fork between edge " + fork.edge1.prt() + " and " + fork.edge2.prt() + '.'
+                + "<br>Back edges of edge 1: {" + backEdges1.map(edge => edge.prt()).join(', ') + "}"
+                + "<br>Back edges of edge 2: {" + backEdges2.map(edge => edge.prt()).join(', ') + "}"
+                + "<br>R12: {" + r12.map(edge => edge.prt()).join(', ') + "}"
+                + "<br>R21: {" + r21.map(edge => edge.prt()).join(', ') + "}"
+                + conflictString);
+        }
 
         return [equalityConflicts, unequalityConflicts];
     }
@@ -262,7 +301,7 @@ class PlanarityTestAlgo extends Algorithm {
         let reachableVertices = depthFirstSearch(
             pseudoGraph.getVertexByNumber(edge.getEndVertexNr()), pseudoGraph, true);
         let backEdges = [];
-        console.log(edge.print(),'reachableVertices', reachableVertices);
+        console.log(edge.print(), 'reachableVertices', reachableVertices);
         reachableVertices.forEach(vertex => {
             let incidentEdges = graph.getIncidentEdges(vertex, true);
             incidentEdges.forEach(incidentEdge => {
@@ -285,7 +324,11 @@ class PlanarityTestAlgo extends Algorithm {
      * @param {Graph} runGraph 
      * @returns {Graph}
      */
-    async createHGraph([equalConflicts, unequalConflicts], runGraph) {
+    async getHGraph([equalConflicts, unequalConflicts], runGraph) {
+        await super.pause("Create the H Graph",
+            "The H Graph is a graph that has a vertex for every edge in the original graph. "
+            + "There is an edge between two vertices in the H Graph if there is an unequality conflict between the corresponding edges. "
+            + "Vertices whose edges have equality conflicts are combined.");
         let hGraph = new Graph();
         // A vertex for every edge in the original graph
         runGraph.edges.forEach(edge => {
