@@ -361,7 +361,7 @@ class DisjunctSTPathsAlgo extends Algorithm {
                 outerFacetVertexNr = vf.vertexNumber;
             }
         });
-        console.log('ofvn',outerFacetVertexNr);
+        console.log('ofvn', outerFacetVertexNr);
         await super.pause("Eliminate clockwise circles (II)",
             "Second, create a BFS-tree starting at the outer facet vertex " + outerFacetVertexNr);
         let layers = breadthFirstSearchTree(graph.getVertexByNumber(outerFacetVertexNr), graph);
@@ -420,9 +420,9 @@ class DisjunctSTPathsAlgo extends Algorithm {
         }
         redrawAll();
 
-        await super.pause("Find paths by using right-depth-first search", 
-        "Start at the source, always take the rightmost unvisited edge. If the target is reached, a path was found.");
-        let paths = this.rightDepthFirstSearch(graph.getVertexByNumber(graph.sources[0]));
+        await super.pause("Find paths by using right-depth-first search",
+            "Start at the source, always take the rightmost unvisited edge. If the target is reached, a path was found.");
+        let paths = await this.rightDepthFirstSearchWrapper(graph.getVertexByNumber(graph.sources[0]));
 
         let colors = ["green", "orange", "blue", "purple", "yellow", "pink"];
         let colorSet = new ColorSet();
@@ -432,12 +432,12 @@ class DisjunctSTPathsAlgo extends Algorithm {
             });
         });
         redrawAll(colorSet);
-        await super.pause("Preliminary result", 
-        "There are " + paths.length + " disjunct s-t-paths in both the original and this graph."
-        + " Now, we have to convert the paths in this graph to paths in the original graph.");
+        await super.pause("Preliminary result",
+            "There are " + paths.length + " disjunct s-t-paths in both the original and this graph."
+            + " Now, we have to convert the paths in this graph to paths in the original graph.");
 
-        await super.pause("Add weights to edges", 
-        "If there is a path using an edge, set its weight to 1, else 0.");
+        await super.pause("Add weights to edges",
+            "If there is a path using an edge, set its weight to 1, else 0.");
         graph.edges.forEach(edge => {
             edge.weight = 0;
         });
@@ -448,9 +448,9 @@ class DisjunctSTPathsAlgo extends Algorithm {
         });
         redrawAll(colorSet);
 
-        await super.pause("Normalize orientations", 
-        "If there are two edges with the same orientation, reverse one of them and invert its weight."
-        + " If two antiparallel edges have different weights, there is a path going along them.");
+        await super.pause("Normalize orientations",
+            "If there are two edges with the same orientation, reverse one of them and invert its weight."
+            + " If two antiparallel edges have different weights, there is a path going along them.");
         for (let i = 0; i < graph.edges.length; i++) {
             for (let j = i + 1; j < graph.edges.length; j++) {
                 let edge1 = graph.edges[i];
@@ -481,7 +481,7 @@ class DisjunctSTPathsAlgo extends Algorithm {
         await super.pause("Remove edges with capacity 0", "");
         graph = runGraph;
         redrawAll(unorientedColorSet);
-        await super.pause("Use depth-first search to identify each path","");
+        await super.pause("Use depth-first search to identify each path", "");
         let startIncidentEdges = runGraph.getIncidentEdges(runGraph.getVertexByNumber(runGraph.sources[0]), true);
         let finalColorSet = new ColorSet();
         startIncidentEdges.forEach((startEdge, i) => {
@@ -527,7 +527,7 @@ class DisjunctSTPathsAlgo extends Algorithm {
         let minPoint = new Point(marginWidth, marginHeight);
         let width = fgCanvas.width - 2 * marginWidth;
         let height = fgCanvas.height - 2 * marginHeight;
-        console.log('w',width,'h',height);
+        console.log('w', width, 'h', height);
         let layerHeight = height / (layers.length - 1);
         $.each(layers, function (layerIndex, layer) {
             $.each(layer, function (bsVertexIndex, bsVertex) {
@@ -539,94 +539,34 @@ class DisjunctSTPathsAlgo extends Algorithm {
         redrawAll();
     }
 
-    rightDepthFirstSearch(startVertex) {
-        console.log("rightDepthFirstSearch");
+    rightDepthFirstSearchWrapper(startVertex) {
         graph.indexAllEdges();
-        let visited = [];
         let incidentEdges = graph.getIncidentEdges(startVertex, true);
         let result = [];
-        incidentEdges.forEach(sie => {
-            let stack = [];
-            stack.push(sie);
-            while (stack.length > 0) {
-                let entryEdge = stack.pop();
-                visited.push(entryEdge);
-                let vertex = null;
-                if (entryEdge.orientation == EdgeOrientation.NORMAL) {
-                    vertex = graph.getVertexByNumber(entryEdge.v2nr);
-                } else if (entryEdge.orientation == EdgeOrientation.REVERSED) {
-                    vertex = graph.getVertexByNumber(entryEdge.v1nr);
-                }
-                if (vertex == null) {
-                    console.error("vertex == null");
-                    return;
-                }
-                if (vertex.number == graph.targets[0]) {
-                    console.log('Found target');
-                    // Reconstruct path
-                    let partResult = [];
-                    let lastConfirmed = graph.targets[0];
-                    for (let i = visited.length - 1; i >= 0; i--) {
-                        let visitedEdge = visited[i];
-                        if (visitedEdge.v1nr == lastConfirmed) {
-                            partResult.push(visitedEdge);
-                            lastConfirmed = visitedEdge.v2nr;
-                        } else if (visitedEdge.v2nr == lastConfirmed) {
-                            partResult.push(visitedEdge);
-                            lastConfirmed = visitedEdge.v1nr;
-                        }
-                        if (lastConfirmed == graph.sources[0]) {
-                            break;
-                        }
+        let copyGraph = graph.getCopy();
+        for (let i = 0; i < incidentEdges.length; i++) {
+            let targetVertex = copyGraph.getVertexByNumber(copyGraph.targets[0]);
+            let visited = rightDepthFirstSearch(startVertex, targetVertex, copyGraph, false, false);
+            if (visited != null) {
+                let partResult = [];
+                visited.forEach(edge => {
+                    let index = eqIndexOf(copyGraph.edges, edge, true, true);
+                    if (index != -1) {
+                        copyGraph.edges.splice(index, 1);
+                    } else {
+                        console.error("edge not found in dummyGraph");
                     }
-                    result.push(partResult);
-                    break;
-                }
-                if (entryEdge == null) {
-                    console.error("entryEdge == null");
-                    return;
-                }
-                let edgesRightOfEntryEdge = this.getEdgesRightOfEntryEdge(vertex, entryEdge);
-                // Reverse order because stack is LIFO
-                edgesRightOfEntryEdge.reverse();
-                edgesRightOfEntryEdge.forEach(e => {
-                    if (eqIndexOf(visited, e, true, true) == -1) {
-                        stack.push(e);
+                    let edgeIdx = eqIndexOf(graph.edges, edge, true, true);
+                    if (edgeIdx == -1) {
+                        console.error("edgeIdx == -1");
+                        return;
+                    } else {
+                        partResult.push(graph.edges[edgeIdx]);
                     }
                 });
+                result.push(partResult);
             }
-        });
+        }
         return result;
-    }
-
-    getEdgesRightOfEntryEdge(vertex, entryEdge) {
-        let entryEdgeAngle = getAngle(vertex, graph.getOtherVertex(entryEdge, vertex));
-        let incidentEdges = graph.getIncidentEdges(vertex, true);
-        incidentEdges.sort((e1, e2) => {
-            let otherVertex1 = graph.getOtherVertex(e1, vertex);
-            let otherVertex2 = graph.getOtherVertex(e2, vertex);
-            let angle1 = getAngle(vertex, otherVertex1);
-            let angle2 = getAngle(vertex, otherVertex2);
-            return angle2 - angle1;
-        });
-        let edgesRightOfEntryEdge = [];
-        let nextSmallerEdgeIndex = -1;
-        for (let i = 0; i < incidentEdges.length; i++) {
-            let currAngle = getAngle(vertex, graph.getOtherVertex(incidentEdges[i], vertex));
-            if (currAngle < entryEdgeAngle) {
-                nextSmallerEdgeIndex = i;
-                break;
-            }
-        }
-        if (nextSmallerEdgeIndex == -1) {
-            nextSmallerEdgeIndex = 0;
-        }
-        for (let i = nextSmallerEdgeIndex; i < incidentEdges.length; i++) {
-            edgesRightOfEntryEdge.push(incidentEdges[i]);
-        }
-        for (let i = 0; i < nextSmallerEdgeIndex; i++) {
-            edgesRightOfEntryEdge.push(incidentEdges[i]);
-        }
-        return edgesRightOfEntryEdge;
     }
 }

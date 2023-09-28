@@ -372,7 +372,7 @@ class OkamuraSeymourAlgo extends Algorithm {
             // Reverse order because stack is LIFO
             edgesRightOfEntryEdge.reverse();
             edgesRightOfEntryEdge.forEach(e => {
-                if (eqIndexOf(visited, e) == -1) {
+                if (eqIndexOf(visited, e, true, true) == -1) {
                     if (orientUnorientedEdges) {
                         if (e.v1nr == vertex.number) {
                             e.orientation = EdgeOrientation.NORMAL;
