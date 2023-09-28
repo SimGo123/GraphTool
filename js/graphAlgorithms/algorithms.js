@@ -12,6 +12,9 @@ const ALGORITHMS = {
 var algorithm = null;
 
 async function algorithmClick(param) {
+    if (algorithm != null) {
+        // TODO cancel current algorithm
+    }
     switch (param) {
         case ALGORITHMS.TRIANGULATION:
             algorithm = new TriangulationAlgo();
@@ -45,7 +48,12 @@ async function algorithmClick(param) {
     if (algorithm) {
         $("#algoControlPanel").removeClass("invisible");
         $("#stepButton").removeClass("disabled");
+        $("#stepButton").removeClass("collapse");
+        $("#runCompleteButton").removeClass("collapse");
         $("#runCompleteButton").removeClass("disabled");
+        $("#stepCard").removeClass("bg-success");
+        $("#stepCard").removeClass("bg-danger");
+        $("#finishButton").addClass("collapse");
         await algorithm.run();
         algorithm = null;
     }
@@ -62,6 +70,11 @@ function runCompleteClick() {
         algorithm.runComplete = true;
         algorithm.shouldContinue = true;
     }
+}
+
+function finishClick() {
+    $("#finishButton").addClass("collapse");
+    $("#algoControlPanel").addClass("invisible");
 }
 
 class Algorithm {
@@ -88,7 +101,7 @@ class Algorithm {
         $("#stepTitle").text("Step " + this.currentStep + "/" + this.numSteps + ": " + stepTitle);
         $("#stepDescription").html(stepDesc);
         while (!this.shouldContinue) {
-            console.log("waiting");
+            console.log("waiting",this);
             await this.sleep(1000);
         }
         this.shouldContinue = false;
@@ -100,9 +113,23 @@ class Algorithm {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    onFinished() {
+    onFinished(wasSuccessful = false, message = null) {
         if (!this.isSubAlgo) {
-            $("#algoControlPanel").addClass("invisible");
+            if (message) {
+                $("#finishButton").removeClass("collapse");
+                $("#stepButton").addClass("collapse");
+                $("#runCompleteButton").addClass("collapse");
+                $("#stepTitle").text("Result");
+                if (wasSuccessful) {
+                    $("#stepCard").addClass("bg-success");
+                    $("#stepDescription").html(message);
+                } else {
+                    $("#stepCard").addClass("bg-danger");
+                    $("#stepDescription").html(message);
+                }
+            } else {
+                $("#algoControlPanel").addClass("invisible");
+            }
             // $("#stepButton").removeClass("disabled");
             // $("#runCompleteButton").removeClass("disabled");
         }

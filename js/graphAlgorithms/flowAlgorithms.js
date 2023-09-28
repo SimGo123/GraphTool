@@ -56,7 +56,7 @@ class MaxFlowAlgo extends Algorithm {
             result = await this.slowApproach();
         }
 
-        super.onFinished();
+        super.onFinished(true, "Max flow is " + result);
         return result;
     }
 
@@ -330,17 +330,19 @@ class DisjunctSTPathsAlgo extends Algorithm {
         let outerFacetPoss = tryGetOuterFacet(graph);
         let onOuterFacet = outerFacetPoss.length == 1
             && getUniqueVerticeNrsOnFacet(outerFacetPoss[0]).includes(graph.targets[0]);
+        let result = -1;
         if (onOuterFacet) {
             super.numSteps = 14;
             await super.pause("Target is on the outer facet", "The fast O(n) approach can be used.");
-            await this.fastApproach(outerFacetPoss[0]);
+            result = await this.fastApproach(outerFacetPoss[0]);
         } else {
             super.numSteps = 5;
             await super.pause("Target is not on the outer facet", "The slow O(nlogn) approach has to be used because making any facet an outer facet isn't implemented.");
-            await this.slowApproach();
+            result = await this.slowApproach();
         }
 
-        super.onFinished();
+        super.onFinished(true, "There are " + result + " disjunct s-t-paths in the graph.");
+        return result;
     }
 
     async fastApproach(outerFacet) {
@@ -502,6 +504,7 @@ class DisjunctSTPathsAlgo extends Algorithm {
         graph = unorientedGraph;
         redrawAll(finalColorSet);
         await super.pause("Result", "There are " + paths.length + " disjunct s-t-paths in the original graph. Here they are.");
+        return paths.length;
     }
 
     async slowApproach() {
@@ -519,6 +522,7 @@ class DisjunctSTPathsAlgo extends Algorithm {
         graph = copyOneGraph;
         redrawAll();
         await super.pause("Result", "Max flow is " + maxFlow + ", so there are " + maxFlow + " disjunct s-t-paths");
+        return maxFlow;
     }
 
     drawLayerStructure(layers) {

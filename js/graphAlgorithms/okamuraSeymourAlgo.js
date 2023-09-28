@@ -42,12 +42,10 @@ class OkamuraSeymourAlgo extends Algorithm {
             }
         });
         if (!onOuterFacet) {
-            await super.pause("Not all sources and targets are on the outer facet", "");
-            super.onFinished();
+            super.onFinished(false, "Not all sources and targets are on the outer facet");
             return;
         }
         if (!await this.testEulerCondition()) {
-            super.onFinished();
             return;
         }
         super.numSteps = graph.sources.length * 2 + 11;
@@ -59,9 +57,9 @@ class OkamuraSeymourAlgo extends Algorithm {
         let helpGraph = await this.rdfsPaths();
         await this.convertPathsToOriginalStructure(helpGraph, originalGraph,
             oldSources, oldTargets, oldToNewVertexNrs);
-        await super.pause("Result", "These are the disjunct si-ti paths");
+        // await super.pause("Result", "These are the disjunct si-ti paths");
 
-        super.onFinished();
+        super.onFinished(true, "These are the disjunct si-ti paths");
     }
 
     async testEulerCondition() {
@@ -81,8 +79,10 @@ class OkamuraSeymourAlgo extends Algorithm {
                 let violatingColorSet = new ColorSet();
                 violatingColorSet.addVertexColor(vertex.number, "red");
                 redrawAll(violatingColorSet);
-                await super.pause("Vertex " + vertex.number + " violates the euler condition",
-                    "It has capacity " + capacity + " and density " + density + ", so fcap({" + vertex.number + "}) = " + fcap);
+                // await super.pause("Vertex " + vertex.number + " violates the euler condition",
+                //     "It has capacity " + capacity + " and density " + density + ", so fcap({" + vertex.number + "}) = " + fcap);
+                super.onFinished(false, "Vertex " + vertex.number + " violates the euler condition."
+                    + " It has capacity " + capacity + " and density " + density + ", so fcap({" + vertex.number + "}) = " + fcap);
                 return false;
             }
         }
@@ -240,8 +240,8 @@ class OkamuraSeymourAlgo extends Algorithm {
         for (let key in oldToNewVertexNrs) {
             newToOldVertexNrs[oldToNewVertexNrs[key]] = key;
         }
-        await super.pause("Revert bracket structure", 
-        "We use the original (s,t)-pairs again.");
+        await super.pause("Revert bracket structure",
+            "We use the original (s,t)-pairs again.");
         let newOldSources = [];
         let newOldTargets = [];
         oldSources.forEach(source => {

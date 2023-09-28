@@ -82,8 +82,9 @@
     <p>
     <button id="stepButton" type="button" class="btn btn-primary disabled" onclick="stepClick()">Step</button>
     <button id="runCompleteButton" type="button" class="btn btn-success disabled" onclick="runCompleteClick()">Run to completion</button>
+    <button id="finishButton" type="button" class="btn btn-success collapse" onclick="finishClick()">Finish</button>
     </p>
-    <div class="card" style="width: 30rem;">
+    <div class="card" id="stepCard" style="width: 30rem;">
       <div class="card-body">
         <h5 id="stepTitle" class="card-title"></h5>
         <p id="stepDescription" class="card-text"></p>
