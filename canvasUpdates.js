@@ -128,8 +128,8 @@ function clearFgCanvas() {
     ctx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
 }
 
-function redrawAll(colorSet = globalColorSet) {
+function redrawAll(colorSet = globalColorSet, graphToDraw = graph) {
     clearFgCanvas();
     drawCanvasWalls();
-    graph.draw(selectedVertex, selectedEdge, colorSet);
+    graphToDraw.draw(selectedVertex, selectedEdge, colorSet);
 }

@@ -50,8 +50,14 @@ class OkamuraSeymourAlgo extends Algorithm {
             super.onFinished();
             return;
         }
-        await this.getBracketStructure(verticeNrsOnOuterFacet);
-        await this.rdfsPaths(verticeNrsOnOuterFacet);
+        let oldSources = graph.sources;
+        let oldTargets = graph.targets;
+        let originalGraph = graph.getCopy();
+        await this.convertToBracketStructure(verticeNrsOnOuterFacet);
+        let oldToNewVertexNrs = await this.addDummyEdges(verticeNrsOnOuterFacet);
+        let helpGraph = await this.rdfsPaths();
+        await this.convertPathsToOriginalStructure(helpGraph, originalGraph,
+            oldSources, oldTargets, oldToNewVertexNrs);
 
         super.onFinished();
     }
@@ -81,7 +87,7 @@ class OkamuraSeymourAlgo extends Algorithm {
         return true;
     }
 
-    async getBracketStructure(outerFacetVertexNrs) {
+    async convertToBracketStructure(outerFacetVertexNrs) {
         await super.pause("Get bracket structure", "");
         let bracketString = "";
         let bracketStructure = [];
@@ -136,8 +142,9 @@ class OkamuraSeymourAlgo extends Algorithm {
         await super.pause("Corrected bracket structure", correctedBracketStr);
     }
 
-    async rdfsPaths(outerFacetVertexNrs) {
+    async addDummyEdges(outerFacetVertexNrs) {
         await super.pause("Add dummy edges", "");
+        let oldToNewVertexNrs = {};
         for (let i = 0; i < outerFacetVertexNrs.length; i++) {
             let vertexNr = outerFacetVertexNrs[i];
             let sourceIndex = graph.sources.indexOf(vertexNr);
@@ -158,42 +165,132 @@ class OkamuraSeymourAlgo extends Algorithm {
             graph.addVertex(newVertex);
             graph.addEdge(newEdge);
             if (sourceIndex != -1) {
+                oldToNewVertexNrs[graph.sources[sourceIndex]] = newVertex.number;
                 graph.sources[sourceIndex] = newVertex.number;
             }
             if (targetIndex != -1) {
+                oldToNewVertexNrs[graph.targets[targetIndex]] = newVertex.number;
                 graph.targets[targetIndex] = newVertex.number;
             }
         }
         redrawAll();
-        let dummyGraph = graph.getCopy();
+        return oldToNewVertexNrs;
+    }
+
+    async rdfsPaths() {
+        let dummyHelpGraph = graph.getCopy();
+        let helpGraph = graph.getCopy();
         let colors = ["green", "orange", "blue", "purple", "yellow", "pink"];
         let rdfsColorSet = new ColorSet();
-        for (let i = 0; i < dummyGraph.sources.length; i++) {
-            let source = dummyGraph.sources[i];
+        for (let i = 0; i < dummyHelpGraph.sources.length; i++) {
+            let source = dummyHelpGraph.sources[i];
             await super.pause("Right depth first search from source " + i + " to target " + i, "");
-            let copyDummyGraph = dummyGraph.getCopy();
-            let sourceVertex = dummyGraph.getVertexByNumber(source);
-            let visited = this.rightDepthFirstSearch(sourceVertex, dummyGraph.targets[i], copyDummyGraph);
+            let copyDummyGraph = dummyHelpGraph.getCopy();
+            let sourceVertex = dummyHelpGraph.getVertexByNumber(source);
+            let targetVertex = dummyHelpGraph.getVertexByNumber(dummyHelpGraph.targets[i]);
+            let visited = this.rightDepthFirstSearch(
+                sourceVertex, targetVertex, copyDummyGraph, true);
             console.log('visited', visited);
             if (visited != null) {
                 visited.forEach(edge => {
-                    let index = eqIndexOf(dummyGraph.edges, edge);
+                    let index = eqIndexOf(dummyHelpGraph.edges, edge);
                     if (index != -1) {
-                        dummyGraph.edges.splice(index, 1);
+                        dummyHelpGraph.edges.splice(index, 1);
                     } else {
-                        console.error("edge not found in dummyGraph");
+                        console.error("edge not found in dummyHelpGraph");
                     }
-                    let graphEdge = graph.getEdgeByStartEnd(edge.v1nr, edge.v2nr);
-                    if (graphEdge == null) {
-                        console.error("graphEdge == null");
+                    let helpGraphEdge = helpGraph.getEdgeByStartEnd(edge.v1nr, edge.v2nr);
+                    if (helpGraphEdge == null) {
+                        console.error("helpGraphEdge == null");
                     }
-                    rdfsColorSet.addEdgeColor(graphEdge, colors[i % colors.length]);
+                    helpGraphEdge.orientation = edge.orientation;
+                    rdfsColorSet.addEdgeColor(helpGraphEdge, colors[i % colors.length]);
                 });
             } else {
                 console.error("visited == null");
             }
-            redrawAll(rdfsColorSet);
+            redrawAll(rdfsColorSet, helpGraph);
         }
+        await super.pause("Remove unoriented edges from help graph", "");
+        let onlyOrientedEdges = helpGraph.edges.filter(e => e.orientation != EdgeOrientation.UNDIRECTED);
+        helpGraph.edges = onlyOrientedEdges;
+        redrawAll(rdfsColorSet, helpGraph);
+
+        return helpGraph;
+    }
+
+    async convertPathsToOriginalStructure(helpGraph, originalGraph,
+        oldSources, oldTargets, oldToNewVertexNrs) {
+        let newToOldVertexNrs = {};
+        for (let key in oldToNewVertexNrs) {
+            newToOldVertexNrs[oldToNewVertexNrs[key]] = key;
+        }
+        await super.pause("Revert bracket structure", "");
+        let newOldSources = [];
+        let newOldTargets = [];
+        oldSources.forEach(source => {
+            let newVertexNr = oldToNewVertexNrs[source];
+            newOldSources.push(newVertexNr);
+        });
+        oldTargets.forEach(target => {
+            let newVertexNr = oldToNewVertexNrs[target];
+            newOldTargets.push(newVertexNr);
+        });
+        helpGraph.sources = newOldSources;
+        helpGraph.targets = newOldTargets;
+        graph = helpGraph;
+
+        redrawAll(new ColorSet(), helpGraph);
+
+        await super.pause("Start right depth-first search for the original (s,t)-paths",
+            "");
+        let dummyHelpGraph = helpGraph.getCopy();
+        let rdfsColorSet = new ColorSet();
+        let colors = ["green", "orange", "blue", "purple", "yellow", "pink"];
+        for (let i = 0; i < dummyHelpGraph.sources.length; i++) {
+            let source = dummyHelpGraph.sources[i];
+            await super.pause("Right depth first search from source " + i + " to target " + i, "");
+            let copyDummyHelpGraph = dummyHelpGraph.getCopy();
+            let sourceVertex = dummyHelpGraph.getVertexByNumber(source);
+            let targetVertex = dummyHelpGraph.getVertexByNumber(dummyHelpGraph.targets[i]);
+            let visited = null;
+            if (copyDummyHelpGraph.getIncidentEdges(sourceVertex, true).length > 0) {
+                visited = this.rightDepthFirstSearch(
+                    sourceVertex, targetVertex, copyDummyHelpGraph, false);
+            } else {
+                visited = this.rightDepthFirstSearch(
+                    targetVertex, sourceVertex, copyDummyHelpGraph, false);
+            }
+            console.log('visited', visited);
+            if (visited != null) {
+                visited.forEach(edge => {
+                    let index = eqIndexOf(dummyHelpGraph.edges, edge);
+                    if (index != -1) {
+                        dummyHelpGraph.edges.splice(index, 1);
+                    } else {
+                        console.error("edge not found in dummyHelpGraph");
+                    }
+                    let helpGraphEdge = helpGraph.getEdgeByStartEnd(edge.v1nr, edge.v2nr);
+                    if (helpGraphEdge == null) {
+                        console.error("helpGraphEdge == null");
+                    }
+                    rdfsColorSet.addEdgeColor(helpGraphEdge, colors[i % colors.length]);
+                    // The original graph doesn't contain dummy edges -> check for it
+                    let is1DummyVertex = newToOldVertexNrs.hasOwnProperty(edge.v1nr);
+                    let is2DummyVertex = newToOldVertexNrs.hasOwnProperty(edge.v2nr);
+                    if (!is1DummyVertex && !is2DummyVertex) {
+                        let graphEdge = originalGraph.getEdgeByStartEnd(edge.v1nr, edge.v2nr);
+                        rdfsColorSet.addEdgeColor(graphEdge, colors[i % colors.length]);
+                    }
+                });
+            } else {
+                console.error("visited == null");
+            }
+            redrawAll(rdfsColorSet, helpGraph);
+        }
+        await super.pause("Convert graph back to original structure", "");
+        graph = originalGraph;
+        redrawAll(rdfsColorSet);
     }
 
     getVectorAwayFrom(vertexLeft, vertex, vertexRight) {
@@ -209,13 +306,17 @@ class OkamuraSeymourAlgo extends Algorithm {
         return changeVectorLength(awayVec, 50);
     }
 
-    rightDepthFirstSearch(startVertex, endVertexNr, runGraph) {
+    rightDepthFirstSearch(startVertex, endVertex, runGraph, orientUnorientedEdges) {
         console.log("rightDepthFirstSearch");
-        console.log('svn',startVertex.number);
         runGraph.indexAllEdges();
         let visited = [];
         let stack = [];
         let incidentEdges = runGraph.getIncidentEdges(startVertex, true);
+        if (incidentEdges.length == 0) {
+            console.error("incidentEdges.length == 0");
+            console.log('startVertex', startVertex);
+            return;
+        }
         let incidentEdge = incidentEdges[0];
         if (incidentEdge.v1nr == startVertex.number) {
             incidentEdge.orientation = EdgeOrientation.NORMAL;
@@ -237,11 +338,11 @@ class OkamuraSeymourAlgo extends Algorithm {
                 console.error("vertex == null");
                 return;
             }
-            if (vertex.number == endVertexNr) {
+            if (vertex.number == endVertex.number) {
                 console.log('Found target');
                 // Reconstruct path
                 let result = [];
-                let lastConfirmed = endVertexNr;
+                let lastConfirmed = endVertex.number;
                 for (let i = visited.length - 1; i >= 0; i--) {
                     let visitedEdge = visited[i];
                     if (visitedEdge.getEndVertexNr() != lastConfirmed) {
@@ -272,10 +373,12 @@ class OkamuraSeymourAlgo extends Algorithm {
             edgesRightOfEntryEdge.reverse();
             edgesRightOfEntryEdge.forEach(e => {
                 if (eqIndexOf(visited, e) == -1) {
-                    if (e.v1nr == vertex.number) {
-                        e.orientation = EdgeOrientation.NORMAL;
-                    } else {
-                        e.orientation = EdgeOrientation.REVERSED;
+                    if (orientUnorientedEdges) {
+                        if (e.v1nr == vertex.number) {
+                            e.orientation = EdgeOrientation.NORMAL;
+                        } else {
+                            e.orientation = EdgeOrientation.REVERSED;
+                        }
                     }
                     stack.push(e);
                 }
