@@ -1,7 +1,7 @@
 var fgCanvas = $("#fgCanvas")[0];
 var vertexCount = 0;
 
-var vertexRadius = 15;
+var vertexRadius = 18;
 
 class Vertex {
     constructor(x, y, number = -1) {

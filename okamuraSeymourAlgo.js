@@ -88,7 +88,10 @@ class OkamuraSeymourAlgo extends Algorithm {
     }
 
     async convertToBracketStructure(outerFacetVertexNrs) {
-        await super.pause("Get bracket structure", "");
+        await super.pause("Convert to bracket structure (I)",
+            "In order to find disjunct paths, we first have to convert the graph to a simpler bracket structure."
+            + " A bracket structure has the advantage that we can easily find disjunct paths by right depth-first search."
+            + "<br> To do this, we first determine the current bracket structure.");
         let bracketString = "";
         let bracketStructure = [];
         let visited = [];
@@ -119,7 +122,10 @@ class OkamuraSeymourAlgo extends Algorithm {
                 bracketVertexNrs.push(vertexNr);
             }
         });
-        await super.pause("Current bracket structure", bracketString + "<br>Now correct it.");
+        await super.pause("Current bracket structure",
+            "Current bracket structure: " + bracketString
+            + "<br>Now correct the bracket structure."
+            + "<br>This is done by associating each pair of opening and closing brackets with one (s,t) pair");
         let correctedSources = [];
         let correctedTargets = new Array(graph.targets.length).fill(-1);
         let indexStack = [];
@@ -143,7 +149,10 @@ class OkamuraSeymourAlgo extends Algorithm {
     }
 
     async addDummyEdges(outerFacetVertexNrs) {
-        await super.pause("Add dummy edges", "");
+        await super.pause("Add dummy edges",
+            "For every source/target vertex, we add a new edge extending into the outer facet."
+            + " The vertex at the end of the new edge becomes the new source/target."
+            + " This is done for technical reasons.");
         let oldToNewVertexNrs = {};
         for (let i = 0; i < outerFacetVertexNrs.length; i++) {
             let vertexNr = outerFacetVertexNrs[i];
@@ -184,7 +193,9 @@ class OkamuraSeymourAlgo extends Algorithm {
         let rdfsColorSet = new ColorSet();
         for (let i = 0; i < dummyHelpGraph.sources.length; i++) {
             let source = dummyHelpGraph.sources[i];
-            await super.pause("Right depth first search from source " + i + " to target " + i, "");
+            await super.pause("Right depth first search from source " + i + " to target " + i,
+                "We now perform a right depth-first search from each source to its target."
+                + " Each edge on a path is oriented towards the target.");
             let copyDummyGraph = dummyHelpGraph.getCopy();
             let sourceVertex = dummyHelpGraph.getVertexByNumber(source);
             let targetVertex = dummyHelpGraph.getVertexByNumber(dummyHelpGraph.targets[i]);
@@ -211,7 +222,9 @@ class OkamuraSeymourAlgo extends Algorithm {
             }
             redrawAll(rdfsColorSet, helpGraph);
         }
-        await super.pause("Remove unoriented edges from help graph", "");
+        await super.pause("Remove all unoriented edges from help graph",
+            "All unoriented edges weren't part of any s-t-path in the bracket structure."
+            + " They therefore also aren't relevant for any s-t-path in the original graph.");
         let onlyOrientedEdges = helpGraph.edges.filter(e => e.orientation != EdgeOrientation.UNDIRECTED);
         helpGraph.edges = onlyOrientedEdges;
         redrawAll(rdfsColorSet, helpGraph);
@@ -225,7 +238,8 @@ class OkamuraSeymourAlgo extends Algorithm {
         for (let key in oldToNewVertexNrs) {
             newToOldVertexNrs[oldToNewVertexNrs[key]] = key;
         }
-        await super.pause("Revert bracket structure", "");
+        await super.pause("Revert bracket structure", 
+        "We use the original (s,t)-pairs again.");
         let newOldSources = [];
         let newOldTargets = [];
         oldSources.forEach(source => {
