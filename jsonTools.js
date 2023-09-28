@@ -9,8 +9,8 @@ function jsonClick(param) {
             let jsonGraph = {};
             jsonGraph["canvasWidth"] = $("#fgCanvas")[0].width;
             jsonGraph["canvasHeight"] = $("#fgCanvas")[0].height;
-            jsonGraph["source"] = graph.source;
-            jsonGraph["target"] = graph.target;
+            jsonGraph["sources"] = graph.sources;
+            jsonGraph["targets"] = graph.targets;
             jsonGraph.vertices = [];
             for (let i = 0; i < graph.vertices.length; i++) {
                 let vertex = graph.vertices[i];
@@ -41,6 +41,14 @@ function loadGraphFromJson(graphString) {
     let jsonGraph = JSON.parse(graphString);
     graph = new Graph();
     vertexCount = 0;
+    if (jsonGraph.hasOwnProperty('source') && jsonGraph.hasOwnProperty('target')) {
+        graph.makeSource(jsonGraph['source']);
+        graph.makeTarget(jsonGraph['target']);
+    }
+    if (jsonGraph.hasOwnProperty('sources') && jsonGraph.hasOwnProperty('targets')) {
+        graph.sources = jsonGraph['sources'];
+        graph.targets = jsonGraph['targets'];
+    }
     for (var i = 0; i < jsonGraph.vertices.length; i++) {
         var jsonVertex = jsonGraph.vertices[i];
         let nr = -1;
@@ -56,10 +64,6 @@ function loadGraphFromJson(graphString) {
             let newCanvasHeight = $("#fgCanvas")[0].height;
             jsonVertex.x = (jsonVertex.x / originalCanvasWidth) * newCanvasWidth;
             jsonVertex.y = (jsonVertex.y / originalCanvasHeight) * newCanvasHeight;
-        }
-        if (jsonGraph.hasOwnProperty('source') && jsonGraph.hasOwnProperty('target')) {
-            graph.makeSource(jsonGraph['source']);
-            graph.makeTarget(jsonGraph['target']);
         }
         let vertex = new Vertex(jsonVertex.x, jsonVertex.y, nr);
         graph.addVertex(vertex);

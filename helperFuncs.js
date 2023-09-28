@@ -1,28 +1,3 @@
-/**
- * 
- * @param {Vertex} vertex 
- * @param {Graph} runGraph 
- * @param {boolean} usingOrientation 
- * @returns {Vertex[]}
- */
-function depthFirstSearch(vertex, runGraph, usingOrientation = false) {
-    console.log("depthFirstSearch");
-    let visited = [];
-    let stack = [];
-    stack.push(vertex);
-    while (stack.length > 0) {
-        let vertex = stack.pop();
-        if (eqIndexOf(visited, vertex) == -1) {
-            visited.push(vertex);
-            let neighbours = runGraph.getAllNeighbours(vertex, usingOrientation);
-            $.each(neighbours, function (_index, neighbour) {
-                stack.push(neighbour);
-            });
-        }
-    }
-    return visited;
-}
-
 class BreadthSearchVertex {
     constructor(vertex, parent) {
         this.vertex = vertex;
@@ -406,6 +381,10 @@ function doIntersect(p1, q1, p2, q2) {
     if (o4 == 0 && onSegment(p2, q1, q2)) return true;
 
     return false; // Doesn't fall in any of the above cases
+}
+
+function mod(number, modulus) {
+    return ((number % modulus) + modulus) % modulus;
 }
 
 function printArr(arr) {

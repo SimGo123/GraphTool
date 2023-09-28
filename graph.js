@@ -1,7 +1,7 @@
 var fgCanvas = $("#fgCanvas")[0];
 var vertexCount = 0;
 
-var vertexRadius = 15;
+var vertexRadius = 18;
 
 class Vertex {
     constructor(x, y, number = -1) {
@@ -18,7 +18,7 @@ class Vertex {
         this.radius = vertexRadius;
     }
 
-    draw(selectedVertex, source, target, colorSet) {
+    draw(selectedVertex, sources, targets, colorSet) {
         var ctx = fgCanvas.getContext("2d");
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
@@ -30,10 +30,20 @@ class Vertex {
         ctx.closePath();
         ctx.fillStyle = colorSet.getVertexColor(this.number);
         let text = this.number;
-        if (this.number != -1 && source == this.number) {
-            text = "S" + text;
-        } else if (this.number != -1 && target == this.number) {
-            text = "T" + text;
+        let sIndex = sources.indexOf(this.number);
+        let tIndex = targets.indexOf(this.number);
+        if (this.number != -1 && sIndex != -1) {
+            if (sources.length > 1) {
+                text = "S" + sIndex + "(" + text + ")";
+            } else {
+                text = "S" + text;
+            }
+        } else if (this.number != -1 && tIndex != -1) {
+            if (sources.length > 1) {
+                text = "T" + tIndex + "(" + text + ")";
+            } else {
+                text = "T" + text;
+            }
         }
         let metrics = ctx.measureText(text);
         let txtWidth = metrics.width;
@@ -52,18 +62,12 @@ class Vertex {
         }
     }
 
-    eq(other, withId = null) {
+    eq(other) {
         return this.number == other.number;
     }
 
     print() {
-        // let appendix = "";
-        // if (this.number != -1 && this.source == this.number) {
-        //     appendix = "(Source) ";
-        // } else if (this.number != -1 && this.target == this.number) {
-        //     appendix = "(Target) ";
-        // }
-        return "Vertex " + this.number; //appendix + this.number;
+        return "Vertex " + this.number;
     }
 }
 
@@ -303,8 +307,8 @@ class Graph {
         this.vertices = [];
         this.edges = [];
 
-        this.source = -1;
-        this.target = -1;
+        this.sources = [];
+        this.targets = [];
     }
 
     addVertex(vertex) {
@@ -341,19 +345,46 @@ class Graph {
     }
 
     makeSource(vertexNr) {
-        if (this.target == vertexNr && vertexNr != -1) {
+        console.log('sources',this.sources);
+        if (this.targets.includes(vertexNr) && vertexNr != -1) {
             window.alert("Can't have same source & target");
             return;
         }
-        this.source = vertexNr;
+        if (!this.sources.includes(vertexNr) && vertexNr != -1) {
+            this.sources.push(vertexNr);
+        } else if (vertexNr != -1) {
+            window.alert("Vertex is already a source");
+        }
     }
 
     makeTarget(vertexNr) {
-        if (this.source == vertexNr && vertexNr != -1) {
+        if (this.sources.includes(vertexNr) && vertexNr != -1) {
             window.alert("Can't have same source & target");
             return;
         }
-        this.target = vertexNr;
+        if (!this.targets.includes(vertexNr) && vertexNr != -1) {
+            this.targets.push(vertexNr);
+        } else if (vertexNr != -1) {
+            window.alert("Vertex is already a target");
+        }
+    }
+
+    deleteSource(vertexNr) {
+        let index = this.sources.indexOf(vertexNr);
+        if (index != -1) {
+            this.sources.splice(index, 1);
+        } else {
+            window.alert("This vertex is not a source");
+        }
+    }
+
+    deleteTarget(vertexNr) {
+        let index = this.targets.indexOf(vertexNr);
+        if (index != -1) {
+            this.targets.splice(index, 1);
+        } else {
+            window.alert("This vertex is not a target");
+        }
     }
 
     getVertexAt(x, y) {
@@ -446,7 +477,7 @@ class Graph {
             edge.draw(this, selectedEdge, colorSet);
         }
         for (let i = 0; i < this.vertices.length; i++) {
-            this.vertices[i].draw(selectedVertex, this.source, this.target, colorSet);
+            this.vertices[i].draw(selectedVertex, this.sources, this.targets, colorSet);
         }
     }
 
@@ -713,8 +744,12 @@ class Graph {
         $.each(this.edges, function (_index, edge) {
             copy.addEdge(new Edge(edge.v1nr, edge.v2nr, edge.id, edge.weight, edge.orientation));
         });
-        copy.source = this.source;
-        copy.target = this.target;
+        this.sources.forEach(source => {
+            copy.sources.push(source);
+        });
+        this.targets.forEach(target => {
+            copy.targets.push(target);
+        });
         return copy;
     }
 
