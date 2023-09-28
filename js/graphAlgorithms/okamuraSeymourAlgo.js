@@ -50,6 +50,7 @@ class OkamuraSeymourAlgo extends Algorithm {
             super.onFinished();
             return;
         }
+        super.numSteps = graph.sources.length * 2 + 11;
         let oldSources = graph.sources;
         let oldTargets = graph.targets;
         let originalGraph = graph.getCopy();
@@ -58,6 +59,7 @@ class OkamuraSeymourAlgo extends Algorithm {
         let helpGraph = await this.rdfsPaths();
         await this.convertPathsToOriginalStructure(helpGraph, originalGraph,
             oldSources, oldTargets, oldToNewVertexNrs);
+        await super.pause("Result", "These are the disjunct si-ti paths");
 
         super.onFinished();
     }
