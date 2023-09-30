@@ -336,9 +336,9 @@ class Graph {
                 this.edges.splice(i, 1);
             }
         }
-        let index = this.vertices.indexOf(vertex);
+        let index = eqIndexOf(this.vertices, vertex);
         if (index != -1) {
-            this.vertices.splice(this.vertices.indexOf(vertex), 1);
+            this.vertices.splice(index, 1);
         } else {
             console.error("deleteVertex: vertex {" + vertex.print() + "} not found");
         }
@@ -753,6 +753,13 @@ class Graph {
         return copy;
     }
 
+    /**
+     * Gets a subgraph of this graph, containing only the vertices in the given array
+     * and edges between those vertices.
+     * 
+     * @param {Vertex[]} vertices 
+     * @returns {Graph}
+     */
     getSubgraph(vertices) {
         let subgraph = new Graph();
         $.each(vertices, function (_index, vertex) {
