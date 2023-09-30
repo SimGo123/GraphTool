@@ -2,35 +2,47 @@ const ALGORITHMS = {
     TRIANGULATION: 0,
     PLANAR_SEPARATOR: 1,
     WEIGHT_MAX_MATCHING: 2,
-    MIXED_MAX_CUT: 3
+    MIXED_MAX_CUT: 3,
+    MAX_FLOW: 4,
+    DISJUNCT_ST_PATHS: 5,
+    PLANARITY_TEST: 6,
+    OKAMURA_SEYMOUR: 7,
 };
 
 var algorithm = null;
 
 async function algorithmClick(param) {
-    if (param == ALGORITHMS.TRIANGULATION) {
-        algorithm = new TriangulationAlgo();
-        $("#algoControlPanel").removeClass("invisible");
-        $("#stepButton").removeClass("disabled");
-        $("#runCompleteButton").removeClass("disabled");
-        await algorithm.run();
-        algorithm = null;
-    } else if (param == ALGORITHMS.PLANAR_SEPARATOR) {
-        algorithm = new PlanarSeparatorAlgo();
-        $("#algoControlPanel").removeClass("invisible");
-        $("#stepButton").removeClass("disabled");
-        $("#runCompleteButton").removeClass("disabled");
-        await algorithm.run();
-        algorithm = null;
-    } else if (param == ALGORITHMS.WEIGHT_MAX_MATCHING) {
-        algorithm = new WeightMaxMatchingAlgo();
-        $("#algoControlPanel").removeClass("invisible");
-        $("#stepButton").removeClass("disabled");
-        $("#runCompleteButton").removeClass("disabled");
-        await algorithm.run();
-        algorithm = null;
-    } else if (param == ALGORITHMS.MIXED_MAX_CUT) {
-        algorithm = new MixedMaxCutAlgo();
+    switch (param) {
+        case ALGORITHMS.TRIANGULATION:
+            algorithm = new TriangulationAlgo();
+            break;
+        case ALGORITHMS.PLANAR_SEPARATOR:
+            algorithm = new PlanarSeparatorAlgo();
+            break;
+        case ALGORITHMS.WEIGHT_MAX_MATCHING:
+            algorithm = new WeightMaxMatchingAlgo();
+            break;
+        case ALGORITHMS.MIXED_MAX_CUT:
+            algorithm = new MixedMaxCutAlgo();
+            break;
+        case ALGORITHMS.MAX_FLOW:
+            algorithm = new MaxFlowAlgo();
+            break;
+        case ALGORITHMS.DISJUNCT_ST_PATHS:
+            algorithm = new DisjunctSTPathsAlgo();
+            break;
+        case ALGORITHMS.PLANARITY_TEST:
+            algorithm = new PlanarityTestAlgo();
+            break;
+        case ALGORITHMS.OKAMURA_SEYMOUR:
+            algorithm = new OkamuraSeymourAlgo();
+            break;
+        default:
+            // code for default case
+            break;
+    }
+
+    if (algorithm) {
         $("#algoControlPanel").removeClass("invisible");
         $("#stepButton").removeClass("disabled");
         $("#runCompleteButton").removeClass("disabled");
@@ -74,7 +86,7 @@ class Algorithm {
         $("#stepButton").removeClass("disabled");
         $("#runCompleteButton").removeClass("disabled");
         $("#stepTitle").text("Step " + this.currentStep + "/" + this.numSteps + ": " + stepTitle);
-        $("#stepDescription").text(stepDesc);
+        $("#stepDescription").html(stepDesc);
         while (!this.shouldContinue) {
             console.log("waiting");
             await this.sleep(1000);
@@ -161,7 +173,7 @@ class TriangulationAlgo extends Algorithm {
 
     // Triangulate the graph without paying attention to loops/multi-edges
     uncleanTriangulation() {
-        let allFacets = getAllFacets();
+        let allFacets = getAllFacets(graph);
 
         let newFacets = [];
         $.each(allFacets, function (_index, facet) {

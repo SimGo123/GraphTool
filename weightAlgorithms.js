@@ -274,7 +274,7 @@ class MixedMaxCutAlgo extends Algorithm {
         redrawAll();
 
         await super.pause("Calculate dual graph", "Build the dual graph from the current graph, keep edges");
-        let [dualGraph, edgeEqualities] = graph.getDualGraph();
+        let [dualGraph, edgeEqualities, vertexFacets] = graph.getDualGraph();
         let dualCopy = dualGraph.getCopy();
         graph = dualGraph;
         redrawAll();

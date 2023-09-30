@@ -1,51 +1,3 @@
-function getNextDegOneVertex() {
-    console.log("deg1");
-    for (var i = 0; i < graph.vertices.length; i++) {
-        var vertex = graph.vertices[i];
-        if (graph.getVertexDegree(vertex) == 1) {
-            console.log("found deg1 vertex");
-            return vertex;
-        }
-    }
-    console.log("no deg1 vertices");
-    return null;
-}
-
-function nextVertexAfter(vertices, afterVertex, rightDir) {
-    let vertexIndex = eqIndexOf(vertices, afterVertex);
-    if (rightDir) {
-        if (vertexIndex == vertices.length - 1) {
-            return vertices[0];
-        } else {
-            return vertices[vertexIndex + 1];
-        }
-    } else {
-        if (vertexIndex == 0) {
-            return vertices[vertices.length - 1];
-        } else {
-            return vertices[vertexIndex - 1];
-        }
-    }
-}
-
-function depthFirstSearch(vertex) {
-    console.log("depthFirstSearch");
-    let visited = [];
-    let stack = [];
-    stack.push(vertex);
-    while (stack.length > 0) {
-        let vertex = stack.pop();
-        if (eqIndexOf(visited, vertex) == -1) {
-            visited.push(vertex);
-            let neighbours = graph.getAllNeighbours(vertex);
-            $.each(neighbours, function (_index, neighbour) {
-                stack.push(neighbour);
-            });
-        }
-    }
-    return visited;
-}
-
 class BreadthSearchVertex {
     constructor(vertex, parent) {
         this.vertex = vertex;
@@ -80,168 +32,160 @@ function breadthFirstSearchTree(vertex, runGraph) {
     return layers;
 }
 
-class StatusEdge {
-    constructor(edge, rightVisited, leftVisited) {
-        this.edge = edge;
-        this.rightVisited = rightVisited;
-        this.leftVisited = leftVisited;
+// Next brute force iteration
+// Starts with [false, false, ...]
+// Ends with [true, true, ...]
+// Returns null if [true, true, ...] was passed
+function nextBruteForceIter(array) {
+    let done = !array.includes(false);
+    if (done) {
+        return null;
     }
+
+    let index = array.indexOf(false);
+    array[index] = true;
+    for (let i = 0; i < index; i++) {
+        array[i] = false;
+    }
+    return array;
 }
 
-// Returns an array of facet walks
-// Requires: graph is planar embedded, only one connected component
-// TODO Handle one degree vertices
-function getAllFacets() {
-    console.log("getAllFacets");
-    // Copy edges into statusEdges, which keep additional left/right visited booleans
-    let statusEdges = [];
-    $.each(graph.edges, function (_index, edge) {
-        // Status edges are [edge, rightVisited, leftVisited]
-        statusEdges.push(new StatusEdge(edge, false, false));
+function getDijekstraResults(startVertex) {
+    let queue = [startVertex];
+    let distances = [];
+    graph.vertices.forEach(v => {
+        distances.push(parseInt(Number.MAX_SAFE_INTEGER));
     });
-    let facets = [];
-    $.each(graph.edges, function (_index, edge) {
-        let statusEdge = statusEdges[statusEdgeIndex(statusEdges, edge)];
-        if (!statusEdge.rightVisited) {
-            // console.log('right facet');
-            let rightFacet = facetWalk(edge, true, statusEdges);
-            facets.push(rightFacet);
-            $.each(rightFacet, function (_index, edge) {
-                let edgeIndex = statusEdgeIndex(statusEdges, edge);
-                if (statusEdges[edgeIndex].edge.v1nr == edge.v1nr) {
-                    statusEdges[edgeIndex].rightVisited = true;
-                    // console.log("r");
-                } else {
-                    statusEdges[edgeIndex].leftVisited = true;
-                    // console.log("l");
+    distances[eqIndexOf(graph.vertices, startVertex)] = 0;
+    while (queue.length > 0) {
+        let newQueue = [];
+        queue.forEach(v => {
+            let incidentEdges = graph.getIncidentEdges(v, true);
+            incidentEdges.forEach(e => {
+                let dist = parseInt(distances[eqIndexOf(graph.vertices, v)]) + parseInt(e.weight);
+                let nNumber = (e.v1nr != v.number) ? e.v1nr : e.v2nr;
+                let neighbourIdx = eqIndexOf(graph.vertices, graph.getVertexByNumber(nNumber));
+                if (dist < distances[neighbourIdx]) {
+                    distances[neighbourIdx] = dist;
+                    newQueue.push(graph.getVertexByNumber(nNumber));
                 }
-            });
-        }
-        statusEdge = statusEdges[statusEdgeIndex(statusEdges, edge)];
-        if (!statusEdge.leftVisited) {
-            // console.log('left facet');
-            let leftFacet = facetWalk(edge, false, statusEdges);
-            facets.push(leftFacet);
-            $.each(leftFacet, function (_index, edge) {
-                let edgeIndex = statusEdgeIndex(statusEdges, edge);
-                if (statusEdges[edgeIndex].edge.v1nr == edge.v1nr) {
-                    statusEdges[edgeIndex].leftVisited = true;
-                    // console.log("l");
-                } else {
-                    statusEdges[edgeIndex].rightVisited = true;
-                    // console.log("r");
-                }
-            });
-        }
-    });
-    console.log("Found " + facets.length + " facets");
-    $.each(facets, function (_index, facet) {
-        let facetStr = "";
-        $.each(facet, function (_index, edge) {
-            facetStr += edge.print() + " ";
+            })
         });
-        // console.log(facetStr);
-    });
-    return facets;
-}
-
-// Follow a facet from a vertex back to itself, return edges on facet
-function facetWalk(edge, rightDir, statusEdges) {
-    let facet = [];
-    let prevVertex = graph.getVertexByNumber(edge.v1nr);
-    let currentVertex = graph.getVertexByNumber(edge.v2nr);
-    let statusEdgeVisited = false;
-    while (!statusEdgeVisited) {
-        let neighbours = graph.getAllNeighbours(currentVertex);
-        let nextVertex = nextVertexAfter(neighbours, prevVertex, rightDir);
-
-        let newEdge = new Edge(currentVertex.number, nextVertex.number);
-        let edgeIndex = statusEdgeIndex(statusEdges, newEdge);
-
-        if (rightDir) {
-            if (statusEdges[edgeIndex].edge.v1nr == newEdge.v1nr) {
-                statusEdgeVisited = statusEdges[edgeIndex].rightVisited;
-            } else {
-                statusEdgeVisited = statusEdges[edgeIndex].leftVisited;
-            }
-        } else {
-            if (statusEdges[edgeIndex].edge.v1nr == newEdge.v1nr) {
-                statusEdgeVisited = statusEdges[edgeIndex].leftVisited;
-            } else {
-                statusEdgeVisited = statusEdges[edgeIndex].rightVisited;
-            }
-        }
-
-        if (!statusEdgeVisited) {
-            facet.push(newEdge);
-
-            if (rightDir) {
-                if (statusEdges[edgeIndex].edge.v1nr == newEdge.v1nr) {
-                    statusEdges[edgeIndex].rightVisited = true;
-                } else {
-                    statusEdges[edgeIndex].leftVisited = true;
-                }
-            } else {
-                if (statusEdges[edgeIndex].edge.v1nr == newEdge.v1nr) {
-                    statusEdges[edgeIndex].leftVisited = true;
-                } else {
-                    statusEdges[edgeIndex].rightVisited = true;
-                }
-            }
-        }
-
-        prevVertex = currentVertex;
-        currentVertex = nextVertex;
+        queue = newQueue;
     }
-    return facet;
+    return distances;
 }
 
-function getUniqueVerticeNrsOnFacet(facet) {
-    let verticesOnFacet = [];
-    $.each(facet, function (_index, edge) {
-        if (verticesOnFacet.indexOf(edge.v1nr) == -1) {
-            verticesOnFacet.push(edge.v1nr);
+// Check if graph contains negative cycles using Bellman-Ford
+function containsNegativeCycles(graph, startVertex) {
+    let numVertices = graph.vertices.length;
+    let shortestPaths = [];
+    let predecessors = [];
+    for (let i = 0; i < numVertices; i++) {
+        shortestPaths.push(10000);
+        predecessors.push(null);
+    }
+    shortestPaths[graph.getVertexIdByNumber(startVertex.number)] = 0;
+
+    for (let i = 0; i < numVertices - 1; i++) {
+        for (let j = 0; j < graph.edges.length; j++) {
+            let edge = graph.edges[j];
+            let u = graph.getVertexIdByNumber(edge.v1nr);
+            let v = graph.getVertexIdByNumber(edge.v2nr);
+            let weight = parseInt(edge.weight);
+            if (edge.orientation == EdgeOrientation.NORMAL || edge.orientation == EdgeOrientation.UNDIRECTED) {
+                if (shortestPaths[u] + parseInt(weight) < shortestPaths[v]) {
+                    shortestPaths[v] = shortestPaths[u] + weight;
+                    predecessors[v] = u;
+                }
+            }
+            if (edge.orientation == EdgeOrientation.REVERSED || edge.orientation == EdgeOrientation.UNDIRECTED) {
+                if (shortestPaths[v] + parseInt(weight) < shortestPaths[u]) {
+                    shortestPaths[u] = shortestPaths[v] + weight;
+                    predecessors[u] = v;
+                }
+            }
         }
-        if (verticesOnFacet.indexOf(edge.v2nr) == -1) {
-            verticesOnFacet.push(edge.v2nr);
+    }
+    for (let j = 0; j < graph.edges.length; j++) {
+        let edge = graph.edges[j];
+        let u = graph.getVertexIdByNumber(edge.v1nr);
+        let v = graph.getVertexIdByNumber(edge.v2nr);
+        let weight = parseInt(edge.weight);
+        if (edge.orientation == EdgeOrientation.NORMAL || edge.orientation == EdgeOrientation.UNDIRECTED) {
+            if (shortestPaths[u] + weight < shortestPaths[v]) {
+                predecessors[v] = u;
+                // A negative cycle exist; find a vertex on the cycle 
+                visited = [];
+                for (let i = 0; i < numVertices; i++) {
+                    visited.push(false);
+                }
+                visited[v] = true;
+                while (!visited[u]) {
+                    visited[u] = true;
+                    u = predecessors[u];
+                }
+                // u is a vertex in a negative cycle, find the cycle itself
+                ncycle = [graph.vertices[u].number];
+                v = predecessors[u];
+                while (v != u) {
+                    ncycle.unshift(graph.vertices[v].number);
+                    v = predecessors[v]
+                }
+                console.log('Negative cycle: ' + ncycle);
+                return true;
+            }
         }
-    });
-    return verticesOnFacet;
+        if (edge.orientation == EdgeOrientation.REVERSED || edge.orientation == EdgeOrientation.UNDIRECTED) {
+            if (shortestPaths[v] + weight < shortestPaths[u]) {
+                console.log('dwn');
+                predecessors[u] = v;
+                // A negative cycle exist; find a vertex on the cycle 
+                visited = [];
+                for (let i = 0; i < numVertices; i++) {
+                    visited.push(false);
+                }
+                visited[u] = true;
+                while (!visited[v]) {
+                    visited[v] = true;
+                    v = predecessors[v];
+                }
+                // u is a vertex in a negative cycle, find the cycle itself
+                ncycle = [graph.vertices[v].number];
+                u = predecessors[v];
+                while (u != v) {
+                    ncycle.unshift(graph.vertices[u].number);
+                    u = predecessors[u]
+                }
+                console.log('Negative cycle: ' + ncycle);
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
-function getFacetCenter(facet) {
-    let facetCenter = new Point(0, 0);
-    let verticesOnFacet = getUniqueVerticeNrsOnFacet(facet);
-    $.each(verticesOnFacet, function (_index, vertexNr) {
-        let vertex = graph.getVertexByNumber(vertexNr);
-        facetCenter.x += vertex.x;
-        facetCenter.y += vertex.y;
-    });
-    facetCenter.x /= verticesOnFacet.length;
-    facetCenter.y /= verticesOnFacet.length;
-    return facetCenter;
+
+function getNextDegOneVertex() {
+    console.log("deg1");
+    for (var i = 0; i < graph.vertices.length; i++) {
+        var vertex = graph.vertices[i];
+        if (graph.getVertexDegree(vertex) == 1) {
+            console.log("found deg1 vertex");
+            return vertex;
+        }
+    }
+    console.log("no deg1 vertices");
+    return null;
 }
 
-function eqIndexOf(array, element, withId = false) {
+function eqIndexOf(array, element, withId = false, withWeightAndOrient = false) {
     for (var i = 0; i < array.length; i++) {
-        if (array[i].eq(element, withId)) {
+        if (array[i].eq(element, withId, withWeightAndOrient)) {
             return i;
         }
     }
     //console.log("eq index not found");
-    return -1;
-}
-
-function statusEdgeIndex(statusEdges, edge) {
-    //console.log("looking for " + edge.print());
-    for (var i = 0; i < statusEdges.length; i++) {
-        //console.log("statusEdge " + statusEdges[i][0].v1.number + " " + statusEdges[i][0].v2.number);
-        if (statusEdges[i].edge.eq(edge)) {
-            //console.log("found se");
-            return i;
-        }
-    }
-    console.log("no se");
     return -1;
 }
 
@@ -270,6 +214,55 @@ function sortClockwise(vertex, vertices) {
     });
 }
 
+function isBipartite(runGraph) {
+    const numVertices = runGraph.vertices.length;
+    const colors = new Array(numVertices).fill(-1); // Initialize colors as -1 (unvisited)
+
+    const sets = [[], []]; // Two sets for vertices with colors 0 and 1
+
+    for (let startVertex = 0; startVertex < numVertices; startVertex++) {
+        if (colors[startVertex] === -1) {
+            if (!bipartiteBFS(runGraph, startVertex, colors, sets)) {
+                console.log('not bipartite starting with ' + runGraph.vertices[startVertex].number);
+                return { isBipartite: false, sets: [] };
+            }
+        }
+    }
+
+    return { isBipartite: true, sets: sets };
+}
+
+function bipartiteBFS(runGraph, startVertex, colors, sets) {
+    const queue = [];
+    queue.push(startVertex);
+    colors[startVertex] = 0; // Color the starting vertex as 0
+    sets[0].push(startVertex); // Add the starting vertex to the first set
+
+    while (queue.length > 0) {
+        const currentVertex = queue.shift();
+
+        const neighbours = runGraph.getAllNeighbours(runGraph.vertices[currentVertex]);
+        for (let i = 0; i < neighbours.length; i++) {
+            const neighborVertex = neighbours[i];
+            const neighborIndex = eqIndexOf(runGraph.vertices, neighborVertex);
+            if (colors[neighborIndex] === -1) {
+                // If neighbor is unvisited, color it with the opposite color of the currentVertex
+                colors[neighborIndex] = 1 - colors[currentVertex];
+                sets[1 - colors[currentVertex]].push(neighborIndex); // Add to the opposite set
+                queue.push(neighborIndex);
+            } else if (colors[neighborIndex] === colors[currentVertex]) {
+                // If neighbor has the same color as the currentVertex, the graph is not bipartite
+                console.log('conflict: ' + runGraph.vertices[neighborIndex].number + ' and ' + runGraph.vertices[currentVertex].number);
+                return false;
+            }
+            // If neighbor is already visited with a different color, continue
+        }
+    }
+
+    return true;
+}
+
+
 // Get the angle in degrees between 0 o'clock from the vertex and the vertex's neighbor
 function getAngle(vertex, neighbour) {
     var dAx = 0;
@@ -289,22 +282,113 @@ function changeVectorLength(vector, length) {
     return new Point(vector.x * length / vectorLength, vector.y * length / vectorLength);
 }
 
-// Next brute force iteration
-// Starts with [false, false, ...]
-// Ends with [true, true, ...]
-// Returns null if [true, true, ...] was passed
-function nextBruteForceIter(array) {
-    let done = !array.includes(false);
-    if (done) {
-        return null;
+function reverseOrientation(orientation) {
+    switch (orientation) {
+        case EdgeOrientation.NORMAL:
+            return EdgeOrientation.REVERSED;
+        case EdgeOrientation.REVERSED:
+            return EdgeOrientation.NORMAL;
     }
-    
-    let index = array.indexOf(false);
-    array[index] = true;
-    for (let i = 0; i < index; i++) {
-        array[i] = false;
+    return EdgeOrientation.UNORIENTED;
+}
+
+function haveOpposedOrient(orientation1, orientation2) {
+    return (orientation1 == EdgeOrientation.NORMAL && orientation2 == EdgeOrientation.REVERSED)
+        || (orientation1 == EdgeOrientation.REVERSED && orientation2 == EdgeOrientation.NORMAL);
+}
+
+class Point {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
     }
-    return array;
+}
+
+function distance(p1, p2) {
+    return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+}
+
+// Determine the distance between a point and a line
+function pointLineDist(lineStart, lineEnd, point) {
+    let m = (lineEnd.y - lineStart.y) / (lineEnd.x - lineStart.x);
+    let t = lineStart.y - m * lineStart.x;
+    let t2 = point.y + (1 / m) * point.x;
+    let closeX = (t2 - t) / (m + 1 / m);
+    let closestPoint = new Point(closeX, m * closeX + t);
+
+    if (closeX < Math.min(lineStart.x, lineEnd.x) || closeX > Math.max(lineStart.x, lineEnd.x)
+        || closestPoint.y < Math.min(lineStart.y, lineEnd.y) || closestPoint.y > Math.max(lineStart.y, lineEnd.y)) {
+        return Math.min(distance(point, lineStart), distance(point, lineEnd));
+    }
+
+    return distance(point, closestPoint);
+}
+
+// Given three collinear points p, q, r, the function checks if
+// point q lies on line segment 'pr'
+function onSegment(p, q, r) {
+    if (q.x <= Math.max(p.x, r.x) && q.x >= Math.min(p.x, r.x) &&
+        q.y <= Math.max(p.y, r.y) && q.y >= Math.min(p.y, r.y))
+        return true;
+
+    return false;
+}
+
+// To find orientation of ordered triplet (p, q, r).
+// The function returns following values
+// 0 --> p, q and r are collinear
+// 1 --> Clockwise
+// 2 --> Counterclockwise
+function orientation(p, q, r) {
+    // See https://www.geeksforgeeks.org/orientation-3-ordered-points/
+    // for details of below formula.
+    let val = (q.y - p.y) * (r.x - q.x) -
+        (q.x - p.x) * (r.y - q.y);
+
+    if (val == 0) return 0; // collinear
+
+    return (val > 0) ? 1 : 2; // clock or counterclock wise
+}
+
+// The main function that returns true if line segment 'p1q1'
+// and 'p2q2' intersect.
+function doIntersect(p1, q1, p2, q2) {
+    if ((p1.x == p2.x && p1.y == p2.y) || (p1.x == q2.x && p1.y == q2.y)) return false;
+    if ((q1.x == p2.x && q1.y == p2.y) || (q1.x == q2.x && q1.y == q2.y)) return false;
+
+    // Find the four orientations needed for general and
+    // special cases
+    let o1 = orientation(p1, q1, p2);
+    let o2 = orientation(p1, q1, q2);
+    let o3 = orientation(p2, q2, p1);
+    let o4 = orientation(p2, q2, q1);
+
+    // General case
+    if (o1 != o2 && o3 != o4)
+        return true;
+
+    // Special Cases
+    // p1, q1 and p2 are collinear and p2 lies on segment p1q1
+    if (o1 == 0 && onSegment(p1, p2, q1)) return true;
+
+    // p1, q1 and q2 are collinear and q2 lies on segment p1q1
+    if (o2 == 0 && onSegment(p1, q2, q1)) return true;
+
+    // p2, q2 and p1 are collinear and p1 lies on segment p2q2
+    if (o3 == 0 && onSegment(p2, p1, q2)) return true;
+
+    // p2, q2 and q1 are collinear and q1 lies on segment p2q2
+    if (o4 == 0 && onSegment(p2, q1, q2)) return true;
+
+    return false; // Doesn't fall in any of the above cases
+}
+
+function mod(number, modulus) {
+    return ((number % modulus) + modulus) % modulus;
+}
+
+function printArr(arr) {
+    arr.forEach(elem => console.log(elem.print()));
 }
 
 class VertexFacet {

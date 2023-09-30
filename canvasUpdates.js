@@ -30,99 +30,60 @@ class Wall {
     }
 }
 
-fgCanvas.addEventListener("click", function (event) {
-    console.log("fgCanvas click");
-    var rect = fgCanvas.getBoundingClientRect();
-    var x = event.clientX - rect.left;
-    var y = event.clientY - rect.top;
-
-    if (currentMode == Modes.VERTICES) {
-        var vertex = new Vertex(x, y);
-        graph.addVertex(vertex);
-        changeVertexToolsVisible(false);
-        changeEdgeToolsVisible(false);
-    } else if (currentMode == Modes.EDGES) {
-        if (selectedVertex == null) {
-            var vertex = graph.getVertexAt(x, y);
-            if (vertex != null) {
-                selectedVertex = vertex;
-            }
-        } else if (selectedVertex != null) {
-            var vertex = graph.getVertexAt(x, y);
-            if (vertex != null) {
-                var edge = new Edge(selectedVertex.number, vertex.number);
-                graph.addEdge(edge);
-                selectedVertex = null;
-            }
-        }
-        changeVertexToolsVisible(false);
-        changeEdgeToolsVisible(false);
-    } else if (currentMode == Modes.SELECTION) {
-        var vertex = graph.getVertexAt(x, y);
-        var edge = graph.getEdgeAt(x, y);
-        if (vertex != null) {
-            if (selectedVertex == null) {
-                selectedVertex = vertex;
-                changeVertexToolsVisible(true);
-            }
-            else {
-                selectedVertex = null;
-                changeVertexToolsVisible(false);
-            }
-            selectedEdge = null;
-            changeEdgeToolsVisible(false);
-        } else {
-            if (selectedVertex != null) {
-                selectedVertex.x = x;
-                selectedVertex.y = y;
-                selectedVertex = null;
-                selectedEdge = null;
-                changeVertexToolsVisible(true);
-                changeEdgeToolsVisible(false);
-            } else {
-                selectedVertex = null;
-                if (edge != null && edge != selectedEdge) {
-                    selectedEdge = edge;
-                    changeEdgeToolsVisible(true);
-                } else {
-                    selectedEdge = null;
-                    changeEdgeToolsVisible(false);
-                }
-                changeVertexToolsVisible(false);
-            }
-        }
-    }
-
-    redrawAll();
-});
-
-function vertexToolClick(param) {
-    if (selectedVertex == null) {
-        return;
-    }
-    if (param == VertexTools.DELETE) {
-        graph.deleteVertex(selectedVertex);
-        selectedVertex = null;
-        changeVertexToolsVisible(false);
-        redrawAll();
+class VertexColor {
+    constructor(vertexNr, color) {
+        this.vertexNr = vertexNr;
+        this.color = color;
     }
 }
 
-function edgeToolClick(param) {
-    if (selectedEdge == null) {
-        return;
+class EdgeColor {
+    constructor(edge, color) {
+        this.edge = edge;
+        this.color = color;
     }
-    if (param == EdgeTools.DELETE) {
-        graph.deleteEdge(selectedEdge);
-        selectedEdge = null;
-    } else if (param == EdgeTools.EXPAND) {
-        graph.expandEdge(selectedEdge);
-    } else if (param == EdgeTools.CONTRACT) {
-        graph.contractEdge(selectedEdge);
-    }
-    changeEdgeToolsVisible(false);
-    redrawAll();
 }
+
+class ColorSet {
+    vertexColors = {};
+    edgeColors = [];
+    constructor(vertexColor = "gray", edgeColor = "gray", highlightColor = "red") {
+        this.vertexColor = vertexColor;
+        this.edgeColor = edgeColor;
+        this.highlightColor = highlightColor;
+    }
+
+    addVertexColor(vertexNr, color) {
+        this.vertexColors[vertexNr] = color;
+    }
+    addEdgeColor(edge, color) {
+        for (let i = 0; i < this.edgeColors.length; i++) {
+            if (this.edgeColors[i].edge.eq(edge, true, true)) {
+                this.edgeColors[i].color = color;
+                return;
+            }
+        }
+        this.edgeColors.push(new EdgeColor(edge, color));
+    }
+
+    getVertexColor(vertexNr) {
+        if (vertexNr in this.vertexColors) {
+            return this.vertexColors[vertexNr];
+        }
+        return this.vertexColor;
+    }
+    getEdgeColor(edge) {
+        for (let i = 0; i < this.edgeColors.length; i++) {
+            let colorableEdge = this.edgeColors[i].edge;
+            if (colorableEdge.eq(edge, true, true)) {
+                return this.edgeColors[i].color;
+            }
+        }
+        return this.edgeColor;
+    }
+}
+
+var globalColorSet = new ColorSet();
 
 
 // Called initially
@@ -144,8 +105,6 @@ function drawCanvases() {
 
 // Draw the outer walls of the canvas
 function drawCanvasWalls() {
-    console.log("drawCanvasWalls");
-
     canvasWalls = [];
     canvasWalls.push(new Wall(0, 0, fgCanvas.width, Orientation.HORIZONTAL));
     canvasWalls.push(new Wall(0, fgCanvas.height - Wall.thickness, fgCanvas.width, Orientation.HORIZONTAL));
@@ -165,14 +124,12 @@ function drawCanvasWalls() {
 }
 
 function clearFgCanvas() {
-    console.log("clearFgCanvas");
     var ctx = fgCanvas.getContext("2d");
     ctx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
 }
 
-function redrawAll() {
-    console.log("redrawAll");
+function redrawAll(colorSet = globalColorSet, graphToDraw = graph) {
     clearFgCanvas();
     drawCanvasWalls();
-    graph.draw(selectedVertex, selectedEdge);
+    graphToDraw.draw(selectedVertex, selectedEdge, colorSet);
 }
