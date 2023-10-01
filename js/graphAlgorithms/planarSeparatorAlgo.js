@@ -2,6 +2,15 @@ class PlanarSeparatorAlgo extends Algorithm {
 
     originalGraph = null;
 
+    preconditionsCheck() {
+        let fulfilled = true;
+        if (!graph.isPlanarEmbedded()) {
+            alert("Graph is not planar embedded!");
+            fulfilled = false;
+        }
+        return fulfilled;
+    }
+
     async run(runGraph = graph) {
         super.numSteps = "X";
 
@@ -19,7 +28,7 @@ class PlanarSeparatorAlgo extends Algorithm {
         triangulationAlgo.isSubAlgo = true;
         await triangulationAlgo.run();
 
-        await super.pause("Construct breadth-first search tree", "Construct tree");
+        await super.pause("Construct breadth-first search tree", "");
         let startVertex = runGraph.vertices[0];
         if (!this.isSubAlgo) {
             let startVertexNr = window.prompt("Enter start vertex number", "0");
@@ -34,7 +43,7 @@ class PlanarSeparatorAlgo extends Algorithm {
         let layers = breadthFirstSearchTree(startVertex, runGraph);
         this.showBFSTree(layers);
 
-        await super.pause("Draw layers", "First layer on top, other layers below");
+        await super.pause("Draw graph like a tree", "First layer on top, other layers below");
         this.drawLayerStructure(layers);
 
         for (var i = 0; i < layers.length; i++) {
@@ -55,7 +64,8 @@ class PlanarSeparatorAlgo extends Algorithm {
         const maxSeparatorSize = 4 * Math.sqrt(n);
         await super.pause("Check if layer μ is a separator",
             "Check if layer μ has <= 4*sqrt(n) vertices."
-            + " In this case: |μ|=" + layers[layerMyIdx].length + " <= 4*sqrt(n)=" + +maxSeparatorSize.toFixed(1) + "?");
+            + "<br> In this case: |μ|=" + layers[layerMyIdx].length + " <= 4*sqrt(n)=" 
+            + +maxSeparatorSize.toFixed(1) + "?");
         if (layers[layerMyIdx].length <= maxSeparatorSize) {
             this.rectAroundLayer(layers, layerMyIdx, "red");
             await super.pause("Layer μ is a separator",
@@ -131,15 +141,6 @@ class PlanarSeparatorAlgo extends Algorithm {
             super.onFinished();
             return null;
         }
-    }
-
-    preconditionsCheck() {
-        let fulfilled = true;
-        if (!graph.isPlanarEmbedded()) {
-            alert("Graph is not planar embedded!");
-            fulfilled = false;
-        }
-        return fulfilled;
     }
 
     showBFSTree(layers) {
@@ -264,8 +265,8 @@ class PlanarSeparatorAlgo extends Algorithm {
         let layerMinX = layers[layerIndex][0].x - 20;
         let layerMaxX = layers[layerIndex][layers[layerIndex].length - 1].x + 20;
         let width = layerMaxX - layerMinX;
-        let height = 40;
-        ctx.rect(layerMinX, layerY - 20, width, height);
+        let height = vertexRadius * 2 + 10;
+        ctx.rect(layerMinX, layerY - height/2, width, height);
         ctx.stroke();
         ctx.closePath();
     }
