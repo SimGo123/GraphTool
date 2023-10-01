@@ -46,21 +46,20 @@ class PlanarSeparatorAlgo extends Algorithm {
         }
 
         const n = runGraph.vertices.length;
-        await super.pause("Find layer my",
-            "Find layer my so that all layers below together have <= n/2="
-            + (n / 2) + " vertices, and together with my have > n/2 vertices");
+        await super.pause("Find layer μ",
+            "Find layer μ so that all layers below together have <= n/2="
+            + (n / 2) + " vertices, and together with μ have > n/2 vertices");
         let layerMyIdx = this.getLayerMy(layers);
         this.rectAroundLayer(layers, layerMyIdx, "green");
 
         const maxSeparatorSize = 4 * Math.sqrt(n);
-        await super.pause("Check if layer my is a separator",
-            "Check if layer my has <= 4*sqrt(n) vertices."
-            + " In this case: |my|=" + layers[layerMyIdx].length + " <= 4*sqrt(n)=" + +maxSeparatorSize.toFixed(1) + "?");
+        await super.pause("Check if layer μ is a separator",
+            "Check if layer μ has <= 4*sqrt(n) vertices."
+            + " In this case: |μ|=" + layers[layerMyIdx].length + " <= 4*sqrt(n)=" + +maxSeparatorSize.toFixed(1) + "?");
         if (layers[layerMyIdx].length <= maxSeparatorSize) {
             this.rectAroundLayer(layers, layerMyIdx, "red");
-            if (!this.isSubAlgo) {
-                alert('Layer ' + layerMyIdx + ' is a separator');
-            }
+            await super.pause("Layer μ is a separator",
+                "Layer μ (" + layerMyIdx + ") is a separator");
 
             let v1 = [];
             let v2 = [];
@@ -76,8 +75,8 @@ class PlanarSeparatorAlgo extends Algorithm {
         }
 
         await super.pause("Find layers m and M",
-            "Layer my was not a separator."
-            + " Now find layers m before and M after my with |m|, |M| < sqrt(n)=" + +Math.sqrt(n).toFixed(1));
+            "Layer μ was not a separator."
+            + " Now find layers m before and M after μ with |m|, |M| < sqrt(n)=" + +Math.sqrt(n).toFixed(1));
         let layersMmIndexes = this.getLayersMm(layers, layerMyIdx);
         let m_idx = layersMmIndexes[0];
         let M_idx = layersMmIndexes[1];
@@ -103,7 +102,7 @@ class PlanarSeparatorAlgo extends Algorithm {
                 + " -> Go to Case 1");
             // m u M is a separator
             await super.pause("Case 1: m u M is a separator",
-                "S = m u M, V1 = max(|A1|, |A2|, |A3|), V2=V \ {S,V1}");
+                "S = m u M, V1 = max(|A1|, |A2|, |A3|), V2=V \\ {S,V1}");
             let a_lengths = [a1.length, a2.length, a3.length];
             let max_a_idx = a_lengths.indexOf(Math.max(...a_lengths));
             let v1 = a_s[max_a_idx];
@@ -113,7 +112,6 @@ class PlanarSeparatorAlgo extends Algorithm {
                     v2.push(i);
                 }
             }
-            alert('m u M is a separator, V1=layers(' + v1 + '), V2=layers(' + v2 + ')');
             if (m_idx != -1) {
                 this.rectAroundLayer(layers, m_idx, "red");
             }
@@ -146,6 +144,7 @@ class PlanarSeparatorAlgo extends Algorithm {
 
     showBFSTree(layers) {
         console.log('layers: ' + layers.length);
+        let bfsColorSet = new ColorSet();
         for (var i = 0; i < layers.length; i++) {
             for (var j = 0; j < layers[i].length; j++) {
                 console.log(i + ' ' + layers[i][j].vertex.print());
@@ -153,14 +152,14 @@ class PlanarSeparatorAlgo extends Algorithm {
         }
         for (var i = 1; i < layers.length; i++) {
             let layer = layers[i];
-            console.log('layer ' + i + ': ' + layer.length);
             for (var j = 0; j < layer.length; j++) {
                 let bsVertex = layer[j];
-                console.log('edge from ' + bsVertex.vertex.print() + ' to ' + bsVertex.parent.print());
                 let edgeIndex = eqIndexOf(graph.edges, new Edge(bsVertex.vertex.number, bsVertex.parent.number));
                 graph.edges[edgeIndex].color = "orange";
+                bfsColorSet.addEdgeColor(graph.edges[edgeIndex], "orange");
             }
         }
+        globalColorSet = bfsColorSet;
         redrawAll();
     }
 
@@ -184,13 +183,11 @@ class PlanarSeparatorAlgo extends Algorithm {
         let width = maxPoint.x - minPoint.x;
         let height = maxPoint.y - minPoint.y;
         let layerHeight = height / layers.length;
-        console.log('width=' + width + ' height=' + height + ' layerHeight=' + layerHeight);
         $.each(layers, function (layerIndex, layer) {
             $.each(layer, function (bsVertexIndex, bsVertex) {
                 let vertexIndex = eqIndexOf(graph.vertices, bsVertex.vertex);
                 graph.vertices[vertexIndex].x = minPoint.x + width / (layer.length + 1) * (bsVertexIndex + 1);
                 graph.vertices[vertexIndex].y = minPoint.y + layerHeight * layerIndex;
-                console.log('y ' + layerHeight * layerIndex);
             });
         });
         redrawAll();
@@ -203,14 +200,15 @@ class PlanarSeparatorAlgo extends Algorithm {
         let seperatorIndex = -1;
         let verticesBefore = 0;
         $.each(layers, function (layerIndex, layer) {
-            console.log('n/2=' + n / 2 + ' verticesBefore=' + verticesBefore + ' verticesInclusive=' + (verticesBefore + layer.length));
-            console.log('layer.length=' + layer.length + ' 4*sqrt(n)=' + 4 * Math.sqrt(n));
             if (verticesBefore < n / 2 && verticesBefore + layer.length > n / 2) {
                 seperatorIndex = layerIndex;
                 return;
             }
             verticesBefore += layer.length;
         });
+        console.log('n/2=' + n / 2);
+        console.log('layer.length=' + layers[seperatorIndex].length + ' 4*sqrt(n)=' + 4 * Math.sqrt(n));
+
         return seperatorIndex;
     }
 
@@ -286,24 +284,28 @@ class PlanarSeparatorAlgo extends Algorithm {
             s_vertices = s_vertices.concat(layers[s[i]]);
         }
 
-        await super.pause("Transform back", "Transform back to original graph");
         this.transformBack();
 
+        let vertexColorSet = new ColorSet();
         for (var i = 0; i < graph.vertices.length; i++) {
             let vertex = graph.vertices[i];
             if (eqIndexOf(v1_vertices, vertex) != -1) {
-                vertex.color = "blue";
+                vertexColorSet.addVertexColor(vertex.number, "blue");
             }
             if (eqIndexOf(s_vertices, vertex) != -1) {
-                vertex.color = "red";
+                vertexColorSet.addVertexColor(vertex.number, "green");
             }
             if (eqIndexOf(v2_vertices, vertex) != -1) {
-                vertex.color = "green";
+                vertexColorSet.addVertexColor(vertex.number, "red");
             }
         }
+        globalColorSet = vertexColorSet;
         redrawAll();
 
-        super.onFinished();
+        super.onFinished(true, 
+            "S: [" + s_vertices.map(v => v.number).join(", ") + "] (green)<br>separates"
+            + "<br>V1: [" + v1_vertices.map(v => v.number).join(", ") + "] (blue)<br>from"
+            + "<br>V2: [" + v2_vertices.map(v => v.number).join(", ") + "] (red)");
 
         return [v1_vertices, s_vertices, v2_vertices];
     }
