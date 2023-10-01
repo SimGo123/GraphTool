@@ -15,7 +15,21 @@ class WeightMaxMatchingAlgo extends Algorithm {
         });
         return fulfilled;
     }
-
+    /*
+    {"canvasWidth":1069,"canvasHeight":538,"sources":[],"targets":[],"vertices":[{"x":1059,"y":250,"nr":12},{"x":1019,"y":290,"nr":13},{"x":1059,"y":290,"nr":14},{"x":385,"y":247,"nr":15},{"x":345,"y":287,"nr":16},{"x":385,"y":287,"nr":17},{"x":385,"y":371,"nr":18},{"x":345,"y":411,"nr":19},{"x":385,"y":411,"nr":20},{"x":559,"y":470,"nr":21},{"x":519,"y":510,"nr":22},{"x":559,"y":510,"nr":23},{"x":711,"y":372,"nr":24},{"x":671,"y":412,"nr":25},{"x":711,"y":412,"nr":26},{"x":559,"y":346,"nr":27},{"x":519,"y":386,"nr":28},{"x":559,"y":386,"nr":29}],"edges":[{"v1nr":12,"v2nr":15,"weight":273,"orientation":"U"},{"v1nr":18,"v2nr":16,"weight":289,"orientation":"U"},{"v1nr":19,"v2nr":21,"weight":278,"orientation":"U"},{"v1nr":24,"v2nr":22,"weight":288,"orientation":"U"},{"v1nr":25,"v2nr":13,"weight":284,"orientation":"U"},{"v1nr":26,"v2nr":20,"weight":295,"orientation":"U"},{"v1nr":27,"v2nr":14,"weight":289,"orientation":"U"},{"v1nr":23,"v2nr":28,"weight":289,"orientation":"U"},{"v1nr":29,"v2nr":17,"weight":289,"orientation":"U"},{"v1nr":12,"v2nr":13,"weight":289,"orientation":"U"},{"v1nr":13,"v2nr":14,"weight":289,"orientation":"U"},{"v1nr":12,"v2nr":14,"weight":289,"orientation":"U"},{"v1nr":15,"v2nr":16,"weight":289,"orientation":"U"},{"v1nr":16,"v2nr":17,"weight":289,"orientation":"U"},{"v1nr":15,"v2nr":17,"weight":289,"orientation":"U"},{"v1nr":18,"v2nr":19,"weight":289,"orientation":"U"},{"v1nr":19,"v2nr":20,"weight":289,"orientation":"U"},{"v1nr":18,"v2nr":20,"weight":289,"orientation":"U"},{"v1nr":21,"v2nr":22,"weight":289,"orientation":"U"},{"v1nr":22,"v2nr":23,"weight":289,"orientation":"U"},{"v1nr":21,"v2nr":23,"weight":289,"orientation":"U"},{"v1nr":24,"v2nr":25,"weight":289,"orientation":"U"},{"v1nr":25,"v2nr":26,"weight":289,"orientation":"U"},{"v1nr":24,"v2nr":26,"weight":289,"orientation":"U"},{"v1nr":27,"v2nr":28,"weight":289,"orientation":"U"},{"v1nr":28,"v2nr":29,"weight":289,"orientation":"U"},{"v1nr":27,"v2nr":29,"weight":289,"orientation":"U"}]}
+    Edge 26 20 (U)
+    Edge 27 14 (U)
+    Edge 23 28 (U)
+    Edge 29 17 (U)
+    Edge 12 13 (U)
+    id: 0 Edge 15 16 (U)
+    id: 0 Edge 18 19 (U)
+    id: 0 Edge 21 22 (U)
+    id: 0 Edge 24 25 (U)
+    id: 0
+    Planar embedd.: {"canvasWidth":1119,"canvasHeight":538,"sources":[],"targets":[],"vertices":[{"x":1109,"y":250,"nr":12},{"x":1067,"y":290,"nr":13},{"x":1028,"y":264,"nr":14},{"x":403,"y":247,"nr":15},{"x":361,"y":287,"nr":16},{"x":403,"y":287,"nr":17},{"x":403,"y":371,"nr":18},{"x":442,"y":420,"nr":19},{"x":422,"y":505,"nr":20},{"x":518,"y":440,"nr":21},{"x":550,"y":460,"nr":22},{"x":578,"y":407,"nr":23},{"x":750,"y":412,"nr":24},{"x":806,"y":413,"nr":25},{"x":727,"y":480,"nr":26},{"x":585,"y":346,"nr":27},{"x":508,"y":373,"nr":28},{"x":526,"y":330,"nr":29}],"edges":[{"v1nr":12,"v2nr":15,"weight":273,"orientation":"U"},{"v1nr":18,"v2nr":16,"weight":289,"orientation":"U"},{"v1nr":19,"v2nr":21,"weight":278,"orientation":"U"},{"v1nr":24,"v2nr":22,"weight":288,"orientation":"U"},{"v1nr":25,"v2nr":13,"weight":284,"orientation":"U"},{"v1nr":26,"v2nr":20,"weight":295,"orientation":"U"},{"v1nr":27,"v2nr":14,"weight":289,"orientation":"U"},{"v1nr":23,"v2nr":28,"weight":289,"orientation":"U"},{"v1nr":29,"v2nr":17,"weight":289,"orientation":"U"},{"v1nr":12,"v2nr":13,"weight":289,"orientation":"U"},{"v1nr":13,"v2nr":14,"weight":289,"orientation":"U"},{"v1nr":12,"v2nr":14,"weight":289,"orientation":"U"},{"v1nr":15,"v2nr":16,"weight":289,"orientation":"U"},{"v1nr":16,"v2nr":17,"weight":289,"orientation":"U"},{"v1nr":15,"v2nr":17,"weight":289,"orientation":"U"},{"v1nr":18,"v2nr":19,"weight":289,"orientation":"U"},{"v1nr":19,"v2nr":20,"weight":289,"orientation":"U"},{"v1nr":18,"v2nr":20,"weight":289,"orientation":"U"},{"v1nr":21,"v2nr":22,"weight":289,"orientation":"U"},{"v1nr":22,"v2nr":23,"weight":289,"orientation":"U"},{"v1nr":21,"v2nr":23,"weight":289,"orientation":"U"},{"v1nr":24,"v2nr":25,"weight":289,"orientation":"U"},{"v1nr":25,"v2nr":26,"weight":289,"orientation":"U"},{"v1nr":24,"v2nr":26,"weight":289,"orientation":"U"},{"v1nr":27,"v2nr":28,"weight":289,"orientation":"U"},{"v1nr":28,"v2nr":29,"weight":289,"orientation":"U"},{"v1nr":27,"v2nr":29,"weight":289,"orientation":"U"}]}
+    {"canvasWidth":906,"canvasHeight":538,"sources":[],"targets":[],"vertices":[{"x":853,"y":220,"nr":12},{"x":864,"y":290,"nr":13},{"x":750,"y":276,"nr":14},{"x":82,"y":215,"nr":15},{"x":32,"y":262,"nr":16},{"x":151,"y":262,"nr":17},{"x":183,"y":418,"nr":18},{"x":230,"y":444,"nr":19},{"x":169,"y":483,"nr":20},{"x":382,"y":417,"nr":21},{"x":445,"y":460,"nr":22},{"x":468,"y":407,"nr":23},{"x":607,"y":412,"nr":24},{"x":653,"y":413,"nr":25},{"x":642,"y":494,"nr":26},{"x":474,"y":346,"nr":27},{"x":362,"y":349,"nr":28},{"x":372,"y":286,"nr":29}],"edges":[{"v1nr":12,"v2nr":15,"weight":273,"orientation":"U"},{"v1nr":18,"v2nr":16,"weight":289,"orientation":"U"},{"v1nr":19,"v2nr":21,"weight":278,"orientation":"U"},{"v1nr":24,"v2nr":22,"weight":288,"orientation":"U"},{"v1nr":25,"v2nr":13,"weight":284,"orientation":"U"},{"v1nr":26,"v2nr":20,"weight":295,"orientation":"U"},{"v1nr":27,"v2nr":14,"weight":289,"orientation":"U"},{"v1nr":23,"v2nr":28,"weight":289,"orientation":"U"},{"v1nr":29,"v2nr":17,"weight":289,"orientation":"U"},{"v1nr":12,"v2nr":13,"weight":289,"orientation":"U"},{"v1nr":13,"v2nr":14,"weight":289,"orientation":"U"},{"v1nr":12,"v2nr":14,"weight":289,"orientation":"U"},{"v1nr":15,"v2nr":16,"weight":289,"orientation":"U"},{"v1nr":16,"v2nr":17,"weight":289,"orientation":"U"},{"v1nr":15,"v2nr":17,"weight":289,"orientation":"U"},{"v1nr":18,"v2nr":19,"weight":289,"orientation":"U"},{"v1nr":19,"v2nr":20,"weight":289,"orientation":"U"},{"v1nr":18,"v2nr":20,"weight":289,"orientation":"U"},{"v1nr":21,"v2nr":22,"weight":289,"orientation":"U"},{"v1nr":22,"v2nr":23,"weight":289,"orientation":"U"},{"v1nr":21,"v2nr":23,"weight":289,"orientation":"U"},{"v1nr":24,"v2nr":25,"weight":289,"orientation":"U"},{"v1nr":25,"v2nr":26,"weight":289,"orientation":"U"},{"v1nr":24,"v2nr":26,"weight":289,"orientation":"U"},{"v1nr":27,"v2nr":28,"weight":289,"orientation":"U"},{"v1nr":28,"v2nr":29,"weight":289,"orientation":"U"},{"v1nr":27,"v2nr":29,"weight":289,"orientation":"U"}]}
+    */
     async run() {
         super.numSteps = "X";
 
@@ -67,13 +81,18 @@ class WeightMaxMatchingAlgo extends Algorithm {
             });
             if (path != null) {
                 path.edges.forEach(edge => {
-                    loopColorSet.addEdgeColor(edge, "blue");
+                    if (eqIndexOf(maxWeightEdges, edge) != -1) {
+                        loopColorSet.addEdgeColor(edge, "purple");
+                    } else {
+                        loopColorSet.addEdgeColor(edge, "blue");
+                    }
                 });
             }
             gApostrophe.vertices.forEach(vertex => {
                 loopColorSet.addVertexColor(vertex.number, "blue");
             });
             loopColorSet.addVertexColor(v.number, "red");
+            globalColorSet = loopColorSet;
             redrawAll(loopColorSet);
             await super.pause("a", "");
             // Lösche v aus S. (oben ^)
@@ -97,6 +116,9 @@ class WeightMaxMatchingAlgo extends Algorithm {
     }
 
     async divide(toDivideGraph) {
+        redrawAll(new ColorSet(), toDivideGraph);
+        console.log('currJson',getCurrJSON(toDivideGraph));
+        await super.pause("Divide graph", "Divide graph into subgraphs with <= 5 vertices");
         const N = toDivideGraph.vertices.length;
         if (N <= 5) {
             let maxWeightEdges = this.bruteForce(toDivideGraph);
@@ -110,7 +132,12 @@ class WeightMaxMatchingAlgo extends Algorithm {
         planarSeparatorAlgo.shouldContinue = true;
         planarSeparatorAlgo.runComplete = true;
         planarSeparatorAlgo.isSubAlgo = true;
-        let result = await planarSeparatorAlgo.run(toDivideGraph);
+        let divideCopy = toDivideGraph.getCopy();
+        let graphCopy = graph.getCopy();
+        graph = toDivideGraph.getCopy();
+        let result = await planarSeparatorAlgo.run();
+        graph = graphCopy;
+        toDivideGraph = divideCopy;
         console.log('result=', result);
         if (result == null) {
             alert("No separator found, can't calculate weight max matching");
@@ -119,6 +146,8 @@ class WeightMaxMatchingAlgo extends Algorithm {
         }
         let [v1, separator, v2] = result;
         console.log('v1', v1, "separator", separator, "v2", v2);
+        redrawAll(new ColorSet(), toDivideGraph);
+        await super.pause("Q", "");
 
         let v1Graph = toDivideGraph.getSubgraph(v1);
         let v2Graph = toDivideGraph.getSubgraph(v2);
@@ -137,6 +166,7 @@ class WeightMaxMatchingAlgo extends Algorithm {
         }
         let maxWeight = 0;
         let maxWeightEdges = [];
+        let lastTrueIdx = -1;
         while (includeEdge != null) {
             // Valid if no two edges to same vertex
             let valid = true;
@@ -171,6 +201,17 @@ class WeightMaxMatchingAlgo extends Algorithm {
             }
 
             includeEdge = nextBruteForceIter(includeEdge);
+            if (includeEdge != null) {
+                for (let i = includeEdge.length - 1; i >= 0; i--) {
+                    if (includeEdge[i]) {
+                        if (lastTrueIdx != i) {
+                            console.log(i + '/' + includeEdge.length);
+                        }
+                        lastTrueIdx = i;
+                        break;
+                    }
+                }
+            }
         }
         $.each(maxWeightEdges, function (_index, edge) {
             edge.color = "red";
@@ -193,11 +234,11 @@ class WeightMaxMatchingAlgo extends Algorithm {
             console.log('v is matched');
             // V is matched -> P has to take matched edge
             return this.findWayRec(weightMaxEdges, gApostropheWithV,
-                new AlternatingPath([], 0, v), false);
+                new AlternatingPath([], 0, v, v), false);
         }
 
         return this.findWayRec(weightMaxEdges, gApostropheWithV,
-            new AlternatingPath([], 0, v), true);
+            new AlternatingPath([], 0, v, v), true);
     }
 
     findWayRec(weightMaxEdges, runGraph, currPath, lastEdgeMatched) {
@@ -213,10 +254,20 @@ class WeightMaxMatchingAlgo extends Algorithm {
         });
         // No edges left to pick
         if (considerableEdges.length == 0) {
+            if (currPath.edges.length == 0) {
+                return null;
+            }
             let lastPathEdge = currPath.edges[currPath.edges.length - 1];
             let lastPathEdgeMatched = eqIndexOf(weightMaxEdges, lastPathEdge) != -1;
             let isEndMatched = this.isVertexMatched(currPath.end, weightMaxEdges);
             if (!isEndMatched || isEndMatched && lastPathEdgeMatched) {
+                if (currPath.end.number == currPath.start.number) {
+                    let firstPathEdge = currPath.edges[0];
+                    let firstPathEdgeMatched = eqIndexOf(weightMaxEdges, firstPathEdge) != -1;
+                    if (firstPathEdgeMatched == lastPathEdgeMatched) {
+                        return null;
+                    }
+                }
                 currPath.valid = true;
             }
             return currPath;
@@ -232,7 +283,7 @@ class WeightMaxMatchingAlgo extends Algorithm {
             let newV = runGraph.getVertexByNumber(newVNr);
             if (eqIndexOf(currPath.edges, edge) == -1) {
                 let res = this.findWayRec(weightMaxEdges, runGraph,
-                    new AlternatingPath(newWay, newWeight, newV), !lastEdgeMatched);
+                    new AlternatingPath(newWay, newWeight, currPath.start, newV), !lastEdgeMatched);
                 if (res != null && res.valid
                     && this.getRelevantWeight(res.edges, weightMaxEdges) > maxWeight) {
                     maxPath = res;
@@ -291,9 +342,10 @@ class WeightMaxMatchingAlgo extends Algorithm {
 }
 
 class AlternatingPath {
-    constructor(edges, weight, end) {
+    constructor(edges, weight, start, end) {
         this.edges = edges;
         this.weight = weight;
+        this.start = start;
         this.end = end;
         this.valid = false;
     }
@@ -362,16 +414,18 @@ class MixedMaxCutAlgo extends Algorithm {
         weightMaxMatchAlgo.isSubAlgo = true;
         // TODO await weightMaxMatchAlgo.run();
         // console.log('Starting brute force...');
-        // let weightMaxEdges = weightMaxMatchAlgo.bruteForce(graph);
-        // let wmeString = "";
-        // weightMaxEdges.forEach(function(edge) {
-        //     wmeString += edge.print() + " ";
-        // });
-        // console.log(wmeString);
+        let wmeColorSet = new ColorSet();
+        let wmeBf = weightMaxMatchAlgo.bruteForce(graph);
+        let wmeString = "";
+        wmeBf.forEach(function (edge) {
+            wmeColorSet.addEdgeColor(edge, "red");
+            wmeString += edge.print() + " ";
+        });
+        console.log(wmeString);
         // console.log('...finished brute force');
 
         // Weight max edges for the mixed-max-graph
-        // TODO Delte when non-brute-force weight max matching is implemented
+        // TODO Delete when non-brute-force weight max matching is implemented
         let weightMaxEdges = [];
         weightMaxEdges.push(new Edge(19, 25));
         weightMaxEdges.push(new Edge(13, 26));
@@ -384,10 +438,10 @@ class MixedMaxCutAlgo extends Algorithm {
         weightMaxEdges.push(new Edge(23, 24));
         for (let i = 0; i < graph.edges.length; i++) {
             if (eqIndexOf(weightMaxEdges, graph.edges[i]) != -1) {
-                graph.edges[i].color = "red";
+                wmeColorSet.addEdgeColor(graph.edges[i], "red");
             }
         }
-        redrawAll();
+        redrawAll(wmeColorSet);
 
         await super.pause("Calculate weight max. 2-factor in G'",
             "C' = E' - M is a weight max. 2-factor in G'");

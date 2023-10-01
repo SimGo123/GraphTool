@@ -763,14 +763,14 @@ class Graph {
     getSubgraph(vertices) {
         let subgraph = new Graph();
         $.each(vertices, function (_index, vertex) {
-            subgraph.addVertex(vertex);
+            subgraph.addVertex(new Vertex(vertex.x, vertex.y, vertex.number));
         });
         for (let i = 0; i < this.edges.length; i++) {
             let edge = this.edges[i];
             let v1 = this.getVertexByNumber(edge.v1nr);
             let v2 = this.getVertexByNumber(edge.v2nr);
             if (eqIndexOf(vertices, v1) != -1 && eqIndexOf(vertices, v2) != -1) {
-                subgraph.addEdge(edge);
+                subgraph.addEdge(new Edge(edge.v1nr, edge.v2nr, edge.id, edge.weight, edge.orientation));
             }
         }
         return subgraph;

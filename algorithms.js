@@ -190,7 +190,7 @@ class TriangulationAlgo extends Algorithm {
                 for (var i = 2; i < verticesOnFacet.length - 1; i++) {
                     var edge = new Edge(verticesOnFacet[0], verticesOnFacet[i], index + "_" + i);
                     graph.addEdge(edge);
-                    console.log("added edge " + edge.print());
+                    // console.log("added edge " + edge.print());
                     var newFacet = [
                         edge, new Edge(verticesOnFacet[i], verticesOnFacet[i - 1]),
                         prevEdge];
@@ -207,12 +207,12 @@ class TriangulationAlgo extends Algorithm {
         });
 
         $.each(newFacets, function (_index, facet) {
-            console.log("Facet " + _index);
+            // console.log("Facet " + _index);
             let str = "";
             $.each(facet, function (_index, edge) {
                 str += edge.print() + " ";
             });
-            console.log(str);
+            // console.log(str);
         });
         redrawAll();
 
@@ -227,7 +227,7 @@ class TriangulationAlgo extends Algorithm {
         $.each(toDelete, function (_index, deleteElem) {
             graph.deleteEdge(deleteElem);
             let str = mEdge ? "multi-edge " : "loop";
-            console.log("deleted " + str + " " + deleteElem.print());
+            // console.log("deleted " + str + " " + deleteElem.print());
             for (var i = 0; i < newFacets.length; i++) {
                 let facet = newFacets[i];
                 let index = eqIndexOf(facet, deleteElem);
@@ -240,8 +240,8 @@ class TriangulationAlgo extends Algorithm {
                             if (index2 != -1) {
                                 let id2 = facet2[index2].id;
                                 if (id == id2) {
-                                    console.log("found both facets w/" + str + ": "
-                                        + i + " and " + j);
+                                    // console.log("found both facets w/" + str + ": "
+                                    //     + i + " and " + j);
                                     newFacets = self.edgeExchange(
                                         facet, index, facet2, index2,
                                         newFacets, deleteElem, mEdge);
@@ -258,22 +258,22 @@ class TriangulationAlgo extends Algorithm {
                     }
                 }
             }
-            console.log('after removing ' + str + ' ' + deleteElem.print());
-            $.each(newFacets, function (_index, facet) {
-                console.log("Facet " + _index);
-                let str = "";
-                $.each(facet, function (_index, edge) {
-                    str += edge.print() + " ";
-                });
-                console.log(str);
-            });
+            // console.log('after removing ' + str + ' ' + deleteElem.print());
+            // $.each(newFacets, function (_index, facet) {
+            //     console.log("Facet " + _index);
+            //     let str = "";
+            //     $.each(facet, function (_index, edge) {
+            //         str += edge.print() + " ";
+            //     });
+            //     console.log(str);
+            // });
         });
 
         if (mEdge) {
             $.each(noIdOccured, function (_index, edge) {
                 if (eqIndexOf(graph.edges, edge) == -1) {
                     graph.addEdge(edge);
-                    console.log("re-added original edge " + edge.print());
+                    // console.log("re-added original edge " + edge.print());
                 }
             });
         }
@@ -293,18 +293,18 @@ class TriangulationAlgo extends Algorithm {
         safeArrDel(verticesOnFacet2, deleteElem.v2nr);
         let newEdge = new Edge(verticesOnFacet[0], verticesOnFacet2[0]);
         graph.addEdge(newEdge);
-        console.log("added edge " + newEdge.print());
+        // console.log("added edge " + newEdge.print());
 
         if (mEdge) {
             let eIdxOne = eqIndexOf(facet, new Edge(verticesOnFacet[0], deleteElem.v1nr));
             let eIdxTwo = eqIndexOf(facet2, new Edge(deleteElem.v1nr, verticesOnFacet2[0]));
-            console.log('eIdxOne=' + eIdxOne + ' eIdxTwo=' + eIdxTwo);
+            // console.log('eIdxOne=' + eIdxOne + ' eIdxTwo=' + eIdxTwo);
             let newFacet = [
                 newEdge,
                 facet[eIdxOne],
                 facet2[eIdxTwo]];
             newFacets.push(newFacet);
-            console.log("added facet " + printArr(newFacet));
+            // console.log("added facet " + printArr(newFacet));
             eIdxOne = eqIndexOf(facet, new Edge(verticesOnFacet[0], deleteElem.v2nr));
             eIdxTwo = eqIndexOf(facet2, new Edge(deleteElem.v2nr, verticesOnFacet2[0]));
             let newFacet2 = [
@@ -312,7 +312,7 @@ class TriangulationAlgo extends Algorithm {
                 facet[eIdxOne],
                 facet2[eIdxTwo]];
             newFacets.push(newFacet2);
-            console.log("added facet " + printArr(newFacet2));
+            // console.log("added facet " + printArr(newFacet2));
             newFacets.splice(newFacets.indexOf(facet), 1);
             newFacets.splice(newFacets.indexOf(facet2), 1);
         } else {
@@ -323,11 +323,11 @@ class TriangulationAlgo extends Algorithm {
             newFacet[edgeToReplaceIdx] = newEdge;
             safeArrEqDel(newFacet, new Edge(newEdge.v2nr, deleteElem.v2nr), true);
             newFacets.push(newFacet);
-            console.log('added facet ' + printArr(newFacet));
+            // console.log('added facet ' + printArr(newFacet));
 
             let newFacet2 = [newEdge, new Edge(newEdge.v2nr, deleteElem.v1nr), new Edge(deleteElem.v1nr, newEdge.v1nr)];
             newFacets.push(newFacet2);
-            console.log('added facet ' + printArr(newFacet2));
+            // console.log('added facet ' + printArr(newFacet2));
 
             newFacets.splice(newFacets.indexOf(facet), 1);
             newFacets.splice(newFacets.indexOf(facet2), 1);
@@ -396,6 +396,7 @@ class PlanarSeparatorAlgo extends Algorithm {
             + " In this case: |my|=" + layers[layerMyIdx].length + " <= 4*sqrt(n)=" + +maxSeparatorSize.toFixed(1) + "?");
         if (layers[layerMyIdx].length <= maxSeparatorSize) {
             this.rectAroundLayer(layers, layerMyIdx, "red");
+            console.log('Layer ' + layerMyIdx + ' is a separator');
             if (!this.isSubAlgo) {
                 alert('Layer ' + layerMyIdx + ' is a separator');
             }
@@ -452,6 +453,7 @@ class PlanarSeparatorAlgo extends Algorithm {
                 }
             }
             alert('m u M is a separator, V1=layers(' + v1 + '), V2=layers(' + v2 + ')');
+            console.log('m u M is a separator, V1=layers(' + v1 + '), V2=layers(' + v2 + ')');
             if (m_idx != -1) {
                 this.rectAroundLayer(layers, m_idx, "red");
             }
@@ -467,6 +469,7 @@ class PlanarSeparatorAlgo extends Algorithm {
                 + " In this case: |A2|=" + a2_len + " > 2/3 * n=" + +((2 / 3) * n).toFixed(1)
                 + " -> Go to Case 2");
             alert('Case 2: Not implemented yet');
+            console.log('Case 2: Not implemented yet');
 
             super.onFinished();
             return null;
@@ -475,6 +478,7 @@ class PlanarSeparatorAlgo extends Algorithm {
 
     preconditionsCheck() {
         let fulfilled = true;
+        console.log('is planar embedded: ' + graph.isPlanarEmbedded());
         if (!graph.isPlanarEmbedded()) {
             alert("Graph is not planar embedded!");
             fulfilled = false;
@@ -483,18 +487,18 @@ class PlanarSeparatorAlgo extends Algorithm {
     }
 
     showBFSTree(layers) {
-        console.log('layers: ' + layers.length);
-        for (var i = 0; i < layers.length; i++) {
-            for (var j = 0; j < layers[i].length; j++) {
-                console.log(i + ' ' + layers[i][j].vertex.print());
-            }
-        }
+        // console.log('layers: ' + layers.length);
+        // for (var i = 0; i < layers.length; i++) {
+        //     for (var j = 0; j < layers[i].length; j++) {
+        //         console.log(i + ' ' + layers[i][j].vertex.print());
+        //     }
+        // }
         for (var i = 1; i < layers.length; i++) {
             let layer = layers[i];
-            console.log('layer ' + i + ': ' + layer.length);
+            // console.log('layer ' + i + ': ' + layer.length);
             for (var j = 0; j < layer.length; j++) {
                 let bsVertex = layer[j];
-                console.log('edge from ' + bsVertex.vertex.print() + ' to ' + bsVertex.parent.print());
+                // console.log('edge from ' + bsVertex.vertex.print() + ' to ' + bsVertex.parent.print());
                 let edgeIndex = eqIndexOf(graph.edges, new Edge(bsVertex.vertex.number, bsVertex.parent.number));
                 graph.edges[edgeIndex].color = "orange";
             }
@@ -540,15 +544,16 @@ class PlanarSeparatorAlgo extends Algorithm {
         const n = graph.vertices.length;
         let seperatorIndex = -1;
         let verticesBefore = 0;
-        $.each(layers, function (layerIndex, layer) {
+        for (let i = 0; i < layers.length; i++) {
+            let layer = layers[i];
             console.log('n/2=' + n / 2 + ' verticesBefore=' + verticesBefore + ' verticesInclusive=' + (verticesBefore + layer.length));
             console.log('layer.length=' + layer.length + ' 4*sqrt(n)=' + 4 * Math.sqrt(n));
             if (verticesBefore < n / 2 && verticesBefore + layer.length > n / 2) {
-                seperatorIndex = layerIndex;
-                return;
+                seperatorIndex = i;
+                break;
             }
             verticesBefore += layer.length;
-        });
+        }
         return seperatorIndex;
     }
 
