@@ -43,16 +43,18 @@ class PlanarityTestAlgo extends Algorithm {
             });
             this.drawTwoGraphs(graph, hGraph,
                 new ColorSet("#D3D3D3", "#D3D3D3", "red"), colorSet);
-            await super.pause("Graph is planar",
-                "H is bipartite, therefore there is a LR decomposition of G, therefore G is planar");
+            super.onFinished(true, "Graph is planar because the conflict graph H is bipartite");
+            // await super.pause("Graph is planar",
+            //     "H is bipartite, therefore there is a LR decomposition of G, therefore G is planar");
         } else {
-            await super.pause("Graph is not planar",
-                "H is not bipartite, therefore there is no LR decomposition of G, therefore G isn't planar");
+            super.onFinished(false, "Graph is not planar because the conflict graph H is not bipartite");
+            // await super.pause("Graph is not planar",
+            //     "H is not bipartite, therefore there is no LR decomposition of G, therefore G isn't planar");
         }
         graph = originalGraph;
         redrawAll();
 
-        super.onFinished();
+        // super.onFinished();
     }
 
     async preparation(dfsColor) {

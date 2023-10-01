@@ -35,6 +35,8 @@ With PlanarGraphLab, you can:
 - Mixed Max Cut
 - Max Flow
 - Disjunct S-T Paths
+- LR-Test for Planarity
+- Disjunct paths between (source,target)-pairs (Okamura-Seymour)
 
 ## JSON Format
 1. Select "JSON"
