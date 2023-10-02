@@ -41,6 +41,7 @@ class PlanarSeparatorAlgo extends Algorithm {
         }
         console.log('start vertex: ' + startVertex.print());
         let bfsLayers = breadthFirstSearchTree(startVertex, runGraph);
+        let beforeTreeGraph = graph.getCopy();
         this.showBFSTree(bfsLayers);
 
         await super.pause("Draw graph like a tree", "First layer on top, other layers below");
@@ -82,7 +83,10 @@ class PlanarSeparatorAlgo extends Algorithm {
                 }
             }
 
-            return this.transformBackAndGetReturnValues(layers, v1, [layerMyIdx], v2);
+            return this.transformBackAndGetReturnValues(layers, 
+                this.layersToVertices(v1), 
+                this.layersToVertices([layerMyIdx]), 
+                this.layersToVertices(v2));
         }
 
         await super.pause("Find layers m and M",
@@ -130,7 +134,10 @@ class PlanarSeparatorAlgo extends Algorithm {
                 this.rectAroundLayer(layers, M_idx, "red");
             }
 
-            return this.transformBackAndGetReturnValues(layers, v1, [m_idx, M_idx], v2);
+            return this.transformBackAndGetReturnValues(
+                layers, this.layersToVertices(v1), 
+                this.layersToVertices([m_idx, M_idx]), 
+                this.layersToVertices(v2));
         } else {
             // Case 2
             await super.pause("Check if m u M is a separator",
@@ -172,7 +179,14 @@ class PlanarSeparatorAlgo extends Algorithm {
             let [x, y] = this.impLemmaNonTreeEdge(newLayers);
 
             await super.pause("Apply Important Lemma", "");
-            await this.importantLemma(newLayers, x, y);
+            let [u1, s2, u2] = await this.importantLemma(newLayers, x, y, beforeTreeGraph);
+            // S = S2 u m u M
+            let s = s2.concat(m_idx != -1 ? layers[m_idx] : [])
+                .concat(M_idx != -1 ? layers[M_idx] : []);
+            let v1 = u1.length >= u2.length ? u1 : u2;
+            let v2 = graph.vertices.filter(
+                v => eqIndexOf(v1, v) == -1 && eqIndexOf(s, v) == -1);
+            return this.transformBackAndGetReturnValues(layers, v1, s2, v2);
 
             super.onFinished();
             return null;
@@ -182,10 +196,12 @@ class PlanarSeparatorAlgo extends Algorithm {
     /**
      * 
      * @param {BreadthSearchVertex[][]} layers 
-     * @param {number} x Number of vertex x on non-tree edge {x, y}
-     * @param {number} y Number of vertex y on non-tree edge {x, y}
+     * @param {Vertex} x Number of vertex x on non-tree edge {x, y}
+     * @param {Vertex} y Number of vertex y on non-tree edge {x, y}
+     * @param {Graph} beforeTreeGraph Graph before the BFS tree was constructed
+     * @returns {[Vertex[], Vertex[], Vertex[]]} [U1, S, U2]
      */
-    async importantLemma(layers, x, y) {
+    async importantLemma(layers, x, y, beforeTreeGraph) {
         /*
         Wir w ¨ahlen eine Nichtbaumkane {x, y} aus, wobei
         |Inneres(Kx,y )| ≥ | ¨Außeres(Kx,y )|
@@ -193,13 +209,88 @@ class PlanarSeparatorAlgo extends Algorithm {
         3 n - fertig!
         Wir ersetzen die ausgew ¨ahlte Kante {x, y} durch eine andere
         Nichtbaumkante, sodass das Innere kleiner wird und das ¨Außere nicht
-        ¨uber 2
-        3 n w ¨achstG ist ein eingebetteter Graph. Die Kante {x, y} begrenzt zwei
+        ¨uber 2/3 n w ¨achst
+        G ist ein eingebetteter (!!!!!) Graph. Die Kante {x, y} begrenzt zwei
         Dreiecke, von denen eins im Inneren(Kx,y ) liegt - Dreieck xyt
         Zwei F ¨alle:
         1. Eine der {x, t}, {t, y} ist eine Baumkante,
         2. {x, t} und {t, y} sind beides Nichtbaumkanten
         */
+        for (let i = 0; i < graph.vertices.length; i++) {
+            let vertex = graph.vertices[i];
+            let idxInBeforeGraph = eqIndexOf(beforeTreeGraph.vertices, vertex);
+            if (idxInBeforeGraph != -1) {
+                vertex.x = beforeTreeGraph.vertices[idxInBeforeGraph].x;
+                vertex.y = beforeTreeGraph.vertices[idxInBeforeGraph].y;
+            }
+        }
+        redrawAll();
+        await super.pause("Important Lemma", "Important Lemma");
+        let [innerVertices, circleVertices] = this.calcInnerAndCircleVertices(layers, x, y);
+        let N = graph.vertices.length;
+        if (innerVertices.length <= (2 / 3) * N) {
+            let outerVertices = graph.vertices.filter(v => eqIndexOf(innerVertices, v) == -1
+                && eqIndexOf(circleVertices, v) == -1);
+            return [innerVertices, circleVertices, outerVertices];
+        }
+        // Search triangle xyt on the inside
+        let t = null;
+        let isCircleVertex = false;
+        for (let i = 0; i < innerVertices.length; i++) {
+            let innerVertex = innerVertices[i];
+            let xt = graph.getEdgeByStartEnd(x.number, innerVertex.number);
+            let yt = graph.getEdgeByStartEnd(y.number, innerVertex.number);
+            if (xt != null && yt != null) {
+                t = innerVertex;
+                break;
+            }
+        }
+        if (t == null) {
+            for (let i = 0; i < circleVertices.length; i++) {
+                let circleVertex = circleVertices[i];
+                let xt = graph.getEdgeByStartEnd(x.number, circleVertex.number);
+                let yt = graph.getEdgeByStartEnd(y.number, circleVertex.number);
+                if (xt != null && yt != null) {
+                    t = circleVertex;
+                    isCircleVertex = true;
+                    break;
+                }
+            }
+        }
+        if (t == null) {
+            console.error("No triangle xyt found!");
+            return;
+        }
+        console.log('t: ', t);
+        let xLayer = layers.findIndex(layer => layer.some(bsVertex => bsVertex.vertex.eq(x)));
+        let yLayer = layers.findIndex(layer => layer.some(bsVertex => bsVertex.vertex.eq(y)));
+        let tLayer = layers.findIndex(layer => layer.some(bsVertex => bsVertex.vertex.eq(t)));
+        let isXtTreeEdge = xLayer != tLayer;
+        let isYtTreeEdge = yLayer != tLayer;
+        if (isXtTreeEdge && !isYtTreeEdge) {
+            // Case 1
+            return this.importantLemma(layers, y, t, beforeTreeGraph);
+        } else if (isYtTreeEdge && !isXtTreeEdge) {
+            // Case 1
+            return this.importantLemma(layers, x, t, beforeTreeGraph);
+        } else if (!isXtTreeEdge && !isYtTreeEdge) {
+            // Case 2
+            console.log('Important Lemma Case 2');
+            /*
+            Sei |Inneres(Kx,t )| ≥ |Inneres(Kt,y )|
+            Ersetze {x, y} durch {x, t}
+            */
+            // Might fail if x/y and t are on different layers
+            let [innerVerticesXt, circleVerticesXt] = this.calcInnerAndCircleVertices(layers, x, t);
+            let [innerVerticesYt, circleVerticesYt] = this.calcInnerAndCircleVertices(layers, y, t);
+            if (innerVerticesXt.length >= innerVerticesYt.length) {
+                return this.importantLemma(layers, x, t, beforeTreeGraph);
+            } else {
+                return this.importantLemma(layers, y, t, beforeTreeGraph);
+            }
+        } else {
+            console.error("Both {x, t} and {y, t} are tree edges!");
+        }
     }
 
     /**
@@ -221,11 +312,12 @@ class PlanarSeparatorAlgo extends Algorithm {
                     }
                     let [innerVertices, circleVertices]
                         = this.calcInnerAndCircleVertices(layers, bsVertex.vertex, bsVertex2.vertex);
-                    let outerVertices = graph.vertices.length - innerVertices - circleVertices;
-                    console.log('Edge ' + bsVertex.vertex.number + ' ' + bsVertex2.vertex.number
-                        + ' has ' + innerVertices + ' inner vertices and ' + outerVertices + ' outer vertices'
-                        + ' as well as ' + circleVertices + ' circle vertices');
-                    if (innerVertices >= outerVertices) {
+                    let innerVerticesCount = innerVertices.length;
+                    let outerVerticesCount = graph.vertices.length - innerVerticesCount - circleVertices.length;
+                    // console.log('Edge ' + bsVertex.vertex.number + ' ' + bsVertex2.vertex.number
+                    //     + ' has ' + innerVertices + ' inner vertices and ' + outerVertices + ' outer vertices'
+                    //     + ' as well as ' + circleVertices + ' circle vertices');
+                    if (innerVerticesCount >= outerVerticesCount) {
                         return [bsVertex.vertex, bsVertex2.vertex];
                     }
                 }
@@ -239,26 +331,30 @@ class PlanarSeparatorAlgo extends Algorithm {
      * @param {BreadthSearchVertex[][]} layers 
      * @param {Vertex} x 
      * @param {Vertex} y 
-     * @returns {[number, number]} [#innerVertices, #circleVertices]
+     * @returns {[Vertex[], Vertex[]]} [innerVertices, circleVertices]
      */
     calcInnerAndCircleVertices(layers, x, y) {
+        console.log('x: ', x, 'y: ', y);
         let parentIdxInHigherLevelMap = layers.map((layer, i) => layer.map(bsVertex => {
             return i == 0 ? -1 : eqIndexOf(layers[i - 1], bsVertex.parent);
         }));
-        let innerVertices = 0;
-        let circleVertices = 0;
-        let v1LayerIdx = layers.findIndex(layer => layer.some(bsVertex => bsVertex.eq(x)));
-        let v2LayerIdx = layers.findIndex(layer => layer.some(bsVertex => bsVertex.eq(y)));
+        let innerVertices = [];
+        let circleVertices = [];
+        let v1LayerIdx = layers.findIndex(layer => layer.some(bsVertex => bsVertex.vertex.eq(x)));
+        let v2LayerIdx = layers.findIndex(layer => layer.some(bsVertex => bsVertex.vertex.eq(y)));
         if (v1LayerIdx != v2LayerIdx) {
             console.error("x and y are not on the same layer!");
             return;
         }
         let layerIdx = v1LayerIdx;
-        let v1Idx = layers[layerIdx].findIndex(bsVertex => bsVertex.eq(x));
-        let v2Idx = layers[layerIdx].findIndex(bsVertex => bsVertex.eq(y));
+        let v1Idx = layers[layerIdx].findIndex(bsVertex => bsVertex.vertex.eq(x));
+        let v2Idx = layers[layerIdx].findIndex(bsVertex => bsVertex.vertex.eq(y));
         while (v1Idx != v2Idx) {
-            innerVertices += (v2Idx - v1Idx - 1);
-            circleVertices += 2;
+            for (let i = v1Idx + 1; i < v2Idx; i++) {
+                innerVertices.push(layers[layerIdx][i].vertex);
+            }
+            circleVertices.push(layers[layerIdx][v1Idx].vertex);
+            circleVertices.push(layers[layerIdx][v2Idx].vertex);
             v1Idx = parentIdxInHigherLevelMap[layerIdx][v1Idx];
             v2Idx = parentIdxInHigherLevelMap[layerIdx][v2Idx];
             layerIdx--;
@@ -267,7 +363,7 @@ class PlanarSeparatorAlgo extends Algorithm {
                 break;
             }
         }
-        circleVertices += 1; // Parent
+        circleVertices.push(layers[layerIdx][v1Idx].vertex);
         return [innerVertices, circleVertices];
     }
 
@@ -417,19 +513,27 @@ class PlanarSeparatorAlgo extends Algorithm {
         ctx.closePath();
     }
 
-    async transformBackAndGetReturnValues(layers, v1, s, v2) {
-        let v1_vertices = [];
-        for (var i = 0; i < v1.length; i++) {
-            v1_vertices = v1_vertices.concat(layers[v1[i]]);
+    layersToVertices(layers, layerIndexes) {
+        let vertices = [];
+        for (var i = 0; i < layerIndexes.length; i++) {
+            vertices = vertices.concat(layers[layerIndexes[i]]);
         }
-        let v2_vertices = [];
-        for (var i = 0; i < v2.length; i++) {
-            v2_vertices = v2_vertices.concat(layers[v2[i]]);
-        }
-        let s_vertices = [];
-        for (var i = 0; i < s.length; i++) {
-            s_vertices = s_vertices.concat(layers[s[i]]);
-        }
+        return vertices;
+    }
+
+    async transformBackAndGetReturnValues(layers, v1_vertices, s_vertices, v2_vertices) {
+        // let v1_vertices = [];
+        // for (var i = 0; i < v1.length; i++) {
+        //     v1_vertices = v1_vertices.concat(layers[v1[i]]);
+        // }
+        // let v2_vertices = [];
+        // for (var i = 0; i < v2.length; i++) {
+        //     v2_vertices = v2_vertices.concat(layers[v2[i]]);
+        // }
+        // let s_vertices = [];
+        // for (var i = 0; i < s.length; i++) {
+        //     s_vertices = s_vertices.concat(layers[s[i]]);
+        // }
 
         this.transformBack();
 
