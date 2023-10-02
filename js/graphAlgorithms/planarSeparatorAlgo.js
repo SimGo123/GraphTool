@@ -40,16 +40,17 @@ class PlanarSeparatorAlgo extends Algorithm {
             });
         }
         console.log('start vertex: ' + startVertex.print());
-        let layers = breadthFirstSearchTree(startVertex, runGraph);
-        this.showBFSTree(layers);
+        let bfsLayers = breadthFirstSearchTree(startVertex, runGraph);
+        this.showBFSTree(bfsLayers);
 
         await super.pause("Draw graph like a tree", "First layer on top, other layers below");
-        this.drawLayerStructure(layers);
+        this.drawLayerStructure(bfsLayers);
 
-        for (var i = 0; i < layers.length; i++) {
+        let layers = [];
+        for (var i = 0; i < bfsLayers.length; i++) {
             let vertexLayer = [];
-            for (var j = 0; j < layers[i].length; j++) {
-                vertexLayer.push(layers[i][j].vertex);
+            for (var j = 0; j < bfsLayers[i].length; j++) {
+                vertexLayer.push(bfsLayers[i][j].vertex);
             }
             layers[i] = vertexLayer;
         }
@@ -64,7 +65,7 @@ class PlanarSeparatorAlgo extends Algorithm {
         const maxSeparatorSize = 4 * Math.sqrt(n);
         await super.pause("Check if layer μ is a separator",
             "Check if layer μ has <= 4*sqrt(n) vertices."
-            + "<br> In this case: |μ|=" + layers[layerMyIdx].length + " <= 4*sqrt(n)=" 
+            + "<br> In this case: |μ|=" + layers[layerMyIdx].length + " <= 4*sqrt(n)="
             + +maxSeparatorSize.toFixed(1) + "?");
         if (layers[layerMyIdx].length <= maxSeparatorSize) {
             this.rectAroundLayer(layers, layerMyIdx, "red");
@@ -108,8 +109,8 @@ class PlanarSeparatorAlgo extends Algorithm {
             console.log('Case 1');
             await super.pause("Check if m u M is a separator",
                 "Check if A2 (all layers between m and M) has <= 2/3 * n vertices."
-                + " In this case: |A2|=" + a2_len + " <= 2/3 * n=" + +((2 / 3) * n).toFixed(1)
-                + " -> Go to Case 1");
+                + "<br> In this case: |A2|=" + a2_len + " <= 2/3 * n=" + +((2 / 3) * n).toFixed(1)
+                + "<br> -> Go to Case 1");
             // m u M is a separator
             await super.pause("Case 1: m u M is a separator",
                 "S = m u M, V1 = max(|A1|, |A2|, |A3|), V2=V \\ {S,V1}");
@@ -134,21 +135,167 @@ class PlanarSeparatorAlgo extends Algorithm {
             // Case 2
             await super.pause("Check if m u M is a separator",
                 "Check if A2 (all layers between m and M) has <= 2/3 * n vertices."
-                + " In this case: |A2|=" + a2_len + " > 2/3 * n=" + +((2 / 3) * n).toFixed(1)
-                + " -> Go to Case 2");
-            alert('Case 2: Not implemented yet');
+                + "<br> In this case: |A2|=" + a2_len + " > 2/3 * n=" + +((2 / 3) * n).toFixed(1)
+                + "<br> -> Go to Case 2");
+
+            await super.pause("Prepare for application of Important Lemma",
+                "Combine m and all layers above into a single vertex"
+                + "<br> Delete layer M and all layers below");
+            let newLayers = [];
+            let case2Vertices = [];
+            if (m_idx != -1) {
+                let newVertex = new Vertex(bfsLayers[0][0].vertex.x, bfsLayers[0][0].vertex.y);
+                newLayers.push([new BreadthSearchVertex(newVertex, null)]);
+                case2Vertices.push(newVertex);
+                graph.addVertex(newVertex);
+            }
+            let end = M_idx != -1 ? M_idx : bfsLayers.length;
+            for (var i = m_idx + 1; i < end; i++) {
+                newLayers.push(bfsLayers[i]);
+                for (var j = 0; j < bfsLayers[i].length; j++) {
+                    case2Vertices.push(bfsLayers[i][j].vertex);
+                }
+            }
+            if (m_idx != -1) {
+                for (var i = 0; i < newLayers[1].length; i++) {
+                    newLayers[1][i].parent = newLayers[0][0];
+                    graph.addEdge(new Edge(
+                        newLayers[0][0].vertex.number, newLayers[1][i].vertex.number));
+                }
+            }
+            graph = graph.getSubgraph(case2Vertices);
+            console.log('newLayers: ', newLayers);
+            this.drawLayerStructure(newLayers);
+
+            await super.pause("Precalculations for Important Lemma", "");
+            this.impLemmaPrecalc(newLayers);
+            let [x, y] = this.impLemmaNonTreeEdge(newLayers);
+
+            await super.pause("Apply Important Lemma", "");
+            await this.importantLemma(newLayers, x, y);
 
             super.onFinished();
             return null;
         }
     }
 
+    /**
+     * 
+     * @param {BreadthSearchVertex[][]} layers 
+     * @param {number} x Number of vertex x on non-tree edge {x, y}
+     * @param {number} y Number of vertex y on non-tree edge {x, y}
+     */
+    async importantLemma(layers, x, y) {
+        /*
+        Wir w ¨ahlen eine Nichtbaumkane {x, y} aus, wobei
+        |Inneres(Kx,y )| ≥ | ¨Außeres(Kx,y )|
+        Wenn zus ¨atzlich gilt |Inneres(Kx,y )| ≤ 2
+        3 n - fertig!
+        Wir ersetzen die ausgew ¨ahlte Kante {x, y} durch eine andere
+        Nichtbaumkante, sodass das Innere kleiner wird und das ¨Außere nicht
+        ¨uber 2
+        3 n w ¨achstG ist ein eingebetteter Graph. Die Kante {x, y} begrenzt zwei
+        Dreiecke, von denen eins im Inneren(Kx,y ) liegt - Dreieck xyt
+        Zwei F ¨alle:
+        1. Eine der {x, t}, {t, y} ist eine Baumkante,
+        2. {x, t} und {t, y} sind beides Nichtbaumkanten
+        */
+    }
+
+    /**
+     * Finds a non-tree edge {x, y} so that the number of inner vertices >= outer vertices
+     * 
+     * @param {BreadthSearchVertex[][]} layers 
+     * @returns {BreadthSearchVertex[]} The two vertices on the non-tree edge
+     *         so that the number of inner vertices >= outer vertices
+     */
+    impLemmaNonTreeEdge(layers) {
+        for (let i = 1; i < layers.length; i++) {
+            for (let j = 0; j < layers[i].length; j++) {
+                let bsVertex = layers[i][j];
+                for (let k = j + 1; k < layers[i].length; k++) {
+                    let bsVertex2 = layers[i][k];
+                    let edgeIndex = eqIndexOf(graph.edges, new Edge(bsVertex.vertex.number, bsVertex2.vertex.number));
+                    if (edgeIndex == -1) {
+                        continue;
+                    }
+                    let [innerVertices, circleVertices]
+                        = this.calcInnerAndCircleVertices(layers, bsVertex.vertex, bsVertex2.vertex);
+                    let outerVertices = graph.vertices.length - innerVertices - circleVertices;
+                    console.log('Edge ' + bsVertex.vertex.number + ' ' + bsVertex2.vertex.number
+                        + ' has ' + innerVertices + ' inner vertices and ' + outerVertices + ' outer vertices'
+                        + ' as well as ' + circleVertices + ' circle vertices');
+                    if (innerVertices >= outerVertices) {
+                        return [bsVertex.vertex, bsVertex2.vertex];
+                    }
+                }
+            }
+        }
+        console.error("No non-tree edge matching the requirements found!");
+    }
+
+    /**
+     * 
+     * @param {BreadthSearchVertex[][]} layers 
+     * @param {Vertex} x 
+     * @param {Vertex} y 
+     * @returns {[number, number]} [#innerVertices, #circleVertices]
+     */
+    calcInnerAndCircleVertices(layers, x, y) {
+        let parentIdxInHigherLevelMap = layers.map((layer, i) => layer.map(bsVertex => {
+            return i == 0 ? -1 : eqIndexOf(layers[i - 1], bsVertex.parent);
+        }));
+        let innerVertices = 0;
+        let circleVertices = 0;
+        let v1LayerIdx = layers.findIndex(layer => layer.some(bsVertex => bsVertex.eq(x)));
+        let v2LayerIdx = layers.findIndex(layer => layer.some(bsVertex => bsVertex.eq(y)));
+        if (v1LayerIdx != v2LayerIdx) {
+            console.error("x and y are not on the same layer!");
+            return;
+        }
+        let layerIdx = v1LayerIdx;
+        let v1Idx = layers[layerIdx].findIndex(bsVertex => bsVertex.eq(x));
+        let v2Idx = layers[layerIdx].findIndex(bsVertex => bsVertex.eq(y));
+        while (v1Idx != v2Idx) {
+            innerVertices += (v2Idx - v1Idx - 1);
+            circleVertices += 2;
+            v1Idx = parentIdxInHigherLevelMap[layerIdx][v1Idx];
+            v2Idx = parentIdxInHigherLevelMap[layerIdx][v2Idx];
+            layerIdx--;
+            if (layerIdx == -1) {
+                console.error("No common parent found!");
+                break;
+            }
+        }
+        circleVertices += 1; // Parent
+        return [innerVertices, circleVertices];
+    }
+
+    /**
+     * 
+     * @param {BreadthSearchVertex[][]} layers 
+     */
+    impLemmaPrecalc(layers) {
+        let vertexLowerMap = layers.map(layer => layer.map(_bsVertex => 0));
+        let parentIdxInHigherLevelMap = layers.map((layer, i) => layer.map(bsVertex => {
+            return i == 0 ? -1 : eqIndexOf(layers[i - 1], bsVertex.parent);
+        }));
+        console.log('vertexLowerMap: ', vertexLowerMap);
+        for (let i = layers.length - 1; i > 0; i--) {
+            for (let j = 0; j < layers[i].length; j++) {
+                let parentIdx = parentIdxInHigherLevelMap[i][j];
+                vertexLowerMap[i - 1][parentIdx] += vertexLowerMap[i][j] + 1;
+            }
+        }
+    }
+
     showBFSTree(layers) {
-        console.log('layers: ' + layers.length);
+        console.log('layers: ', layers);
         let bfsColorSet = new ColorSet();
         for (var i = 0; i < layers.length; i++) {
             for (var j = 0; j < layers[i].length; j++) {
-                console.log(i + ' ' + layers[i][j].vertex.print());
+                console.log('i ' + i + ' j ' + j + ' ', layers[i][j]);
+                console.log(layers[i][j].vertex.print());
             }
         }
         for (var i = 1; i < layers.length; i++) {
@@ -156,7 +303,6 @@ class PlanarSeparatorAlgo extends Algorithm {
             for (var j = 0; j < layer.length; j++) {
                 let bsVertex = layer[j];
                 let edgeIndex = eqIndexOf(graph.edges, new Edge(bsVertex.vertex.number, bsVertex.parent.number));
-                graph.edges[edgeIndex].color = "orange";
                 bfsColorSet.addEdgeColor(graph.edges[edgeIndex], "orange");
             }
         }
@@ -266,7 +412,7 @@ class PlanarSeparatorAlgo extends Algorithm {
         let layerMaxX = layers[layerIndex][layers[layerIndex].length - 1].x + 20;
         let width = layerMaxX - layerMinX;
         let height = vertexRadius * 2 + 10;
-        ctx.rect(layerMinX, layerY - height/2, width, height);
+        ctx.rect(layerMinX, layerY - height / 2, width, height);
         ctx.stroke();
         ctx.closePath();
     }
@@ -303,7 +449,7 @@ class PlanarSeparatorAlgo extends Algorithm {
         globalColorSet = vertexColorSet;
         redrawAll();
 
-        super.onFinished(true, 
+        super.onFinished(true,
             "S: [" + s_vertices.map(v => v.number).join(", ") + "] (green)<br>separates"
             + "<br>V1: [" + v1_vertices.map(v => v.number).join(", ") + "] (blue)<br>from"
             + "<br>V2: [" + v2_vertices.map(v => v.number).join(", ") + "] (red)");
