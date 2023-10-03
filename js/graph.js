@@ -460,8 +460,12 @@ class Graph {
      */
     getSubgraph(vertices) {
         let subgraph = new Graph();
-        $.each(vertices, function (_index, vertex) {
-            subgraph.addVertex(new Vertex(vertex.x, vertex.y, vertex.number));
+        vertices.forEach(vertex => {
+            let graphVertex = this.getVertexByNumber(vertex.number);
+            if (graphVertex == null) {
+                console.error("getSubgraph: vertex " + vertex.print() + " not found");
+            }
+            subgraph.addVertex(new Vertex(graphVertex.x, graphVertex.y, graphVertex.number));
         });
         for (let i = 0; i < this.edges.length; i++) {
             let edge = this.edges[i];

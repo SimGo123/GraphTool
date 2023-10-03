@@ -15,21 +15,7 @@ class WeightMaxMatchingAlgo extends Algorithm {
         });
         return fulfilled;
     }
-    /*
-    {"canvasWidth":1069,"canvasHeight":538,"sources":[],"targets":[],"vertices":[{"x":1059,"y":250,"nr":12},{"x":1019,"y":290,"nr":13},{"x":1059,"y":290,"nr":14},{"x":385,"y":247,"nr":15},{"x":345,"y":287,"nr":16},{"x":385,"y":287,"nr":17},{"x":385,"y":371,"nr":18},{"x":345,"y":411,"nr":19},{"x":385,"y":411,"nr":20},{"x":559,"y":470,"nr":21},{"x":519,"y":510,"nr":22},{"x":559,"y":510,"nr":23},{"x":711,"y":372,"nr":24},{"x":671,"y":412,"nr":25},{"x":711,"y":412,"nr":26},{"x":559,"y":346,"nr":27},{"x":519,"y":386,"nr":28},{"x":559,"y":386,"nr":29}],"edges":[{"v1nr":12,"v2nr":15,"weight":273,"orientation":"U"},{"v1nr":18,"v2nr":16,"weight":289,"orientation":"U"},{"v1nr":19,"v2nr":21,"weight":278,"orientation":"U"},{"v1nr":24,"v2nr":22,"weight":288,"orientation":"U"},{"v1nr":25,"v2nr":13,"weight":284,"orientation":"U"},{"v1nr":26,"v2nr":20,"weight":295,"orientation":"U"},{"v1nr":27,"v2nr":14,"weight":289,"orientation":"U"},{"v1nr":23,"v2nr":28,"weight":289,"orientation":"U"},{"v1nr":29,"v2nr":17,"weight":289,"orientation":"U"},{"v1nr":12,"v2nr":13,"weight":289,"orientation":"U"},{"v1nr":13,"v2nr":14,"weight":289,"orientation":"U"},{"v1nr":12,"v2nr":14,"weight":289,"orientation":"U"},{"v1nr":15,"v2nr":16,"weight":289,"orientation":"U"},{"v1nr":16,"v2nr":17,"weight":289,"orientation":"U"},{"v1nr":15,"v2nr":17,"weight":289,"orientation":"U"},{"v1nr":18,"v2nr":19,"weight":289,"orientation":"U"},{"v1nr":19,"v2nr":20,"weight":289,"orientation":"U"},{"v1nr":18,"v2nr":20,"weight":289,"orientation":"U"},{"v1nr":21,"v2nr":22,"weight":289,"orientation":"U"},{"v1nr":22,"v2nr":23,"weight":289,"orientation":"U"},{"v1nr":21,"v2nr":23,"weight":289,"orientation":"U"},{"v1nr":24,"v2nr":25,"weight":289,"orientation":"U"},{"v1nr":25,"v2nr":26,"weight":289,"orientation":"U"},{"v1nr":24,"v2nr":26,"weight":289,"orientation":"U"},{"v1nr":27,"v2nr":28,"weight":289,"orientation":"U"},{"v1nr":28,"v2nr":29,"weight":289,"orientation":"U"},{"v1nr":27,"v2nr":29,"weight":289,"orientation":"U"}]}
-    Edge 26 20 (U)
-    Edge 27 14 (U)
-    Edge 23 28 (U)
-    Edge 29 17 (U)
-    Edge 12 13 (U)
-    id: 0 Edge 15 16 (U)
-    id: 0 Edge 18 19 (U)
-    id: 0 Edge 21 22 (U)
-    id: 0 Edge 24 25 (U)
-    id: 0
-    Planar embedd.: {"canvasWidth":1119,"canvasHeight":538,"sources":[],"targets":[],"vertices":[{"x":1109,"y":250,"nr":12},{"x":1067,"y":290,"nr":13},{"x":1028,"y":264,"nr":14},{"x":403,"y":247,"nr":15},{"x":361,"y":287,"nr":16},{"x":403,"y":287,"nr":17},{"x":403,"y":371,"nr":18},{"x":442,"y":420,"nr":19},{"x":422,"y":505,"nr":20},{"x":518,"y":440,"nr":21},{"x":550,"y":460,"nr":22},{"x":578,"y":407,"nr":23},{"x":750,"y":412,"nr":24},{"x":806,"y":413,"nr":25},{"x":727,"y":480,"nr":26},{"x":585,"y":346,"nr":27},{"x":508,"y":373,"nr":28},{"x":526,"y":330,"nr":29}],"edges":[{"v1nr":12,"v2nr":15,"weight":273,"orientation":"U"},{"v1nr":18,"v2nr":16,"weight":289,"orientation":"U"},{"v1nr":19,"v2nr":21,"weight":278,"orientation":"U"},{"v1nr":24,"v2nr":22,"weight":288,"orientation":"U"},{"v1nr":25,"v2nr":13,"weight":284,"orientation":"U"},{"v1nr":26,"v2nr":20,"weight":295,"orientation":"U"},{"v1nr":27,"v2nr":14,"weight":289,"orientation":"U"},{"v1nr":23,"v2nr":28,"weight":289,"orientation":"U"},{"v1nr":29,"v2nr":17,"weight":289,"orientation":"U"},{"v1nr":12,"v2nr":13,"weight":289,"orientation":"U"},{"v1nr":13,"v2nr":14,"weight":289,"orientation":"U"},{"v1nr":12,"v2nr":14,"weight":289,"orientation":"U"},{"v1nr":15,"v2nr":16,"weight":289,"orientation":"U"},{"v1nr":16,"v2nr":17,"weight":289,"orientation":"U"},{"v1nr":15,"v2nr":17,"weight":289,"orientation":"U"},{"v1nr":18,"v2nr":19,"weight":289,"orientation":"U"},{"v1nr":19,"v2nr":20,"weight":289,"orientation":"U"},{"v1nr":18,"v2nr":20,"weight":289,"orientation":"U"},{"v1nr":21,"v2nr":22,"weight":289,"orientation":"U"},{"v1nr":22,"v2nr":23,"weight":289,"orientation":"U"},{"v1nr":21,"v2nr":23,"weight":289,"orientation":"U"},{"v1nr":24,"v2nr":25,"weight":289,"orientation":"U"},{"v1nr":25,"v2nr":26,"weight":289,"orientation":"U"},{"v1nr":24,"v2nr":26,"weight":289,"orientation":"U"},{"v1nr":27,"v2nr":28,"weight":289,"orientation":"U"},{"v1nr":28,"v2nr":29,"weight":289,"orientation":"U"},{"v1nr":27,"v2nr":29,"weight":289,"orientation":"U"}]}
-    {"canvasWidth":906,"canvasHeight":538,"sources":[],"targets":[],"vertices":[{"x":853,"y":220,"nr":12},{"x":864,"y":290,"nr":13},{"x":750,"y":276,"nr":14},{"x":82,"y":215,"nr":15},{"x":32,"y":262,"nr":16},{"x":151,"y":262,"nr":17},{"x":183,"y":418,"nr":18},{"x":230,"y":444,"nr":19},{"x":169,"y":483,"nr":20},{"x":382,"y":417,"nr":21},{"x":445,"y":460,"nr":22},{"x":468,"y":407,"nr":23},{"x":607,"y":412,"nr":24},{"x":653,"y":413,"nr":25},{"x":642,"y":494,"nr":26},{"x":474,"y":346,"nr":27},{"x":362,"y":349,"nr":28},{"x":372,"y":286,"nr":29}],"edges":[{"v1nr":12,"v2nr":15,"weight":273,"orientation":"U"},{"v1nr":18,"v2nr":16,"weight":289,"orientation":"U"},{"v1nr":19,"v2nr":21,"weight":278,"orientation":"U"},{"v1nr":24,"v2nr":22,"weight":288,"orientation":"U"},{"v1nr":25,"v2nr":13,"weight":284,"orientation":"U"},{"v1nr":26,"v2nr":20,"weight":295,"orientation":"U"},{"v1nr":27,"v2nr":14,"weight":289,"orientation":"U"},{"v1nr":23,"v2nr":28,"weight":289,"orientation":"U"},{"v1nr":29,"v2nr":17,"weight":289,"orientation":"U"},{"v1nr":12,"v2nr":13,"weight":289,"orientation":"U"},{"v1nr":13,"v2nr":14,"weight":289,"orientation":"U"},{"v1nr":12,"v2nr":14,"weight":289,"orientation":"U"},{"v1nr":15,"v2nr":16,"weight":289,"orientation":"U"},{"v1nr":16,"v2nr":17,"weight":289,"orientation":"U"},{"v1nr":15,"v2nr":17,"weight":289,"orientation":"U"},{"v1nr":18,"v2nr":19,"weight":289,"orientation":"U"},{"v1nr":19,"v2nr":20,"weight":289,"orientation":"U"},{"v1nr":18,"v2nr":20,"weight":289,"orientation":"U"},{"v1nr":21,"v2nr":22,"weight":289,"orientation":"U"},{"v1nr":22,"v2nr":23,"weight":289,"orientation":"U"},{"v1nr":21,"v2nr":23,"weight":289,"orientation":"U"},{"v1nr":24,"v2nr":25,"weight":289,"orientation":"U"},{"v1nr":25,"v2nr":26,"weight":289,"orientation":"U"},{"v1nr":24,"v2nr":26,"weight":289,"orientation":"U"},{"v1nr":27,"v2nr":28,"weight":289,"orientation":"U"},{"v1nr":28,"v2nr":29,"weight":289,"orientation":"U"},{"v1nr":27,"v2nr":29,"weight":289,"orientation":"U"}]}
-    */
+
     async run() {
         super.numSteps = "X";
 
@@ -38,11 +24,13 @@ class WeightMaxMatchingAlgo extends Algorithm {
             return;
         }
 
+        await super.pause("Divide the graph",
+            "Divide the graph using the Planar Separator algorithm."
+            + "<br> If a subgraph has <= 5 vertices, calculate the local weight max matching using brute force."
+            + "<br> Finally, unite the weight max matchings found in the subgraphs.");
         let [maxWeightEdges, separators] = await this.divide(graph);
         let stepColorSet = new ColorSet();
-        console.log('mwel ' + maxWeightEdges.length + " sl " + separators.length);
         maxWeightEdges.forEach(edge => {
-            console.log('edge=' + edge.print() + ' color=red');
             stepColorSet.addEdgeColor(edge, "red");
         });
         console.log('S=( ');
@@ -52,6 +40,7 @@ class WeightMaxMatchingAlgo extends Algorithm {
             stepColorSet.addVertexColor(separatorVertex.number, "green");
         });
         redrawAll(stepColorSet);
+        this.numSteps = this.currentStep + separators.length + 1;
         await super.pause("Optimal matchings have been calculated in subgraphs", "");
 
         let gApostrophe = graph.getCopy();
@@ -60,14 +49,14 @@ class WeightMaxMatchingAlgo extends Algorithm {
         });
 
         while (separators.length > 0) {
-            // Wähle v ∈ S.
+            // Choose v ∈ S.
             let v = separators.pop();
             console.log('We chose v=' + v.print());
-            // Finde alternierenden Weg P in G′ + v mit Endpunkt v mit w (P − M′) − w (P ∩ M′) maximal.
+            // Find alternating path P in G′ + v with endpoint v and w(P − M′) − w(P ∩ M′) maximal
             let gApostropheWithV = graph.getSubgraph(gApostrophe.vertices.concat([v]));
             let path = this.findMaxWay(maxWeightEdges, gApostropheWithV, v);
             console.log('path=', path);
-            // Falls P erhöhend, ersetze M′ durch M′ /_\ P.
+            // If P is increasing, replace M′ with M′△P.
             if (path != null && this.wayIsIncreasing(path.edges, maxWeightEdges)) {
                 maxWeightEdges = this.getSymmDiff(path.edges, maxWeightEdges);
             }
@@ -88,15 +77,16 @@ class WeightMaxMatchingAlgo extends Algorithm {
                     }
                 });
             }
-            gApostrophe.vertices.forEach(vertex => {
-                loopColorSet.addVertexColor(vertex.number, "blue");
-            });
             loopColorSet.addVertexColor(v.number, "red");
             globalColorSet = loopColorSet;
             redrawAll(loopColorSet);
-            await super.pause("a", "");
-            // Lösche v aus S. (oben ^)
-            // Ersetze G′ durch G′ + v .
+            await super.pause("Unite the weight max matchings in subgraphs",
+                "The weight max matching is optimal in each subgraph."
+                + "<br> Now, we unite the weight max matching in the subgraphs."
+                + "<br> We took vertex " + v.number + " (red) from the separator set."
+                + "<br> We looked for an increasing alternating path P (blue, edges also in matching violet)"
+                + " in G' + v with end point " + v.number + "."
+                + "<br> If P exists, we replace the current matching M' with M'△P.");
             gApostrophe.addVertex(v);
         }
 
@@ -112,18 +102,26 @@ class WeightMaxMatchingAlgo extends Algorithm {
         });
         redrawAll(resColorSet);
 
-        super.onFinished();
+        let weight = 0;
+        maxWeightEdges.forEach(function (edge) {
+            weight += edge.weight;
+        });
+        super.onFinished(true, "The weight max matching has weight " + weight);
     }
 
     async divide(toDivideGraph) {
-        redrawAll(new ColorSet(), toDivideGraph);
-        console.log('currJson',getCurrJSON(toDivideGraph));
-        await super.pause("Divide graph", "Divide graph into subgraphs with <= 5 vertices");
+        console.log('currJson', getCurrJSON(toDivideGraph));
         const N = toDivideGraph.vertices.length;
         if (N <= 5) {
             let maxWeightEdges = this.bruteForce(toDivideGraph);
-            console.log('divEnd ', toDivideGraph.vertices);
-            console.log('bf res', maxWeightEdges);
+            let bfMaxMatchingColorSet = new ColorSet();
+            maxWeightEdges.forEach(edge => {
+                bfMaxMatchingColorSet.addEdgeColor(edge, "red");
+            });
+            drawTwoGraphs(graph, toDivideGraph, stdBackColorSet, bfMaxMatchingColorSet);
+            await super.pause("Subgraph is small enough",
+                "The graph has <= 5 vertices and therefore is small enough."
+                + "<br> The weight max matching for this subgraph has been calculated using brute force.");
 
             return [maxWeightEdges, []];
         }
@@ -132,12 +130,10 @@ class WeightMaxMatchingAlgo extends Algorithm {
         planarSeparatorAlgo.shouldContinue = true;
         planarSeparatorAlgo.runComplete = true;
         planarSeparatorAlgo.isSubAlgo = true;
-        let divideCopy = toDivideGraph.getCopy();
         let graphCopy = graph.getCopy();
         graph = toDivideGraph.getCopy();
         let result = await planarSeparatorAlgo.run();
         graph = graphCopy;
-        toDivideGraph = divideCopy;
         console.log('result=', result);
         if (result == null) {
             alert("No separator found, can't calculate weight max matching");
@@ -146,8 +142,21 @@ class WeightMaxMatchingAlgo extends Algorithm {
         }
         let [v1, separator, v2] = result;
         console.log('v1', v1, "separator", separator, "v2", v2);
-        redrawAll(new ColorSet(), toDivideGraph);
-        await super.pause("Q", "");
+
+        let planSepColorSet = new ColorSet();
+        v1.forEach(vertex => {
+            planSepColorSet.addVertexColor(vertex.number, "red");
+        });
+        separator.forEach(vertex => {
+            planSepColorSet.addVertexColor(vertex.number, "green");
+        });
+        v2.forEach(vertex => {
+            planSepColorSet.addVertexColor(vertex.number, "blue");
+        });
+        drawTwoGraphs(graph, toDivideGraph, stdBackColorSet, planSepColorSet);
+        await super.pause("Divide the graph further",
+            "This subgraph isn't small enough yet."
+            + "<br> The Planar Separator algorithm has found a separator (green) between V1 (blue) and V2 (red).");
 
         let v1Graph = toDivideGraph.getSubgraph(v1);
         let v2Graph = toDivideGraph.getSubgraph(v2);

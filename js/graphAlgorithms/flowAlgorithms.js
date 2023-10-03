@@ -65,7 +65,7 @@ class MaxFlowAlgo extends Algorithm {
         let copyGraph = graph.getCopy();
         let [dualGraph, edgeEqualities, vertexFacets] = graph.getDualGraph();
         graph = dualGraph;
-        this.drawTwoGraphs(copyGraph, graph);
+        drawTwoGraphs(copyGraph, graph);
 
         await super.pause("Split outer facet", "Split it into two parts, as if an edge were inserted in outer facet between S and T");
         let edgesToNewFacet = [];
@@ -100,13 +100,13 @@ class MaxFlowAlgo extends Algorithm {
                 }
             }
         }
-        this.drawTwoGraphs(copyGraph, graph);
+        drawTwoGraphs(copyGraph, graph);
 
         await super.pause("Calculate shortest distance between the new facet node and every other node",
             "Calculate distance from the new facet vertex " + newFacetVertex.number + " to every other vertex using Dijekstra.");
         let distances = getDijekstraResults(newFacetVertex);
         graph = copyGraph;
-        this.drawTwoGraphs(dualGraph, graph);
+        drawTwoGraphs(dualGraph, graph);
 
         // Combine each facet with its dual vertex.
         // Facets can be identical, but have to be mapped to different vertices
@@ -269,7 +269,7 @@ class MaxFlowAlgo extends Algorithm {
             }
         });
         dirEdgesInRevPath.forEach(e => backColorSet.addEdgeColor(e, "#FFD580"));
-        this.drawTwoGraphs(revOrientGraph, graph, backColorSet, foreColorSet);
+        drawTwoGraphs(revOrientGraph, graph, backColorSet, foreColorSet);
 
         await super.pause("Find maximal alpha so that there are no negative cycles",
             "Decrement edges on s-t-path by alpha and increment edges on reverse s-t-path till there are negative cycles. "
@@ -291,14 +291,6 @@ class MaxFlowAlgo extends Algorithm {
         }
         await super.pause("Result", "Max flow is " + alpha);
         return alpha;
-    }
-
-    drawTwoGraphs(backGraph, foreGraph,
-        backColorSet = new ColorSet("#D3D3D3", "#D3D3D3", "red"), foreColorSet = new ColorSet()) {
-        clearFgCanvas();
-        drawCanvasWalls();
-        backGraph.draw(null, null, backColorSet);
-        foreGraph.draw(selectedVertex, selectedEdge, foreColorSet);
     }
 }
 
