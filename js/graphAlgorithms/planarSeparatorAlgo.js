@@ -172,7 +172,8 @@ class PlanarSeparatorAlgo extends Algorithm {
             }
             graph = graph.getSubgraph(case2Vertices);
             console.log('newLayers: ', newLayers);
-            //this.drawLayerStructure(newLayers);
+            this.drawLayerStructure(newLayers);
+            await super.pause("Convert back to original graph for planar embedding", "");
 
             for (let i = 0; i < graph.vertices.length; i++) {
                 let vertex = graph.vertices[i];
@@ -186,7 +187,6 @@ class PlanarSeparatorAlgo extends Algorithm {
             this.impLemmaPrecalc(newLayers);
             let [x, y] = this.impLemmaNonTreeEdge(newLayers);
 
-            await super.pause("Apply Important Lemma", "");
             let [u1, s2, u2] = await this.importantLemma(newLayers, x, y, beforeTreeGraph);
             // S = S2 u m u M
             let s = s2.concat(m_idx != -1 ? layers[m_idx] : [])
@@ -203,25 +203,12 @@ class PlanarSeparatorAlgo extends Algorithm {
      * @param {BreadthSearchVertex[][]} layers 
      * @param {Vertex} x Number of vertex x on non-tree edge {x, y}
      * @param {Vertex} y Number of vertex y on non-tree edge {x, y}
-     * @param {Graph} beforeTreeGraph Graph before the BFS tree was constructed
      * @returns {[Vertex[], Vertex[], Vertex[]]} [U1, S, U2]
      */
-    async importantLemma(layers, x, y, beforeTreeGraph) {
-        /*
-        Wir w ¨ahlen eine Nichtbaumkane {x, y} aus, wobei
-        |Inneres(Kx,y )| ≥ | ¨Außeres(Kx,y )|
-        Wenn zus ¨atzlich gilt |Inneres(Kx,y )| ≤ 2
-        3 n - fertig!
-        Wir ersetzen die ausgew ¨ahlte Kante {x, y} durch eine andere
-        Nichtbaumkante, sodass das Innere kleiner wird und das ¨Außere nicht
-        ¨uber 2/3 n w ¨achst
-        G ist ein eingebetteter (!!!!!) Graph. Die Kante {x, y} begrenzt zwei
-        Dreiecke, von denen eins im Inneren(Kx,y ) liegt - Dreieck xyt
-        Zwei F ¨alle:
-        1. Eine der {x, t}, {t, y} ist eine Baumkante,
-        2. {x, t} und {t, y} sind beides Nichtbaumkanten
-        */
-        redrawAll();
+    async importantLemma(layers, x, y) {
+        let nonTreeEdgeColorSet = globalColorSet.getCopy();
+        nonTreeEdgeColorSet.addEdgeColor(new Edge(x.number, y.number), "red");
+        redrawAll(nonTreeEdgeColorSet);
         await super.pause("Important Lemma", "Non-tree edge xy is: " + x.number + "-" + y.number);
         let [innerVertices, circleVertices] = this.calcInnerAndCircleVertices(layers, x, y);
         let N = graph.vertices.length;
@@ -256,6 +243,7 @@ class PlanarSeparatorAlgo extends Algorithm {
                 }
             }
         }
+        circleVertices.forEach(v => globalColorSet.addVertexColor(v.number, "green"));
         if (t == null) {
             console.error("No triangle xyt found!");
             return;
@@ -273,28 +261,35 @@ class PlanarSeparatorAlgo extends Algorithm {
         let isYtTreeEdge = yBsVertex.parent.eq(t) || tBsVertex.parent.eq(y);
         if (isXtTreeEdge && !isYtTreeEdge) {
             // Case 1
-            await super.pause("Important Lemma Case 1", "xt is a tree edge, next look at yt");
-            return this.importantLemma(layers, y, t, beforeTreeGraph);
+            await super.pause("Important Lemma Case 1",
+                'xt (' + x.number + '->' + t.number + ') is a tree edge, next look at yt ('
+                + y.number + '->' + t.number + ')');
+            return this.importantLemma(layers, y, t);
         } else if (isYtTreeEdge && !isXtTreeEdge) {
             // Case 1
-            await super.pause("Important Lemma Case 1", "yt is a tree edge, next look at xt");
-            return this.importantLemma(layers, x, t, beforeTreeGraph);
+            await super.pause("Important Lemma Case 1",
+                'yt (' + y.number + '->' + t.number + ') is a tree edge, next look at xt ('
+                + x.number + '->' + t.number + ')');
+            return this.importantLemma(layers, x, t);
         } else if (!isXtTreeEdge && !isYtTreeEdge) {
             // Case 2
             console.log('Important Lemma Case 2');
-            // Might fail if x/y and t are on different layers
             let [innerVerticesXt, circleVerticesXt] = this.calcInnerAndCircleVertices(layers, x, t);
             let [innerVerticesYt, circleVerticesYt] = this.calcInnerAndCircleVertices(layers, y, t);
             if (innerVerticesXt.length >= innerVerticesYt.length) {
                 await super.pause("Important Lemma Case 2",
-                    "Inner(Kx,t)| ≥ |Inner(Kt,y)|"
-                    + "<br> -> Replace xy by xt");
-                return this.importantLemma(layers, x, t, beforeTreeGraph);
+                    "Inner(Circle(" + x.number + ',' + t.number
+                    + '))| ≥ |Inner(Circle(' + t.number + ',' + y.number + "))|"
+                    + "<br> -> Replace " + x.number + '->' + y.number
+                    + ' by ' + x.number + '->' + t.number);
+                return this.importantLemma(layers, x, t);
             } else {
                 await super.pause("Important Lemma Case 2",
-                    "Inner(Kt,y)| >= |Inner(Kx,t)|"
-                    + "<br> -> Replace xy by yt");
-                return this.importantLemma(layers, y, t, beforeTreeGraph);
+                    "Inner(Circle(" + y.number + ',' + t.number
+                    + '))| ≥ |Inner(Circle(' + x.number + ',' + t.number + "))|"
+                    + "<br> -> Replace " + x.number + '->' + y.number
+                    + ' by ' + y.number + '->' + t.number);
+                return this.importantLemma(layers, y, t);
             }
         } else {
             console.error("Both {x, t} and {y, t} are tree edges!");
@@ -471,13 +466,14 @@ class PlanarSeparatorAlgo extends Algorithm {
         const n = graph.vertices.length;
         let seperatorIndex = -1;
         let verticesBefore = 0;
-        $.each(layers, function (layerIndex, layer) {
+        for (let i = 0; i < layers.length; i++) {
+            let layer = layers[i];
             if (verticesBefore < n / 2 && verticesBefore + layer.length > n / 2) {
-                seperatorIndex = layerIndex;
-                return;
+                seperatorIndex = i;
+                break;
             }
             verticesBefore += layer.length;
-        });
+        }
         console.log('n/2=' + n / 2);
         console.log('layer.length=' + layers[seperatorIndex].length + ' 4*sqrt(n)=' + 4 * Math.sqrt(n));
 
