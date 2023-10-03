@@ -107,6 +107,7 @@ class WeightMaxMatchingAlgo extends Algorithm {
             weight += edge.weight;
         });
         super.onFinished(true, "The weight max matching has weight " + weight);
+        return maxWeightEdges;
     }
 
     async divide(toDivideGraph) {

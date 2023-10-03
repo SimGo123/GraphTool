@@ -28,18 +28,15 @@ function modeClick(param) {
             func(false);
         });
         changePredefinedVisible(true);
-        $("#algoControlPanel").addClass("invisible");
     } else if (param == Modes.JSON) {
         $.each(toolBoxFuncs, function(_i, func) {
             func(false);
         });
         changeJsonToolsVisible(true);
-        $("#algoControlPanel").addClass("invisible");
     } else {
         changeAlgorithmsVisible(false);
         changePredefinedVisible(false);
         changeJsonToolsVisible(false);
-        $("#algoControlPanel").addClass("invisible");
     }
     
     for (var i = 0; i < modeItems.length; i++) {
