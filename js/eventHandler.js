@@ -111,6 +111,9 @@ $("body").keypress(function(e){
         case "p":
             modeClick(Modes.PREDEFINED);
             break;
+        case "j":
+            modeClick(Modes.JSON);
+            break;
     }
 });
 
