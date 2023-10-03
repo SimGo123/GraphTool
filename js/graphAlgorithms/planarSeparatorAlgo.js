@@ -186,8 +186,8 @@ class PlanarSeparatorAlgo extends Algorithm {
             this.showBFSTree(newLayers);
             this.impLemmaPrecalc(newLayers);
             let [x, y] = this.impLemmaNonTreeEdge(newLayers);
-
-            let [u1, s2, u2] = await this.importantLemma(newLayers, x, y, beforeTreeGraph);
+            let [innerVertices, circleVertices] = this.calcInnerAndCircleVertices(newLayers, x, y);
+            let [u1, s2, u2] = await this.importantLemma(newLayers, x, y, innerVertices, circleVertices);
             // S = S2 u m u M
             let s = s2.concat(m_idx != -1 ? layers[m_idx] : [])
                 .concat(M_idx != -1 ? layers[M_idx] : []);
@@ -205,12 +205,15 @@ class PlanarSeparatorAlgo extends Algorithm {
      * @param {Vertex} y Number of vertex y on non-tree edge {x, y}
      * @returns {[Vertex[], Vertex[], Vertex[]]} [U1, S, U2]
      */
-    async importantLemma(layers, x, y) {
+    async importantLemma(layers, x, y, innerVertices, circleVertices) {
         let nonTreeEdgeColorSet = globalColorSet.getCopy();
         nonTreeEdgeColorSet.addEdgeColor(new Edge(x.number, y.number), "red");
         redrawAll(nonTreeEdgeColorSet);
         await super.pause("Important Lemma", "Non-tree edge xy is: " + x.number + "-" + y.number);
-        let [innerVertices, circleVertices] = this.calcInnerAndCircleVertices(layers, x, y);
+        console.log('innerVertices: ', innerVertices, 'circleVertices: ', circleVertices);
+        if (innerVertices == null || circleVertices == null) {
+            [innerVertices, circleVertices] = this.calcInnerAndCircleVertices(layers, x, y);
+        }
         let N = graph.vertices.length;
         if (innerVertices.length <= (2 / 3) * N) {
             await super.pause("Important Lemma Done",
@@ -264,13 +267,46 @@ class PlanarSeparatorAlgo extends Algorithm {
             await super.pause("Important Lemma Case 1",
                 'xt (' + x.number + '->' + t.number + ') is a tree edge, next look at yt ('
                 + y.number + '->' + t.number + ')');
-            return this.importantLemma(layers, y, t);
+            if (isCircleVertex) {
+                // new circle vertices: circleVertices \ {y}
+                let newCircleVertices = circleVertices.filter(v => !v.eq(y));
+                return this.importantLemma(layers, y, t, innerVertices, newCircleVertices);
+            } else {
+                // new inner vertices: innerVertices \ {t}
+                let newInnerVertices = innerVertices.filter(v => !v.eq(t));
+                // new circle vertices: circleVertices u {t}
+                if (circleVertices[circleVertices.length - 1].eq(x)) {
+                    circleVertices.push(t);
+                } else if (circleVertices[0].eq(x)) {
+                    circleVertices.unshift(t);
+                } else {
+                    console.error("x is not at the start/end of the circle path!");
+                }
+                return this.importantLemma(layers, y, t, newInnerVertices, circleVertices);
+            }
         } else if (isYtTreeEdge && !isXtTreeEdge) {
             // Case 1
             await super.pause("Important Lemma Case 1",
                 'yt (' + y.number + '->' + t.number + ') is a tree edge, next look at xt ('
                 + x.number + '->' + t.number + ')');
-            return this.importantLemma(layers, x, t);
+            if (isCircleVertex) {
+                // new circle vertices: circleVertices \ {x}
+                let newCircleVertices = circleVertices.filter(v => !v.eq(x));
+                return this.importantLemma(layers, x, t, innerVertices, newCircleVertices);
+            } else {
+                // new inner vertices: innerVertices \ {t}
+                let newInnerVertices = innerVertices.filter(v => !v.eq(t));
+                console.log('without t: ', newInnerVertices);
+                // new circle vertices: circleVertices u {t}
+                if (circleVertices[circleVertices.length - 1].eq(y)) {
+                    circleVertices.push(t);
+                } else if (circleVertices[0].eq(y)) {
+                    circleVertices.unshift(t);
+                } else {
+                    console.error("y is not at the start/end of the circle path!");
+                }
+                return this.importantLemma(layers, x, t, newInnerVertices, circleVertices);
+            }
         } else if (!isXtTreeEdge && !isYtTreeEdge) {
             // Case 2
             console.log('Important Lemma Case 2');
@@ -282,14 +318,14 @@ class PlanarSeparatorAlgo extends Algorithm {
                     + '))| ≥ |Inner(Circle(' + t.number + ',' + y.number + "))|"
                     + "<br> -> Replace " + x.number + '->' + y.number
                     + ' by ' + x.number + '->' + t.number);
-                return this.importantLemma(layers, x, t);
+                return this.importantLemma(layers, x, t, null, null);
             } else {
                 await super.pause("Important Lemma Case 2",
                     "Inner(Circle(" + y.number + ',' + t.number
                     + '))| ≥ |Inner(Circle(' + x.number + ',' + t.number + "))|"
                     + "<br> -> Replace " + x.number + '->' + y.number
                     + ' by ' + y.number + '->' + t.number);
-                return this.importantLemma(layers, y, t);
+                return this.importantLemma(layers, y, t, null, null);
             }
         } else {
             console.error("Both {x, t} and {y, t} are tree edges!");
@@ -318,9 +354,6 @@ class PlanarSeparatorAlgo extends Algorithm {
                         = this.calcInnerAndCircleVertices(layers, bsVertex.vertex, bsVertex2.vertex);
                     let innerVerticesCount = innerVertices.length;
                     let outerVerticesCount = graph.vertices.length - innerVerticesCount - circleVertices.length;
-                    console.log('Edge ' + bsVertex.vertex.number + ' ' + bsVertex2.vertex.number
-                        + ' has ' + innerVertices.length + ' inner vertices'
-                        + ' and ' + circleVertices.length + ' circle vertices');
                     if (innerVerticesCount >= outerVerticesCount) {
                         return [bsVertex.vertex, bsVertex2.vertex];
                     }
@@ -386,6 +419,9 @@ class PlanarSeparatorAlgo extends Algorithm {
                 innerVertices.push(vertex);
             }
         });
+        console.log('Edge ' + x.number + ' ' + y.number
+            + ' has ' + innerVertices.length + ' inner vertices'
+            + ' and ' + circlePath.length + ' circle vertices');
         return [innerVertices, circlePath];
     }
 
