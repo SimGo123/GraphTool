@@ -1,140 +1,3 @@
-class WeightMaxMatchingAlgo extends Algorithm {
-
-    async run() {
-        super.numSteps = "X";
-
-        // if (!this.preconditionsCheck()) {
-        //     super.onFinished();
-        //     return;
-        // }
-
-        // const N = graph.vertices.length;
-        // await super.pause("Check if n <= 5", "If n <= 5, use brute force");
-        // if (N <= 5) {
-        //     await super.pause("Brute force", "Brute force in O(1)");
-        //     let maxWeightEdges = this.bruteForce(graph);
-
-        //     super.onFinished();
-        //     return maxWeightEdges;
-        // }
-
-        // await super.pause("Calculate planar separator", "Calculate planar separator");
-        // let planarSeparatorAlgo = new PlanarSeparatorAlgo();
-        // planarSeparatorAlgo.shouldContinue = true;
-        // planarSeparatorAlgo.runComplete = true;
-        // planarSeparatorAlgo.isSubAlgo = true;
-        // let result = await planarSeparatorAlgo.run(graph.getCopy());
-        // if (result == null) {
-        //     alert("No separator found, can't calculate weight max matching");
-        //     super.onFinished();
-        //     return;
-        // }
-        // console.log('result=' + result);
-        // let [v1, separator, v2] = result;
-        // console.log('v1=' + printArr(v1) + ' separator=' + printArr(separator) + ' v2=' + printArr(v2));
-
-        this.divide(graph);
-
-        super.onFinished();
-    }
-
-    preconditionsCheck() {
-        let fulfilled = true;
-        if (!graph.isPlanarEmbedded()) {
-            alert("Graph is not planar embedded!");
-            fulfilled = false;
-        }
-        $.each(graph.edges, function (_index, edge) {
-            if (edge.weight == null) {
-                alert("can't calculate weight max matching, " + edge.print() + " has no weight!");
-                fulfilled = false;
-                return false;
-            }
-        });
-        return fulfilled;
-    }
-
-    async divide(toDivideGraph) {
-        const N = toDivideGraph.vertices.length;
-        if (N <= 5) {
-            let maxWeightEdges = this.bruteForce(toDivideGraph);
-            console.log('divEnd ' + printArr(toDivideGraph.vertices));
-
-            return maxWeightEdges;
-        }
-
-        let planarSeparatorAlgo = new PlanarSeparatorAlgo();
-        planarSeparatorAlgo.shouldContinue = true;
-        planarSeparatorAlgo.runComplete = true;
-        planarSeparatorAlgo.isSubAlgo = true;
-        let result = await planarSeparatorAlgo.run(toDivideGraph);
-        if (result == null) {
-            alert("No separator found, can't calculate weight max matching");
-            super.onFinished();
-            return;
-        }
-        console.log('result=' + result);
-        let [v1, separator, v2] = result;
-        console.log('v1=' + printArr(v1) + ' separator=' + printArr(separator) + ' v2=' + printArr(v2));
-
-        let v1Graph = toDivideGraph.getSubgraph(v1);
-        let v2Graph = toDivideGraph.getSubgraph(v2);
-
-        let res1 = await this.divide(v1Graph);
-        let res2 = await this.divide(v2Graph);
-        return res1.concat(res2);
-    }
-
-    bruteForce(runGraph) {
-        let includeEdge = [];
-        for (var i = 0; i < runGraph.edges.length; i++) {
-            includeEdge.push(false);
-        }
-        let maxWeight = 0;
-        let maxWeightEdges = [];
-        while (includeEdge != null) {
-            // Valid if no two edges to same vertex
-            let valid = true;
-            for (var i = 0; i < runGraph.edges.length; i++) {
-                if (includeEdge[i]) {
-                    let edge = runGraph.edges[i];
-                    let v1nr = edge.v1nr;
-                    let v2nr = edge.v2nr;
-                    for (var j = i + 1; j < runGraph.edges.length; j++) {
-                        if (includeEdge[j]) {
-                            let edge2 = runGraph.edges[j];
-                            if (edge2.v1nr == v1nr || edge2.v1nr == v2nr || edge2.v2nr == v1nr || edge2.v2nr == v2nr) {
-                                valid = false;
-                            }
-                        }
-                    }
-                }
-            }
-            if (valid) {
-                let weight = 0;
-                let edges = [];
-                for (var i = 0; i < runGraph.edges.length; i++) {
-                    if (includeEdge[i]) {
-                        weight += runGraph.edges[i].weight;
-                        edges.push(runGraph.edges[i]);
-                    }
-                }
-                if (weight > maxWeight) {
-                    maxWeight = weight;
-                    maxWeightEdges = edges;
-                }
-            }
-
-            includeEdge = nextBruteForceIter(includeEdge);
-        }
-        $.each(maxWeightEdges, function (_index, edge) {
-            edge.color = "red";
-        });
-        redrawAll();
-        return maxWeightEdges;
-    }
-}
-
 class MixedMaxCutAlgo extends Algorithm {
     async run() {
         super.numSteps = "X";
@@ -198,16 +61,18 @@ class MixedMaxCutAlgo extends Algorithm {
         weightMaxMatchAlgo.isSubAlgo = true;
         // TODO await weightMaxMatchAlgo.run();
         // console.log('Starting brute force...');
-        // let weightMaxEdges = weightMaxMatchAlgo.bruteForce(graph);
-        // let wmeString = "";
-        // weightMaxEdges.forEach(function(edge) {
-        //     wmeString += edge.print() + " ";
-        // });
-        // console.log(wmeString);
+        let wmeColorSet = new ColorSet();
+        let wmeBf = weightMaxMatchAlgo.bruteForce(graph);
+        let wmeString = "";
+        wmeBf.forEach(function (edge) {
+            wmeColorSet.addEdgeColor(edge, "red");
+            wmeString += edge.print() + " ";
+        });
+        console.log(wmeString);
         // console.log('...finished brute force');
 
         // Weight max edges for the mixed-max-graph
-        // TODO Delte when non-brute-force weight max matching is implemented
+        // TODO Delete when non-brute-force weight max matching is implemented
         let weightMaxEdges = [];
         weightMaxEdges.push(new Edge(19, 25));
         weightMaxEdges.push(new Edge(13, 26));
@@ -220,10 +85,10 @@ class MixedMaxCutAlgo extends Algorithm {
         weightMaxEdges.push(new Edge(23, 24));
         for (let i = 0; i < graph.edges.length; i++) {
             if (eqIndexOf(weightMaxEdges, graph.edges[i]) != -1) {
-                graph.edges[i].color = "red";
+                wmeColorSet.addEdgeColor(graph.edges[i], "red");
             }
         }
-        redrawAll();
+        redrawAll(wmeColorSet);
 
         await super.pause("Calculate weight max. 2-factor in G'",
             "C' = E' - M is a weight max. 2-factor in G'");

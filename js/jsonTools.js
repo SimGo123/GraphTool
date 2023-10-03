@@ -6,22 +6,7 @@ const JSON_TOOLS = {
 function jsonClick(param) {
     switch (param) {
         case JSON_TOOLS.GET_CURR:
-            let jsonGraph = {};
-            jsonGraph["canvasWidth"] = $("#fgCanvas")[0].width;
-            jsonGraph["canvasHeight"] = $("#fgCanvas")[0].height;
-            jsonGraph["sources"] = graph.sources;
-            jsonGraph["targets"] = graph.targets;
-            jsonGraph.vertices = [];
-            for (let i = 0; i < graph.vertices.length; i++) {
-                let vertex = graph.vertices[i];
-                jsonGraph.vertices.push({ "x": Math.round(vertex.x), "y": Math.round(vertex.y), "nr": vertex.number });
-            }
-            jsonGraph.edges = [];
-            for (let i = 0; i < graph.edges.length; i++) {
-                let edge = graph.edges[i];
-                jsonGraph.edges.push({ "v1nr": edge.v1nr, "v2nr": edge.v2nr, "weight": edge.weight, "orientation": edge.orientation });
-            }
-            window.alert(JSON.stringify(jsonGraph));
+            window.alert(getCurrJSON(graph));
             break;
         case JSON_TOOLS.FROM_JSON:
             let jsonGraphStr = window.prompt("Enter JSON graph:");
@@ -35,6 +20,25 @@ function jsonClick(param) {
             }
             break;
     }
+}
+
+function getCurrJSON(runGraph) {
+    let jsonGraph = {};
+    jsonGraph["canvasWidth"] = $("#fgCanvas")[0].width;
+    jsonGraph["canvasHeight"] = $("#fgCanvas")[0].height;
+    jsonGraph["sources"] = runGraph.sources;
+    jsonGraph["targets"] = runGraph.targets;
+    jsonGraph.vertices = [];
+    for (let i = 0; i < runGraph.vertices.length; i++) {
+        let vertex = runGraph.vertices[i];
+        jsonGraph.vertices.push({ "x": Math.round(vertex.x), "y": Math.round(vertex.y), "nr": vertex.number });
+    }
+    jsonGraph.edges = [];
+    for (let i = 0; i < runGraph.edges.length; i++) {
+        let edge = runGraph.edges[i];
+        jsonGraph.edges.push({ "v1nr": edge.v1nr, "v2nr": edge.v2nr, "weight": edge.weight, "orientation": edge.orientation });
+    }
+    return JSON.stringify(jsonGraph);
 }
 
 function loadGraphFromJson(graphString) {

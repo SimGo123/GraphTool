@@ -262,6 +262,15 @@ function bipartiteBFS(runGraph, startVertex, colors, sets) {
     return true;
 }
 
+const stdBackColorSet = new ColorSet("#D3D3D3", "#D3D3D3", "red");
+function drawTwoGraphs(backGraph, foreGraph,
+    backColorSet = stdBackColorSet, foreColorSet = new ColorSet()) {
+    clearFgCanvas();
+    drawCanvasWalls();
+    backGraph.draw(null, null, backColorSet);
+    foreGraph.draw(selectedVertex, selectedEdge, foreColorSet);
+}
+
 
 // Get the angle in degrees between 0 o'clock from the vertex and the vertex's neighbor
 function getAngle(vertex, neighbour) {

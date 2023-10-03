@@ -34,9 +34,9 @@ class Graph {
                 this.edges.splice(i, 1);
             }
         }
-        let index = this.vertices.indexOf(vertex);
+        let index = eqIndexOf(this.vertices, vertex);
         if (index != -1) {
-            this.vertices.splice(this.vertices.indexOf(vertex), 1);
+            this.vertices.splice(index, 1);
         } else {
             console.error("deleteVertex: vertex {" + vertex.print() + "} not found");
         }
@@ -451,17 +451,28 @@ class Graph {
         return copy;
     }
 
+    /**
+     * Gets a subgraph of this graph, containing only the vertices in the given array
+     * and edges between those vertices.
+     * 
+     * @param {Vertex[]} vertices 
+     * @returns {Graph}
+     */
     getSubgraph(vertices) {
         let subgraph = new Graph();
-        $.each(vertices, function (_index, vertex) {
-            subgraph.addVertex(vertex);
+        vertices.forEach(vertex => {
+            let graphVertex = this.getVertexByNumber(vertex.number);
+            if (graphVertex == null) {
+                console.error("getSubgraph: vertex " + vertex.print() + " not found");
+            }
+            subgraph.addVertex(new Vertex(graphVertex.x, graphVertex.y, graphVertex.number));
         });
         for (let i = 0; i < this.edges.length; i++) {
             let edge = this.edges[i];
             let v1 = this.getVertexByNumber(edge.v1nr);
             let v2 = this.getVertexByNumber(edge.v2nr);
             if (eqIndexOf(vertices, v1) != -1 && eqIndexOf(vertices, v2) != -1) {
-                subgraph.addEdge(edge);
+                subgraph.addEdge(new Edge(edge.v1nr, edge.v2nr, edge.id, edge.weight, edge.orientation));
             }
         }
         return subgraph;

@@ -41,7 +41,7 @@ class PlanarityTestAlgo extends Algorithm {
             result['sets'][1].forEach(vertexIndex => {
                 colorSet.addVertexColor(hGraph.vertices[vertexIndex].number, "blue");
             });
-            this.drawTwoGraphs(graph, hGraph,
+            drawTwoGraphs(graph, hGraph,
                 new ColorSet("#D3D3D3", "#D3D3D3", "red"), colorSet);
             super.onFinished(true, "Graph is planar because the conflict graph H is bipartite");
             // await super.pause("Graph is planar",
@@ -352,7 +352,7 @@ class PlanarityTestAlgo extends Algorithm {
             let v2 = hGraph.vertices[eqIndexOf(runGraph.edges, edge2)];
             hGraph.addEdge(new Edge(v1.number, v2.number));
         });
-        this.drawTwoGraphs(graph, hGraph);
+        drawTwoGraphs(graph, hGraph);
         await super.pause("Combine vertices whose edges have equality conflicts", "");
         // Convert conflict of G-edges to conflict of H-vertices
         let conflictVertices = [];
@@ -382,18 +382,9 @@ class PlanarityTestAlgo extends Algorithm {
                 }
             }
         });
-        this.drawTwoGraphs(graph, hGraph);
+        drawTwoGraphs(graph, hGraph);
 
         return hGraph;
-    }
-
-    drawTwoGraphs(backGraph, foreGraph,
-        backColorSet = new ColorSet("#D3D3D3", "#D3D3D3", "red"),
-        foreColorSet = new ColorSet()) {
-        clearFgCanvas();
-        drawCanvasWalls();
-        backGraph.draw(null, null, backColorSet);
-        foreGraph.draw(selectedVertex, selectedEdge, foreColorSet);
     }
 }
 
