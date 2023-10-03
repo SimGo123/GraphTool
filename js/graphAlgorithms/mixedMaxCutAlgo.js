@@ -1,6 +1,6 @@
 class MixedMaxCutAlgo extends Algorithm {
     async run() {
-        super.numSteps = "X";
+        super.numSteps = 11;
 
         if (!this.preconditionsCheck()) {
             super.onFinished();
@@ -9,7 +9,8 @@ class MixedMaxCutAlgo extends Algorithm {
 
         let originalGraph = graph.getCopy();
 
-        await super.pause("Triangulate the graph", "Triangulate the graph, new edges get weight 0");
+        await super.pause("Triangulate the graph",
+            "Triangulate the graph, new edges get weight 0");
         let triangulationAlgo = new TriangulationAlgo();
         triangulationAlgo.shouldContinue = true;
         triangulationAlgo.runComplete = true;
@@ -24,12 +25,43 @@ class MixedMaxCutAlgo extends Algorithm {
         redrawAll();
 
         await super.pause("Calculate dual graph", "Build the dual graph from the current graph, keep edges");
+
+        if (!graph.isPlanarEmbedded() && this.isSubAlgo) {
+            alert("Can't run to completion, a step requires manually changing the graph");
+            super.onFinished();
+            return;
+        }
+        // If running to completion (runComplete = true), this will loop forever otherwise
+        if (!graph.isPlanarEmbedded() && this.runComplete && !this.isSubAlgo) {
+            this.runComplete = false;
+        }
+        while (!graph.isPlanarEmbedded()) {
+            this.currentStep--;
+            await super.pause("Problem: Graph is not planar embedded",
+                "Graph is not planar embedded, try to find a planar embedding first");
+        }
+
         let [dualGraph, edgeEqualities, vertexFacets] = graph.getDualGraph();
+        // Clone edge equalities, as their edges will be modified later
+        for (let i = 0; i < edgeEqualities.length; i++) {
+            let edgeEquality = edgeEqualities[i];
+            let edge1 = edgeEquality.edge1;
+            let edge2 = edgeEquality.edge2;
+            edgeEqualities[i] = new EdgeEquality(
+                new Edge(edge1.v1nr, edge1.v2nr, edge1.id, edge1.weight),
+                new Edge(edge2.v1nr, edge2.v2nr, edge2.id, edge2.weight));
+        }
+        console.log('edgeEqualities: ', edgeEqualities);
         let dualCopy = dualGraph.getCopy();
         graph = dualGraph;
         redrawAll();
 
         await super.pause("Out of one vertex, make three", "Replace every vertex by three interconnected (w=0) vertices");
+        if (graph.getLoops().length > 0 || graph.getMultiEdges().length > 0) {
+            alert("Can't run to calculate mixed max cut, dual graph contains loops or multi edges");
+            super.onFinished();
+            return;
+        }
         let vertexEqualities = this.oneVertexToThree();
         let modifiedGraph = graph.getCopy();
 
@@ -55,34 +87,28 @@ class MixedMaxCutAlgo extends Algorithm {
 
         await super.pause("Calculate weight min. 1-factor",
             "Run max matching algorithm to get a weight max. 1-factor M for w'' in O(n^(3/2))");
+
+        if (!graph.isPlanarEmbedded() && this.isSubAlgo) {
+            alert("Can't run to completion, a step requires manually changing the graph");
+            super.onFinished();
+            return;
+        }
+        // If running to completion (runComplete = true), this will loop forever otherwise
+        if (!graph.isPlanarEmbedded() && this.runComplete && !this.isSubAlgo) {
+            this.runComplete = false;
+        }
+        while (!graph.isPlanarEmbedded()) {
+            this.currentStep--;
+            await super.pause("Problem: Graph is not planar embedded",
+                "Graph is not planar embedded, try to find a planar embedding first");
+        }
+
         let weightMaxMatchAlgo = new WeightMaxMatchingAlgo();
         weightMaxMatchAlgo.shouldContinue = true;
         weightMaxMatchAlgo.runComplete = true;
         weightMaxMatchAlgo.isSubAlgo = true;
-        // TODO await weightMaxMatchAlgo.run();
-        // console.log('Starting brute force...');
+        let weightMaxEdges = await weightMaxMatchAlgo.run();
         let wmeColorSet = new ColorSet();
-        let wmeBf = weightMaxMatchAlgo.bruteForce(graph);
-        let wmeString = "";
-        wmeBf.forEach(function (edge) {
-            wmeColorSet.addEdgeColor(edge, "red");
-            wmeString += edge.print() + " ";
-        });
-        console.log(wmeString);
-        // console.log('...finished brute force');
-
-        // Weight max edges for the mixed-max-graph
-        // TODO Delete when non-brute-force weight max matching is implemented
-        let weightMaxEdges = [];
-        weightMaxEdges.push(new Edge(19, 25));
-        weightMaxEdges.push(new Edge(13, 26));
-        weightMaxEdges.push(new Edge(22, 27));
-        weightMaxEdges.push(new Edge(16, 28));
-        weightMaxEdges.push(new Edge(11, 12));
-        weightMaxEdges.push(new Edge(14, 15));
-        weightMaxEdges.push(new Edge(17, 18));
-        weightMaxEdges.push(new Edge(20, 21));
-        weightMaxEdges.push(new Edge(23, 24));
         for (let i = 0; i < graph.edges.length; i++) {
             if (eqIndexOf(weightMaxEdges, graph.edges[i]) != -1) {
                 wmeColorSet.addEdgeColor(graph.edges[i], "red");
@@ -94,13 +120,14 @@ class MixedMaxCutAlgo extends Algorithm {
             "C' = E' - M is a weight max. 2-factor in G'");
         graph = modifiedGraph;
         let cApostrophe = [];
+        let twoFactorColorSet = new ColorSet();
         for (var i = 0; i < graph.edges.length; i++) {
             if (eqIndexOf(weightMaxEdges, graph.edges[i]) == -1) {
                 cApostrophe.push(graph.edges[i]);
-                graph.edges[i].color = "green";
+                twoFactorColorSet.addEdgeColor(graph.edges[i], "green");
             }
         }
-        redrawAll();
+        redrawAll(twoFactorColorSet);
 
         let cApostropheEq = [];
         $.each(cApostrophe, function (_index, edge) {
@@ -121,13 +148,14 @@ class MixedMaxCutAlgo extends Algorithm {
             "C* = C' n E* is a weight max. even set in G*");
         graph = dualCopy;
         let cStar = [];
+        let evenSetColorSet = new ColorSet();
         for (var i = 0; i < graph.edges.length; i++) {
             if (eqIndexOf(cApostropheEq, graph.edges[i]) != -1) {
                 cStar.push(graph.edges[i]);
-                graph.edges[i].color = "blue";
+                evenSetColorSet.addEdgeColor(graph.edges[i], "blue");
             }
         }
-        redrawAll();
+        redrawAll(evenSetColorSet);
 
         await super.pause("Calculate mixed max cut in G",
             "C = (C*)* is a mixed max cut in G");
@@ -135,31 +163,38 @@ class MixedMaxCutAlgo extends Algorithm {
         let c = [];
         for (var i = 0; i < cStar.length; i++) {
             let cStarEdge = cStar[i];
-            $.each(edgeEqualities, function (_index, edgeEquality) {
+            for (var j = 0; j < edgeEqualities.length; j++) {
+                let edgeEquality = edgeEqualities[j];
                 if (edgeEquality.edge1.eq(cStarEdge)) {
                     c.push(edgeEquality.edge2);
-                    return false;
+                    break;
                 }
-            });
-        }
-        for (var i = 0; i < graph.edges.length; i++) {
-            if (eqIndexOf(c, graph.edges[i]) != -1) {
-                graph.edges[i].color = "orange";
             }
         }
-        redrawAll();
+        let mixedMaxCutColorSet = new ColorSet();
+        for (var i = 0; i < graph.edges.length; i++) {
+            if (eqIndexOf(c, graph.edges[i]) != -1) {
+                mixedMaxCutColorSet.addEdgeColor(graph.edges[i], "orange");
+            }
+        }
+        redrawAll(mixedMaxCutColorSet);
 
         await super.pause("Calculate mixed max cut in G_0",
             "C_0 = C n E_0 is a mixed max cut in G_0");
         graph = originalGraph;
+        let mixedMaxCutColorSet0 = new ColorSet();
         for (var i = 0; i < graph.edges.length; i++) {
             if (eqIndexOf(c, graph.edges[i]) != -1) {
-                graph.edges[i].color = "red";
+                mixedMaxCutColorSet0.addEdgeColor(graph.edges[i], "red");
             }
         }
-        redrawAll();
+        redrawAll(mixedMaxCutColorSet0);
 
-        super.onFinished();
+        let weight = 0;
+        for (var i = 0; i < c.length; i++) {
+            weight += parseInt(c[i].weight);
+        }
+        super.onFinished(true, "Mixed max cut with weight " + weight + " calculated");
     }
 
     preconditionsCheck() {
@@ -192,12 +227,13 @@ class MixedMaxCutAlgo extends Algorithm {
             vertexEqualities.push(new VertexEquality(v1.number, vertex.number));
             vertexEqualities.push(new VertexEquality(v2.number, vertex.number));
             vertexEqualities.push(new VertexEquality(v3.number, vertex.number));
+
             newVertices.push(v1);
             newVertices.push(v2);
             newVertices.push(v3);
-            newEdges.push(new Edge(v1.number, v2.number, 0));
-            newEdges.push(new Edge(v2.number, v3.number, 0));
-            newEdges.push(new Edge(v1.number, v3.number, 0));
+            newEdges.push(new Edge(v1.number, v2.number, null, 0));
+            newEdges.push(new Edge(v2.number, v3.number, null, 0));
+            newEdges.push(new Edge(v1.number, v3.number, null, 0));
             let edges = graph.getIncidentEdges(vertex);
             for (let j = 0; j < edges.length; j++) {
                 let edge = edges[j];

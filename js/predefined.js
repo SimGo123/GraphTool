@@ -41,10 +41,6 @@ function predefinedClick(param) {
             vertexRadius = 10;
             loadGraphFromJson(case1Graph);
             break;
-        case PREDEFINEDS.MIXED_MAX_GRAPH:
-            const mixedMaxGraph = '{"canvasWidth":863,"canvasHeight":538,"vertices":[{"x":33,"y":494,"nr":0},{"x":401,"y":419,"nr":1},{"x":823,"y":497,"nr":2},{"x":401,"y":200,"nr":3},{"x":401,"y":48,"nr":4}],"edges":[{"v1nr":4,"v2nr":3,"weight":16},{"v1nr":3,"v2nr":0,"weight":0},{"v1nr":0,"v2nr":1,"weight":11},{"v1nr":1,"v2nr":2,"weight":1},{"v1nr":2,"v2nr":3,"weight":5},{"v1nr":3,"v2nr":1,"weight":-6}]}';
-            loadGraphFromJson(mixedMaxGraph);
-            break;
         case PREDEFINEDS.WHEEL_GRAPH:
             let nodes = parseInt(prompt("Enter number of nodes:"));
             let radius = (nodes * 25) / (2 * Math.PI);
@@ -87,6 +83,14 @@ function predefinedClick(param) {
             Edge 24 25 (U)
             */
             loadGraphFromJson(weightMaxGraph);
+            break;
+        case PREDEFINEDS.MIXED_MAX_GRAPH:
+            /*
+            Planar embedded 3-vertex dual graph:
+            {"canvasWidth":1106,"canvasHeight":538,"sources":[],"targets":[],"vertices":[{"x":1096,"y":250,"nr":12},{"x":1069,"y":308,"nr":13},{"x":1020,"y":275,"nr":14},{"x":397,"y":247,"nr":15},{"x":357,"y":287,"nr":16},{"x":397,"y":287,"nr":17},{"x":370,"y":369,"nr":18},{"x":446,"y":393,"nr":19},{"x":379,"y":431,"nr":20},{"x":555,"y":392,"nr":21},{"x":617,"y":380,"nr":22},{"x":563,"y":345,"nr":23},{"x":734,"y":372,"nr":24},{"x":777,"y":380,"nr":25},{"x":734,"y":412,"nr":26},{"x":595,"y":268,"nr":27},{"x":554,"y":291,"nr":28},{"x":503,"y":268,"nr":29}],"edges":[{"v1nr":12,"v2nr":15,"weight":273,"orientation":"U"},{"v1nr":18,"v2nr":16,"weight":289,"orientation":"U"},{"v1nr":19,"v2nr":21,"weight":278,"orientation":"U"},{"v1nr":24,"v2nr":22,"weight":288,"orientation":"U"},{"v1nr":25,"v2nr":13,"weight":284,"orientation":"U"},{"v1nr":26,"v2nr":20,"weight":295,"orientation":"U"},{"v1nr":27,"v2nr":14,"weight":289,"orientation":"U"},{"v1nr":23,"v2nr":28,"weight":289,"orientation":"U"},{"v1nr":29,"v2nr":17,"weight":289,"orientation":"U"},{"v1nr":12,"v2nr":13,"weight":289,"orientation":"U"},{"v1nr":13,"v2nr":14,"weight":289,"orientation":"U"},{"v1nr":12,"v2nr":14,"weight":289,"orientation":"U"},{"v1nr":15,"v2nr":16,"weight":289,"orientation":"U"},{"v1nr":16,"v2nr":17,"weight":289,"orientation":"U"},{"v1nr":15,"v2nr":17,"weight":289,"orientation":"U"},{"v1nr":18,"v2nr":19,"weight":289,"orientation":"U"},{"v1nr":19,"v2nr":20,"weight":289,"orientation":"U"},{"v1nr":18,"v2nr":20,"weight":289,"orientation":"U"},{"v1nr":21,"v2nr":22,"weight":289,"orientation":"U"},{"v1nr":22,"v2nr":23,"weight":289,"orientation":"U"},{"v1nr":21,"v2nr":23,"weight":289,"orientation":"U"},{"v1nr":24,"v2nr":25,"weight":289,"orientation":"U"},{"v1nr":25,"v2nr":26,"weight":289,"orientation":"U"},{"v1nr":24,"v2nr":26,"weight":289,"orientation":"U"},{"v1nr":27,"v2nr":28,"weight":289,"orientation":"U"},{"v1nr":28,"v2nr":29,"weight":289,"orientation":"U"},{"v1nr":27,"v2nr":29,"weight":289,"orientation":"U"}]}
+            */
+            const mixedMaxGraph = '{"canvasWidth":863,"canvasHeight":538,"vertices":[{"x":33,"y":494,"nr":0},{"x":401,"y":419,"nr":1},{"x":823,"y":497,"nr":2},{"x":401,"y":200,"nr":3},{"x":401,"y":48,"nr":4}],"edges":[{"v1nr":4,"v2nr":3,"weight":16},{"v1nr":3,"v2nr":0,"weight":0},{"v1nr":0,"v2nr":1,"weight":11},{"v1nr":1,"v2nr":2,"weight":1},{"v1nr":2,"v2nr":3,"weight":5},{"v1nr":3,"v2nr":1,"weight":-6}]}';
+            loadGraphFromJson(mixedMaxGraph);
             break;
         case PREDEFINEDS.MAX_FLOW_GRAPH:
             const maxFlowGraph = '{"canvasWidth":986,"canvasHeight":538,"source":4,"target":7,"vertices":[{"x":233,"y":107,"nr":0},{"x":614,"y":139,"nr":1},{"x":638,"y":397,"nr":2},{"x":289,"y":398,"nr":3},{"x":464,"y":235,"nr":4},{"x":265,"y":229,"nr":5},{"x":453,"y":108,"nr":6},{"x":632,"y":259,"nr":7}],"edges":[{"v1nr":0,"v2nr":6,"weight":"4","orientation":"U"},{"v1nr":6,"v2nr":1,"weight":"5","orientation":"U"},{"v1nr":1,"v2nr":7,"weight":"8","orientation":"U"},{"v1nr":7,"v2nr":2,"weight":"5","orientation":"U"},{"v1nr":2,"v2nr":3,"weight":"0","orientation":"U"},{"v1nr":3,"v2nr":5,"weight":"1","orientation":"U"},{"v1nr":5,"v2nr":0,"weight":"8","orientation":"U"},{"v1nr":0,"v2nr":4,"weight":"2","orientation":"U"},{"v1nr":4,"v2nr":6,"weight":"2","orientation":"U"},{"v1nr":4,"v2nr":1,"weight":"9","orientation":"U"},{"v1nr":4,"v2nr":2,"weight":"1","orientation":"U"},{"v1nr":4,"v2nr":3,"weight":"3","orientation":"U"}]}';
