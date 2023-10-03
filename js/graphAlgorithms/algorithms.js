@@ -101,7 +101,7 @@ class Algorithm {
         $("#stepTitle").text("Step " + this.currentStep + "/" + this.numSteps + ": " + stepTitle);
         $("#stepDescription").html(stepDesc);
         while (!this.shouldContinue) {
-            console.log("waiting",this);
+            console.log("waiting");
             await this.sleep(1000);
         }
         this.shouldContinue = false;

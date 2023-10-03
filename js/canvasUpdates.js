@@ -81,6 +81,13 @@ class ColorSet {
         }
         return this.edgeColor;
     }
+
+    getCopy() {
+        let copy = new ColorSet(this.vertexColor, this.edgeColor, this.highlightColor);
+        copy.vertexColors = Object.assign({}, this.vertexColors);
+        copy.edgeColors = this.edgeColors.slice();
+        return copy;
+    }
 }
 
 var globalColorSet = new ColorSet();
