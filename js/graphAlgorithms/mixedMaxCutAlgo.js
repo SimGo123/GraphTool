@@ -56,6 +56,13 @@ class MixedMaxCutAlgo extends Algorithm {
 
         await super.pause("Calculate weight min. 1-factor",
             "Run max matching algorithm to get a weight max. 1-factor M for w'' in O(n^(3/2))");
+
+        // TODO When running to completion (runComplete = true), this will loop forever
+        if (this.runComplete) {
+            alert("Can't run to completion, a step requires manually changing the graph");
+            super.onFinished();
+            return;
+        }
         while (!graph.isPlanarEmbedded()) {
             await super.pause("Problem: Graph is not planar embedded",
                 "Graph is not planar embedded, try to find a planar embedding first");
