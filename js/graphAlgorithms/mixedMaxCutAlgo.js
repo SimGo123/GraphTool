@@ -26,6 +26,16 @@ class MixedMaxCutAlgo extends Algorithm {
 
         await super.pause("Calculate dual graph", "Build the dual graph from the current graph, keep edges");
         let [dualGraph, edgeEqualities, vertexFacets] = graph.getDualGraph();
+        // Clone edge equalities, as their edges will be modified later
+        for (let i = 0; i < edgeEqualities.length; i++) {
+            let edgeEquality = edgeEqualities[i];
+            let edge1 = edgeEquality.edge1;
+            let edge2 = edgeEquality.edge2;
+            edgeEqualities[i] = new EdgeEquality(
+                new Edge(edge1.v1nr, edge1.v2nr, edge1.id, edge1.weight), 
+                new Edge(edge2.v1nr, edge2.v2nr, edge2.id, edge2.weight));
+        }
+        console.log('edgeEqualities: ', edgeEqualities);
         let dualCopy = dualGraph.getCopy();
         graph = dualGraph;
         redrawAll();
@@ -127,12 +137,13 @@ class MixedMaxCutAlgo extends Algorithm {
         let c = [];
         for (var i = 0; i < cStar.length; i++) {
             let cStarEdge = cStar[i];
-            $.each(edgeEqualities, function (_index, edgeEquality) {
+            for (var j = 0; j < edgeEqualities.length; j++) {
+                let edgeEquality = edgeEqualities[j];
                 if (edgeEquality.edge1.eq(cStarEdge)) {
                     c.push(edgeEquality.edge2);
-                    return false;
+                    break;
                 }
-            });
+            }
         }
         let mixedMaxCutColorSet = new ColorSet();
         for (var i = 0; i < graph.edges.length; i++) {
@@ -153,7 +164,11 @@ class MixedMaxCutAlgo extends Algorithm {
         }
         redrawAll(mixedMaxCutColorSet0);
 
-        super.onFinished(true, "Mixed max cut calculated");
+        let weight = 0;
+        for (var i = 0; i < c.length; i++) {
+            weight += c[i].weight;
+        }
+        super.onFinished(true, "Mixed max cut with weight " + weight + " calculated");
     }
 
     preconditionsCheck() {
