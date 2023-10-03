@@ -1,6 +1,6 @@
 class MixedMaxCutAlgo extends Algorithm {
     async run() {
-        super.numSteps = "X";
+        super.numSteps = 11;
 
         if (!this.preconditionsCheck()) {
             super.onFinished();
@@ -25,6 +25,22 @@ class MixedMaxCutAlgo extends Algorithm {
         redrawAll();
 
         await super.pause("Calculate dual graph", "Build the dual graph from the current graph, keep edges");
+
+        if (!graph.isPlanarEmbedded() && this.isSubAlgo) {
+            alert("Can't run to completion, a step requires manually changing the graph");
+            super.onFinished();
+            return;
+        }
+        // If running to completion (runComplete = true), this will loop forever otherwise
+        if (!graph.isPlanarEmbedded() && this.runComplete && !this.isSubAlgo) {
+            this.runComplete = false;
+        }
+        while (!graph.isPlanarEmbedded()) {
+            this.currentStep--;
+            await super.pause("Problem: Graph is not planar embedded",
+                "Graph is not planar embedded, try to find a planar embedding first");
+        }
+
         let [dualGraph, edgeEqualities, vertexFacets] = graph.getDualGraph();
         // Clone edge equalities, as their edges will be modified later
         for (let i = 0; i < edgeEqualities.length; i++) {
@@ -32,7 +48,7 @@ class MixedMaxCutAlgo extends Algorithm {
             let edge1 = edgeEquality.edge1;
             let edge2 = edgeEquality.edge2;
             edgeEqualities[i] = new EdgeEquality(
-                new Edge(edge1.v1nr, edge1.v2nr, edge1.id, edge1.weight), 
+                new Edge(edge1.v1nr, edge1.v2nr, edge1.id, edge1.weight),
                 new Edge(edge2.v1nr, edge2.v2nr, edge2.id, edge2.weight));
         }
         console.log('edgeEqualities: ', edgeEqualities);
@@ -41,6 +57,11 @@ class MixedMaxCutAlgo extends Algorithm {
         redrawAll();
 
         await super.pause("Out of one vertex, make three", "Replace every vertex by three interconnected (w=0) vertices");
+        if (graph.getLoops().length > 0 || graph.getMultiEdges().length > 0) {
+            alert("Can't run to calculate mixed max cut, dual graph contains loops or multi edges");
+            super.onFinished();
+            return;
+        }
         let vertexEqualities = this.oneVertexToThree();
         let modifiedGraph = graph.getCopy();
 
@@ -67,16 +88,21 @@ class MixedMaxCutAlgo extends Algorithm {
         await super.pause("Calculate weight min. 1-factor",
             "Run max matching algorithm to get a weight max. 1-factor M for w'' in O(n^(3/2))");
 
-        // TODO When running to completion (runComplete = true), this will loop forever
-        if (this.runComplete) {
+        if (!graph.isPlanarEmbedded() && this.isSubAlgo) {
             alert("Can't run to completion, a step requires manually changing the graph");
             super.onFinished();
             return;
         }
+        // If running to completion (runComplete = true), this will loop forever otherwise
+        if (!graph.isPlanarEmbedded() && this.runComplete && !this.isSubAlgo) {
+            this.runComplete = false;
+        }
         while (!graph.isPlanarEmbedded()) {
+            this.currentStep--;
             await super.pause("Problem: Graph is not planar embedded",
                 "Graph is not planar embedded, try to find a planar embedding first");
         }
+
         let weightMaxMatchAlgo = new WeightMaxMatchingAlgo();
         weightMaxMatchAlgo.shouldContinue = true;
         weightMaxMatchAlgo.runComplete = true;
@@ -166,7 +192,7 @@ class MixedMaxCutAlgo extends Algorithm {
 
         let weight = 0;
         for (var i = 0; i < c.length; i++) {
-            weight += c[i].weight;
+            weight += parseInt(c[i].weight);
         }
         super.onFinished(true, "Mixed max cut with weight " + weight + " calculated");
     }
@@ -201,12 +227,13 @@ class MixedMaxCutAlgo extends Algorithm {
             vertexEqualities.push(new VertexEquality(v1.number, vertex.number));
             vertexEqualities.push(new VertexEquality(v2.number, vertex.number));
             vertexEqualities.push(new VertexEquality(v3.number, vertex.number));
+
             newVertices.push(v1);
             newVertices.push(v2);
             newVertices.push(v3);
-            newEdges.push(new Edge(v1.number, v2.number, 0));
-            newEdges.push(new Edge(v2.number, v3.number, 0));
-            newEdges.push(new Edge(v1.number, v3.number, 0));
+            newEdges.push(new Edge(v1.number, v2.number, null, 0));
+            newEdges.push(new Edge(v2.number, v3.number, null, 0));
+            newEdges.push(new Edge(v1.number, v3.number, null, 0));
             let edges = graph.getIncidentEdges(vertex);
             for (let j = 0; j < edges.length; j++) {
                 let edge = edges[j];

@@ -104,7 +104,7 @@ class WeightMaxMatchingAlgo extends Algorithm {
 
         let weight = 0;
         maxWeightEdges.forEach(function (edge) {
-            weight += edge.weight;
+            weight += parseInt(edge.weight);
         });
         super.onFinished(true, "The weight max matching has weight " + weight);
         return maxWeightEdges;

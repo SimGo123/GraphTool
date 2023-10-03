@@ -11,7 +11,7 @@ class PlanarSeparatorAlgo extends Algorithm {
         return fulfilled;
     }
 
-    async run(runGraph = graph) {
+    async run() {
         super.numSteps = "X";
 
         if (!this.preconditionsCheck()) {
@@ -29,10 +29,10 @@ class PlanarSeparatorAlgo extends Algorithm {
         await triangulationAlgo.run();
 
         await super.pause("Construct breadth-first search tree", "");
-        let startVertex = runGraph.vertices[0];
+        let startVertex = graph.vertices[0];
         if (!this.isSubAlgo) {
             let startVertexNr = window.prompt("Enter start vertex number", "0");
-            $.each(runGraph.vertices, function (_index, vertex) {
+            $.each(graph.vertices, function (_index, vertex) {
                 if (vertex.number == startVertexNr) {
                     startVertex = vertex;
                     return false;
@@ -40,7 +40,7 @@ class PlanarSeparatorAlgo extends Algorithm {
             });
         }
         console.log('start vertex: ' + startVertex.print());
-        let bfsLayers = breadthFirstSearchTree(startVertex, runGraph);
+        let bfsLayers = breadthFirstSearchTree(startVertex, graph);
         let beforeTreeGraph = graph.getCopy();
         this.showBFSTree(bfsLayers);
 
@@ -56,7 +56,7 @@ class PlanarSeparatorAlgo extends Algorithm {
             layers[i] = vertexLayer;
         }
 
-        const n = runGraph.vertices.length;
+        const n = graph.vertices.length;
         await super.pause("Find layer μ",
             "Find layer μ so that all layers below together have <= n/2="
             + (n / 2) + " vertices, and together with μ have > n/2 vertices");
